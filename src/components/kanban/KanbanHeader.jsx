@@ -2,8 +2,7 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLogistics } from '../../contexts/LogisticsContext';
 import { useSound } from '../../contexts/SoundContext';
-
-const LOGO_URL = 'https://res.cloudinary.com/dyw2bm0p4/image/upload/v1761740142/jp-branco-300x181_wheyp9.png';
+import { LOGO_COLETAS, LOGO_ENTREGAS } from '../../assets/logo';
 
 export function KanbanHeader({ weekNav }) {
   const { user, profile, role, switchRole, isAdmin, isGestor, isMotorista, signOut } = useAuth();
@@ -22,6 +21,8 @@ export function KanbanHeader({ weekNav }) {
   } = useLogistics();
 
   const { formattedWeekRange } = weekNav;
+
+  const currentLogo = activeTab === 'coletas' ? LOGO_COLETAS : LOGO_ENTREGAS;
 
   const handleSwitchBoard = (type) => {
     if (type === 'dashboard' && !isAdmin && !isGestor) {
@@ -60,21 +61,20 @@ export function KanbanHeader({ weekNav }) {
       {/* ============================================== */}
       {/* CABEÇALHO MOBILE                               */}
       {/* ============================================== */}
-      <header className="flex lg:hidden flex-col px-4 pt-3 pb-2 shrink-0 z-20 transition-colors duration-500 gap-2.5 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+      <header className="flex lg:hidden flex-col px-3.5 pt-3 pb-2.5 shrink-0 z-20 transition-colors duration-500 gap-2.5 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2.5">
-            <div className="p-1 px-2 rounded-xl bg-[#020024] border border-slate-700/40 shadow-sm flex items-center justify-center">
-              <img 
-                src={LOGO_URL} 
-                alt="J Patricio Metais" 
-                className="h-7 w-auto object-contain"
-              />
-            </div>
+            {/* Transparent Dynamic Logo without blue background box */}
+            <img 
+              src={currentLogo} 
+              alt="J Patricio Metais" 
+              className="h-8 sm:h-9 w-auto object-contain bg-transparent drop-shadow-sm"
+            />
             <div className="flex flex-col leading-none">
               <h1 className="font-cunia text-sm sm:text-base font-bold tracking-tight text-slate-900 dynamic-title">
                 Gestão Logística
               </h1>
-              <span className="text-[11px] text-slate-600 font-bold truncate max-w-[130px] mt-0.5">
+              <span className="text-[11px] text-slate-600 font-bold truncate max-w-[125px] mt-0.5">
                 {userDisplayName}
               </span>
             </div>
@@ -183,13 +183,12 @@ export function KanbanHeader({ weekNav }) {
       {/* ============================================== */}
       <header className="hidden lg:flex bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-2.5 justify-between items-center shadow-xs shrink-0 z-10 gap-3 transition-colors duration-500">
         <div className="flex items-center gap-4">
-          <div className="p-1.5 px-3 rounded-2xl bg-[#020024] border border-slate-700/40 shadow-sm flex items-center justify-center">
-            <img 
-              src={LOGO_URL} 
-              alt="J Patricio Metais" 
-              className="h-10 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-200"
-            />
-          </div>
+          {/* Transparent Dynamic Logo without blue background box */}
+          <img 
+            src={currentLogo} 
+            alt="J Patricio Metais" 
+            className="h-10 xl:h-12 w-auto object-contain bg-transparent drop-shadow-sm hover:scale-105 transition-transform duration-200"
+          />
           
           <div className="flex flex-col justify-center border-l-2 border-slate-200 pl-4 border-dynamic transition-colors duration-500">
             <h1 className="font-cunia text-xl font-bold text-slate-900 dynamic-title transition-colors duration-500 leading-tight">
