@@ -11,10 +11,11 @@ import {
   EyeOff,
   Sparkles,
   Users,
+  Building2,
   CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import Logo from '../../assets/logo';
+import Logo, { OFFICIAL_LOGO_URL } from '../../assets/logo';
 
 const GESTORES_CONTAS = [
   { nome: 'SAC FILIAL', email: 'sac.filial@jpatricio.com.br', pass: 'gestor123456', role: 'Gestor' },
@@ -67,7 +68,7 @@ export default function LoginPage() {
       await signIn(loginEmail, loginPass);
     } catch (err) {
       console.error('Erro de login:', err);
-      setErrorMsg(err.message || 'Erro ao autenticar. Verifique o usuário.');
+      setErrorMsg(err.message || 'Erro ao autenticar. Verifique as credenciais.');
       setLoading(false);
     }
   };
@@ -92,70 +93,77 @@ export default function LoginPage() {
       <div className="relative w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-6 z-10">
         
         {/* Left Column: Brand & Direct Form */}
-        <div className="lg:col-span-6 flex flex-col justify-between p-6 sm:p-8 rounded-3xl bg-white/[0.04] backdrop-blur-xl border border-white/10 shadow-2xl">
+        <div className="lg:col-span-6 flex flex-col justify-between p-6 sm:p-8 rounded-3xl bg-white/[0.06] backdrop-blur-2xl border border-white/20 shadow-2xl">
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <Logo className="h-10 w-auto" />
-              <div>
-                <h1 className="font-bold text-lg text-white leading-tight tracking-wide">
+            {/* Header Brand with Official Logo */}
+            <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-white/15">
+              <div className="p-2 rounded-2xl bg-[#020024] border border-cyan-500/30 shadow-md flex items-center justify-center">
+                <img 
+                  src={OFFICIAL_LOGO_URL} 
+                  alt="J Patricio Metais" 
+                  className="h-11 w-auto object-contain drop-shadow" 
+                />
+              </div>
+              <div className="flex flex-col">
+                <h1 className="font-extrabold text-base sm:text-lg text-white leading-tight tracking-wide">
                   J PATRICIO METAIS
                 </h1>
-                <p className="text-xs text-cyan-400 font-medium tracking-wider uppercase">
-                  Gestão Logística & Entregas
+                <p className="text-xs text-cyan-300 font-bold tracking-wider uppercase mt-0.5">
+                  Logística & Distribuição
                 </p>
               </div>
             </div>
 
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white tracking-tight">
+              <h2 className="text-2xl font-extrabold text-white tracking-tight">
                 Acesse o Sistema
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-300 font-medium mt-1">
                 Autentique-se com sua conta de Gestor, Motorista ou Admin
               </p>
             </div>
 
             {errorMsg && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in duration-200">
-                <span className="material-symbols-outlined text-sm mt-0.5 shrink-0">error</span>
+              <div className="mb-4 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs flex items-start gap-2 animate-in fade-in duration-200 font-semibold">
+                <span className="material-symbols-outlined text-base mt-0.5 shrink-0 text-rose-300">error</span>
                 <span>{errorMsg}</span>
               </div>
             )}
 
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-300">E-mail Corporativo</label>
+                <label className="text-xs font-bold text-slate-200">E-mail Corporativo</label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="usuario@jpatricio.com.br"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.07] border border-white/15 focus:border-cyan-400 focus:bg-white/[0.12] outline-none text-xs text-white placeholder-slate-500 transition-all font-medium"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950/70 border border-white/25 focus:border-cyan-400 focus:bg-slate-900 outline-none text-xs text-white placeholder-slate-400 transition-all font-semibold"
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-300">Senha de Acesso</label>
+                  <label className="text-xs font-bold text-slate-200">Senha de Acesso</label>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-white/[0.07] border border-white/15 focus:border-cyan-400 focus:bg-white/[0.12] outline-none text-xs text-white placeholder-slate-500 transition-all font-medium"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-950/70 border border-white/25 focus:border-cyan-400 focus:bg-slate-900 outline-none text-xs text-white placeholder-slate-400 transition-all font-semibold"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -165,7 +173,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-bold shadow-lg shadow-cyan-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="mt-2 w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-extrabold shadow-lg shadow-cyan-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -183,38 +191,38 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-500">
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="mt-6 pt-4 border-t border-white/15 flex items-center justify-between text-xs text-slate-300 font-semibold">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
               Supabase Auth & RBAC
             </span>
-            <span>Versão 2.0 Enterprise</span>
+            <span className="text-slate-400 font-mono">v2.0 Enterprise</span>
           </div>
         </div>
 
         {/* Right Column: Pre-configured Accounts Selector (Instant Testing) */}
-        <div className="lg:col-span-6 flex flex-col p-6 sm:p-8 rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-2xl">
+        <div className="lg:col-span-6 flex flex-col p-6 sm:p-8 rounded-3xl bg-slate-950/80 backdrop-blur-2xl border border-white/15 shadow-2xl">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-amber-400" />
-                Contas Cadastradas para Teste
+                Contas Oficiais para Teste
               </h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Clique no botão "Entrar" de qualquer conta para login instantâneo
+              <p className="text-xs text-slate-300 mt-0.5">
+                Clique no botão "Entrar" para login imediato com o perfil
               </p>
             </div>
           </div>
 
           {/* Subtabs for Quick Accounts */}
-          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-white/[0.05] border border-white/10 mb-4">
+          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-white/[0.08] border border-white/15 mb-4">
             <button
               type="button"
               onClick={() => setActiveQuickTab('gestores')}
-              className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-2 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
                 activeQuickTab === 'gestores'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -224,10 +232,10 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setActiveQuickTab('motoristas')}
-              className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-2 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
                 activeQuickTab === 'motoristas'
                   ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
               }`}
             >
               <Truck className="w-3.5 h-3.5" />
@@ -237,10 +245,10 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setActiveQuickTab('admin')}
-              className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-2 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
                 activeQuickTab === 'admin'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-amber-400 text-slate-950 shadow-md'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -249,12 +257,12 @@ export default function LoginPage() {
           </div>
 
           {/* Account Lists */}
-          <div className="flex-1 overflow-y-auto max-h-[340px] pr-1 flex flex-col gap-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto max-h-[340px] pr-1 flex flex-col gap-2.5 custom-scrollbar">
             
             {/* GESTORES */}
             {activeQuickTab === 'gestores' && (
               <div className="flex flex-col gap-2">
-                <div className="text-[10px] text-blue-300/80 font-bold uppercase tracking-wider px-1">
+                <div className="text-[10px] text-cyan-300 font-extrabold uppercase tracking-wider px-1">
                   Responsáveis / Quem Cadastrou (5 Contas)
                 </div>
                 {GESTORES_CONTAS.map((gestor) => {
@@ -262,24 +270,24 @@ export default function LoginPage() {
                   return (
                     <div
                       key={gestor.email}
-                      className={`p-2.5 sm:p-3 rounded-2xl border transition-all flex items-center justify-between group ${
+                      className={`p-3 rounded-2xl border transition-all flex items-center justify-between group ${
                         isSelected
-                          ? 'bg-blue-600/25 border-blue-400 shadow-md shadow-blue-500/10'
-                          : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.08] hover:border-white/20'
+                          ? 'bg-blue-600/30 border-blue-400 shadow-md'
+                          : 'bg-white/[0.04] border-white/15 hover:bg-white/[0.09] hover:border-white/25'
                       }`}
                     >
                       <div 
                         className="flex items-center gap-3 cursor-pointer flex-1 min-w-0 mr-2"
                         onClick={() => handleSelectQuickAccount(gestor, false)}
                       >
-                        <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                        <div className="w-8 h-8 rounded-xl bg-blue-500/25 text-cyan-300 border border-blue-400/30 flex items-center justify-center font-bold text-xs shrink-0">
                           {gestor.nome.substring(0, 2)}
                         </div>
                         <div className="min-w-0">
                           <div className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
                             {gestor.nome}
                           </div>
-                          <div className="text-[10px] text-slate-400 font-mono truncate">
+                          <div className="text-[11px] text-slate-300 font-mono truncate">
                             {gestor.email}
                           </div>
                         </div>
@@ -288,10 +296,10 @@ export default function LoginPage() {
                       <button
                         type="button"
                         onClick={() => handleSelectQuickAccount(gestor, true)}
-                        className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all flex items-center gap-1 active:scale-95 shrink-0"
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all flex items-center gap-1 active:scale-95 shrink-0"
                       >
                         <span>Entrar</span>
-                        <ArrowRight className="w-3 h-3" />
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   );
@@ -302,7 +310,7 @@ export default function LoginPage() {
             {/* MOTORISTAS */}
             {activeQuickTab === 'motoristas' && (
               <div className="flex flex-col gap-2">
-                <div className="text-[10px] text-emerald-300/80 font-bold uppercase tracking-wider px-1">
+                <div className="text-[10px] text-emerald-300 font-extrabold uppercase tracking-wider px-1">
                   Motoristas & Veículos Oficiais (11 Contas)
                 </div>
                 {MOTORISTAS_CONTAS.map((mot) => {
@@ -310,27 +318,27 @@ export default function LoginPage() {
                   return (
                     <div
                       key={mot.email}
-                      className={`p-2.5 sm:p-3 rounded-2xl border transition-all flex items-center justify-between group ${
+                      className={`p-3 rounded-2xl border transition-all flex items-center justify-between group ${
                         isSelected
-                          ? 'bg-emerald-600/25 border-emerald-400 shadow-md shadow-emerald-500/10'
-                          : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.08] hover:border-white/20'
+                          ? 'bg-emerald-600/30 border-emerald-400 shadow-md'
+                          : 'bg-white/[0.04] border-white/15 hover:bg-white/[0.09] hover:border-white/25'
                       }`}
                     >
                       <div 
                         className="flex items-center gap-3 cursor-pointer flex-1 min-w-0 mr-2"
                         onClick={() => handleSelectQuickAccount(mot, false)}
                       >
-                        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/25 text-emerald-300 border border-emerald-400/30 flex items-center justify-center shrink-0">
                           <Truck className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
                           <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors flex items-center gap-1.5 truncate">
                             <span>{mot.nome}</span>
-                            <span className="text-[10px] text-emerald-400 font-mono font-normal">
+                            <span className="text-[10px] text-emerald-400 font-mono font-bold">
                               ({mot.placa})
                             </span>
                           </div>
-                          <div className="text-[10px] text-slate-400 font-mono truncate">
+                          <div className="text-[11px] text-slate-300 font-mono truncate">
                             {mot.email}
                           </div>
                         </div>
@@ -339,10 +347,10 @@ export default function LoginPage() {
                       <button
                         type="button"
                         onClick={() => handleSelectQuickAccount(mot, true)}
-                        className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all flex items-center gap-1 active:scale-95 shrink-0"
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all flex items-center gap-1 active:scale-95 shrink-0"
                       >
                         <span>Entrar</span>
-                        <ArrowRight className="w-3 h-3" />
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   );
@@ -353,7 +361,7 @@ export default function LoginPage() {
             {/* ADMIN */}
             {activeQuickTab === 'admin' && (
               <div className="flex flex-col gap-2">
-                <div className="text-[10px] text-amber-300/80 font-bold uppercase tracking-wider px-1">
+                <div className="text-[10px] text-amber-300 font-extrabold uppercase tracking-wider px-1">
                   Administração Master
                 </div>
                 {ADMIN_CONTAS.map((adm) => {
@@ -361,24 +369,24 @@ export default function LoginPage() {
                   return (
                     <div
                       key={adm.email}
-                      className={`p-2.5 sm:p-3 rounded-2xl border transition-all flex items-center justify-between group ${
+                      className={`p-3 rounded-2xl border transition-all flex items-center justify-between group ${
                         isSelected
-                          ? 'bg-amber-500/25 border-amber-400 shadow-md shadow-amber-500/10'
-                          : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.08] hover:border-white/20'
+                          ? 'bg-amber-500/30 border-amber-400 shadow-md'
+                          : 'bg-white/[0.04] border-white/15 hover:bg-white/[0.09] hover:border-white/25'
                       }`}
                     >
                       <div 
                         className="flex items-center gap-3 cursor-pointer flex-1 min-w-0 mr-2"
                         onClick={() => handleSelectQuickAccount(adm, false)}
                       >
-                        <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-xs shrink-0">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/25 text-amber-300 border border-amber-400/30 flex items-center justify-center font-bold text-xs shrink-0">
                           👑
                         </div>
                         <div className="min-w-0">
                           <div className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors truncate">
                             {adm.nome}
                           </div>
-                          <div className="text-[10px] text-slate-400 font-mono truncate">
+                          <div className="text-[11px] text-slate-300 font-mono truncate">
                             {adm.email}
                           </div>
                         </div>
@@ -387,10 +395,10 @@ export default function LoginPage() {
                       <button
                         type="button"
                         onClick={() => handleSelectQuickAccount(adm, true)}
-                        className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm transition-all flex items-center gap-1 active:scale-95 shrink-0 font-bold"
+                        className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm transition-all flex items-center gap-1 active:scale-95 shrink-0"
                       >
                         <span>Entrar</span>
-                        <ArrowRight className="w-3 h-3" />
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   );

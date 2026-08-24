@@ -72,6 +72,14 @@ const PLACAS_FILTER_OPTIONS = [
   'QGT4I78 (Leandro)',
   'RGK9D89 (Fabio)',
   'RGK8J70 (Jucier)',
+  'QGO-5D66 (Laercio)',
+  'QGO-5D76 (Otoniel)',
+  'RGF-9F11 (Ronys)',
+  'OJW-0A50 (Genilson)',
+  'TSW-3I57',
+  'TSW-2F58 (Caninde)',
+  'NOC-7041',
+  'QGT-5D69 (Francinildo)',
   'TSW-7G98',
 ];
 
