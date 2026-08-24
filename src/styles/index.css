@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Cunia';
+  src: url('/fontes/cunia-free.woff2') format('woff2'),
+       url('/fontes/cunia-free.woff') format('woff'),
+       url('/fontes/cunia-free.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    background-attachment: fixed;
+    transition: background 0.5s ease;
+    user-select: none;
+  }
+
+  /* TEMA 1: COLETAS */
+  body.theme-coleta,
+  .theme-coleta {
+    background: #EEAECA;
+    background: radial-gradient(circle, rgba(238, 174, 202, 1) 0%, rgba(148, 187, 233, 1) 100%);
+    background-attachment: fixed;
+  }
+
+  /* TEMA 2: ENTREGAS */
+  body.theme-entrega,
+  .theme-entrega {
+    background: #020024;
+    background: linear-gradient(182deg, rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 84%, rgba(9, 9, 121, 1) 84%, rgba(0, 212, 255, 1) 100%);
+    background-attachment: fixed;
+  }
+
+  /* TEMA 3: RELATÓRIOS */
+  body.theme-relatorio,
+  .theme-relatorio {
+    background: linear-gradient(135deg, #03042C 0%, #0A1051 50%, #172090 100%);
+    background-attachment: fixed;
+    position: relative;
+  }
+
+  body.theme-relatorio::before,
+  .theme-relatorio::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.05; 
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+.font-cunia { font-family: 'Cunia', 'Space Grotesk', sans-serif; }
+.font-space { font-family: 'Space Grotesk', sans-serif; }
+.font-inter { font-family: 'Inter', sans-serif; }
+
+/* --- Estilos Base & Glassmorphism --- */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.glass-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Estilos Dashboards (Aba Relatórios) --- */
+.dash-card {
+  background: rgba(10, 16, 81, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+}
+
+.dash-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 8px;
+  padding: 8px 12px;
+  outline: none;
+  transition: all 0.3s;
+}
+.dash-input:focus { border-color: #00D4FF; background: rgba(255, 255, 255, 0.15); }
+.dash-input option { background: #0A1051; color: white; }
+
+/* --- OVERRIDES DO TEMA ENTREGAS E RELATÓRIOS --- */
+body.theme-entrega header, body.theme-relatorio header { background-color: rgba(15, 23, 42, 0.85) !important; border-color: rgba(255, 255, 255, 0.1) !important; }
+body.theme-entrega .dynamic-title, body.theme-relatorio .dynamic-title { color: #00D4FF !important; }
+body.theme-entrega .dynamic-subtitle, body.theme-relatorio .dynamic-subtitle { color: #E2E8F0 !important; }
+body.theme-entrega #week-display, body.theme-entrega #mobile-week-display, body.theme-relatorio #week-display, body.theme-relatorio #mobile-week-display { color: #94A3B8 !important; }
+body.theme-entrega .border-dynamic, body.theme-relatorio .border-dynamic { border-color: rgba(255, 255, 255, 0.2) !important; }
+
+body.theme-entrega .kanban-column { background-color: rgba(30, 41, 59, 0.6) !important; border-color: rgba(255, 255, 255, 0.1) !important; }
+body.theme-entrega .kanban-column > div:first-child { background-color: rgba(15, 23, 42, 0.8) !important; border-color: rgba(255, 255, 255, 0.05) !important; }
+body.theme-entrega .kanban-column h2 { color: #F8FAFC !important; }
+body.theme-entrega .kanban-column .date-label { color: #94A3B8 !important; }
+body.theme-entrega .count-badge { background-color: rgba(255, 255, 255, 0.15) !important; color: #F8FAFC !important; }
+
+body.theme-entrega .glass-panel { background: rgba(15, 23, 42, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+body.theme-entrega .mobile-date { color: #F8FAFC !important; }
+body.theme-entrega .mobile-tab-btn > span:first-child { color: #94A3B8 !important; }
+body.theme-entrega #mobile-col-title { color: #F8FAFC !important; }
+body.theme-entrega .mobile-tab-btn.bg-white { background: rgba(30, 41, 59, 0.9) !important; }
+
+/* Estilização Exata dos Botões de Toggle nas Abas */
+.theme-toggle-container { transition: background 0.3s; }
+body.theme-entrega .theme-toggle-container, body.theme-relatorio .theme-toggle-container { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.1); }
+
+body.theme-coleta #btn-tab-coleta-mob, body.theme-coleta #btn-tab-coleta-desk { background: #2563EB; color: #ffffff; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+body.theme-coleta #btn-tab-entrega-mob, body.theme-coleta #btn-tab-entrega-desk, body.theme-coleta #btn-tab-relatorio-mob, body.theme-coleta #btn-tab-relatorio-desk { background: transparent; color: #475569; }
+
+body.theme-entrega #btn-tab-entrega-mob, body.theme-entrega #btn-tab-entrega-desk { background: #00D4FF; color: #020024; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+body.theme-entrega #btn-tab-coleta-mob, body.theme-entrega #btn-tab-coleta-desk, body.theme-entrega #btn-tab-relatorio-mob, body.theme-entrega #btn-tab-relatorio-desk { background: transparent; color: #94A3B8; }
+
+body.theme-relatorio #btn-tab-relatorio-mob, body.theme-relatorio #btn-tab-relatorio-desk { background: #00D4FF; color: #020024; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+body.theme-relatorio #btn-tab-coleta-mob, body.theme-relatorio #btn-tab-coleta-desk, body.theme-relatorio #btn-tab-entrega-mob, body.theme-relatorio #btn-tab-entrega-desk { background: transparent; color: #94A3B8; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.kanban-cards::-webkit-scrollbar { width: 4px; }
+.kanban-cards::-webkit-scrollbar-track { background: transparent; }
+.kanban-cards::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+/* Dashboard scrollbar */
+#dashboard-view::-webkit-scrollbar { width: 6px; }
+#dashboard-view::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+#dashboard-view::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+#dashboard-view::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+.kanban-column.drag-over { background-color: rgba(241, 245, 249, 0.8); border-color: #3b82f6; border-style: dashed; }
+.dragging { opacity: 0.5; transform: scale(0.98); }
+
+.animate-fade-slide { animation: fadeSlide 0.3s ease-out forwards; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
