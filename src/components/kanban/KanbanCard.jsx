@@ -35,8 +35,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     setSelectedDelivery, 
     setDeliveryModalOpen, 
     setSelectedCollection, 
-    setCollectionModalOpen,
-    openRomaneio 
+    setCollectionModalOpen
   } = useLogistics();
 
   const isColeta = type === 'coleta';
@@ -128,28 +127,30 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
           {isColeta ? (
             /* ================= COLETA CARD ================= */
             <div className="w-full min-w-0">
-              <div className="flex justify-between items-start mb-1 w-full">
-                {/* Mobile Type */}
-                <div className="flex lg:hidden items-center gap-1 shrink-0">
-                  <span className={`material-symbols-outlined text-sm ${config.colorText}`}>{config.icon}</span>
-                  <span className={`text-[11px] font-bold ${config.colorText} uppercase tracking-wider`}>{item.tipo}</span>
-                </div>
-                {/* Desktop Type */}
-                <span className={`hidden lg:flex text-[9px] font-bold px-1.5 py-0.5 rounded-md border items-center gap-1 shrink-0 ${config.colorBgDesktop}`}>
-                  <span className="material-symbols-outlined text-[12px]">{config.icon}</span> 
-                  <span>{item.tipo}</span>
-                </span>
-                
-                <div className="flex items-center gap-1.5 shrink-0 ml-2 text-right">
+              <div className="flex justify-between items-center mb-1.5 w-full gap-2">
+                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                  {/* Mobile Type */}
+                  <div className="flex lg:hidden items-center gap-1 shrink-0">
+                    <span className={`material-symbols-outlined text-sm ${config.colorText}`}>{config.icon}</span>
+                    <span className={`text-[11px] font-bold ${config.colorText} uppercase tracking-wider`}>{item.tipo}</span>
+                  </div>
+                  {/* Desktop Type */}
+                  <span className={`hidden lg:flex text-[9px] font-bold px-1.5 py-0.5 rounded-md border items-center gap-1 shrink-0 ${config.colorBgDesktop}`}>
+                    <span className="material-symbols-outlined text-[12px]">{config.icon}</span> 
+                    <span>{item.tipo}</span>
+                  </span>
+
                   {isCompleted && (
-                    <span className="flex items-center justify-center w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-green-600 text-white shadow-xs shrink-0" title="Coleta Concluída">
-                      <span className="material-symbols-outlined text-[11px] sm:text-[12px] font-black">check</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-green-100 border border-green-300 text-green-800 text-[9px] font-black shrink-0 shadow-2xs">
+                      <span className="material-symbols-outlined text-[11px] text-green-700 font-bold">check_circle</span>
+                      <span>Concluído</span>
                     </span>
                   )}
-                  <div className="flex flex-col items-end">
-                    <span className="text-[10px] lg:text-[9px] font-bold text-slate-700">{dataExibicao}</span>
-                    <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500">{horaExibicao}</span>
-                  </div>
+                </div>
+                
+                <div className="flex flex-col items-end shrink-0 text-right">
+                  <span className="text-[10px] lg:text-[9px] font-bold text-slate-700 leading-tight">{dataExibicao}</span>
+                  <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500 leading-tight">{horaExibicao}</span>
                 </div>
               </div>
 
@@ -190,26 +191,28 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
           ) : (
             /* ================= ENTREGA CARD ================= */
             <div className="w-full min-w-0">
-              <div className="flex justify-between items-start mb-1 w-full">
-                <span className="hidden lg:flex text-[9px] font-bold px-1.5 py-0.5 rounded-md border items-center gap-1 shrink-0 bg-blue-100 border-blue-300 text-blue-900">
-                  <span className="material-symbols-outlined text-[12px]">local_shipping</span> 
-                  <span>Entrega</span>
-                </span>
-                <div className="flex lg:hidden items-center gap-1 shrink-0">
-                  <span className="material-symbols-outlined text-sm text-blue-700">local_shipping</span>
-                  <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Entrega</span>
-                </div>
-                
-                <div className="flex items-center gap-1.5 shrink-0 ml-2 text-right">
+              <div className="flex justify-between items-center mb-1.5 w-full gap-2">
+                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                  <span className="hidden lg:flex text-[9px] font-bold px-1.5 py-0.5 rounded-md border items-center gap-1 shrink-0 bg-blue-100 border-blue-300 text-blue-900">
+                    <span className="material-symbols-outlined text-[12px]">local_shipping</span> 
+                    <span>Entrega</span>
+                  </span>
+                  <div className="flex lg:hidden items-center gap-1 shrink-0">
+                    <span className="material-symbols-outlined text-sm text-blue-700">local_shipping</span>
+                    <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Entrega</span>
+                  </div>
+
                   {isCompleted && (
-                    <span className="flex items-center justify-center w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-green-600 text-white shadow-xs shrink-0" title="Entrega Concluída">
-                      <span className="material-symbols-outlined text-[11px] sm:text-[12px] font-black">check</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-green-100 border border-green-300 text-green-800 text-[9px] font-black shrink-0 shadow-2xs">
+                      <span className="material-symbols-outlined text-[11px] text-green-700 font-bold">check_circle</span>
+                      <span>Concluído</span>
                     </span>
                   )}
-                  <div className="flex flex-col items-end">
-                    <span className="text-[10px] lg:text-[9px] font-bold text-slate-700">{dataExibicao}</span>
-                    <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500">{horaExibicao}</span>
-                  </div>
+                </div>
+                
+                <div className="flex flex-col items-end shrink-0 text-right">
+                  <span className="text-[10px] lg:text-[9px] font-bold text-slate-700 leading-tight">{dataExibicao}</span>
+                  <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500 leading-tight">{horaExibicao}</span>
                 </div>
               </div>
               
@@ -298,30 +301,14 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
 
               {conclusaoText}
 
-              {/* Action Romaneio (Desktop only for Gestor/Admin) & Cadastrador */}
-              <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-1 w-full">
-                {!isMotorista ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openRomaneio(item);
-                    }}
-                    className="hidden lg:flex items-center gap-1 text-[9.5px] font-extrabold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 px-2 py-0.5 rounded-lg transition-colors shadow-xs active:scale-95 cursor-pointer"
-                    title="Abrir e Emitir Romaneio de Carga"
-                  >
-                    <span className="material-symbols-outlined text-[12px] text-indigo-600">receipt_long</span>
-                    <span>Romaneio</span>
-                  </button>
-                ) : <div />}
-
-                {item.cadastrador_entrega && (
-                  <span className="text-[9px] font-extrabold text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ml-auto">
+              {item.cadastrador_entrega && (
+                <div className="mt-2 pt-1.5 border-t border-slate-100 flex justify-end w-full">
+                  <span className="text-[9px] font-extrabold text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1">
                     <span className="material-symbols-outlined text-[10px] text-slate-500">person</span>
                     {item.cadastrador_entrega}
                   </span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
 

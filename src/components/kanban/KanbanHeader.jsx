@@ -42,11 +42,6 @@ export function KanbanHeader({ weekNav }) {
     }
   };
 
-  const handleOpenQuickRomaneio = () => {
-    const firstDel = deliveries && deliveries.length > 0 ? deliveries[0] : null;
-    setSelectedDelivery(firstDel);
-    setDeliveryModalOpen(true);
-  };
 
   const userDisplayName = profile?.nome || (user?.email ? user.email.split('@')[0].toUpperCase() : 'USUÁRIO');
   const userRoleLabel = isAdmin ? 'Admin' : isGestor ? 'Gestor' : 'Motorista';
