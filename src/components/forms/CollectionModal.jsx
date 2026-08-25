@@ -274,7 +274,7 @@ export default function CollectionModal() {
           {/* Bottom Actions */}
           <div className="pt-4 mt-4 flex flex-col sm:flex-row justify-between gap-3 border-t border-slate-100">
             <div className="flex gap-2 w-full sm:w-auto order-last sm:order-first">
-              {isEditing && (
+              {isEditing && !isMotorista && (
                 <button 
                   type="button" 
                   onClick={handleDelete}

@@ -123,7 +123,7 @@ export default function KanbanColumn({
       </div>
 
       {/* Cards Scroll Container */}
-      <div className="px-6 lg:px-2 pt-2 pb-32 lg:pb-2 flex-1 overflow-visible lg:overflow-y-auto space-y-4 lg:space-y-1.5 kanban-cards font-space lg:font-inter">
+      <div className="px-0 lg:px-2 pt-1 pb-28 lg:pb-2 flex-1 overflow-visible lg:overflow-y-auto space-y-3 lg:space-y-1.5 kanban-cards font-space lg:font-inter">
         {items.map((item) => (
           <KanbanCard
             key={item.id}

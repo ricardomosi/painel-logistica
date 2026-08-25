@@ -40,7 +40,7 @@ export default function AuthModal({ isOpen, onClose }) {
         </button>
 
         <div className="flex flex-col items-center text-center mt-2">
-          <Logo className="h-10" />
+          <Logo className="h-14" />
           <h3 className="mt-4 text-lg font-bold text-white tracking-wide">
             Acesso ao Painel Logístico
           </h3>

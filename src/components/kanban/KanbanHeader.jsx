@@ -61,38 +61,26 @@ export function KanbanHeader({ weekNav }) {
       {/* ============================================== */}
       {/* CABEÇALHO MOBILE                               */}
       {/* ============================================== */}
-      <header className="flex lg:hidden flex-col px-3.5 pt-3 pb-2.5 shrink-0 z-20 transition-colors duration-500 gap-2.5 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+      <header className="flex lg:hidden flex-col px-3 pt-2.5 pb-2 shrink-0 z-20 transition-colors duration-500 gap-2 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2.5">
-            {/* Transparent Dynamic Logo without blue background box */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* Transparent Dynamic Logo */}
             <img 
               src={currentLogo} 
               alt="J Patricio Metais" 
-              className="h-8 sm:h-9 w-auto object-contain bg-transparent drop-shadow-sm"
+              className="h-10 sm:h-11 w-auto object-contain bg-transparent drop-shadow-sm shrink-0"
             />
-            <div className="flex flex-col leading-none">
-              <h1 className="font-cunia text-sm sm:text-base font-bold tracking-tight text-slate-900 dynamic-title">
+            <div className="flex flex-col leading-none min-w-0">
+              <h1 className="font-cunia text-sm sm:text-base font-bold tracking-tight text-slate-900 dynamic-title truncate">
                 Gestão Logística
               </h1>
-              <span className="text-[11px] text-slate-600 font-bold truncate max-w-[125px] mt-0.5">
+              <span className="text-[11px] text-slate-600 font-bold truncate max-w-[150px] mt-0.5">
                 {userDisplayName}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            {/* Quick Romaneio Button */}
-            {!isMotorista && (
-              <button
-                onClick={handleOpenQuickRomaneio}
-                className="h-8 px-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-[11px] font-bold flex items-center gap-1 shadow-xs active:scale-95 transition-all"
-                title="Gerenciar Romaneio"
-              >
-                <span className="material-symbols-outlined text-sm text-indigo-600">receipt_long</span>
-                <span className="hidden sm:inline">Romaneio</span>
-              </button>
-            )}
-
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Sound Toggle */}
             <button 
               id="btn-sound-mob" 
@@ -124,6 +112,7 @@ export function KanbanHeader({ weekNav }) {
                 id="btn-add-mob" 
                 onClick={handleOpenNewModal} 
                 className="h-8 w-8 rounded-full bg-blue-600 shadow-md shadow-blue-500/30 flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95 group focus:outline-none shrink-0"
+                title={activeTab === 'coletas' ? 'Nova Coleta' : 'Nova Entrega'}
               >
                 <span className="material-symbols-outlined text-base">add</span>
               </button>
@@ -187,7 +176,7 @@ export function KanbanHeader({ weekNav }) {
           <img 
             src={currentLogo} 
             alt="J Patricio Metais" 
-            className="h-10 xl:h-12 w-auto object-contain bg-transparent drop-shadow-sm hover:scale-105 transition-transform duration-200"
+            className="h-12 xl:h-14 w-auto object-contain bg-transparent drop-shadow-sm hover:scale-105 transition-transform duration-200"
           />
           
           <div className="flex flex-col justify-center border-l-2 border-slate-200 pl-4 border-dynamic transition-colors duration-500">

@@ -471,34 +471,32 @@ export default function DeliveryModal() {
             >
               <X className="w-5 h-5" />
             </button>
-          </div>
-
-          {/* Subtabs Selector */}
-          <div className="flex items-center gap-2 px-6 pt-3 pb-2 bg-slate-50/80 border-b border-slate-200/60 shrink-0">
+            {/* Subtabs Selector */}
+          <div className="flex items-center gap-2 px-4 sm:px-6 pt-3 pb-2 bg-slate-50/80 border-b border-slate-200/60 shrink-0 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => setActiveSubTab('geral')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
                 activeSubTab === 'geral'
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <Truck className="w-4 h-4" />
+              <Truck className="w-4 h-4 shrink-0" />
               <span>1. Dados da Entrega</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveSubTab('romaneio')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all relative ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all relative shrink-0 ${
                 activeSubTab === 'romaneio'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-200'
               }`}
             >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>2. Romaneio de Carga & Itens</span>
+              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <span>2. Romaneio & Carga</span>
               {romaneioItens.length > 0 && (
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                   activeSubTab === 'romaneio' ? 'bg-white text-indigo-700' : 'bg-indigo-600 text-white'
@@ -511,22 +509,22 @@ export default function DeliveryModal() {
             <button
               type="button"
               onClick={() => setActiveSubTab('rota')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
                 activeSubTab === 'rota'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <Gauge className="w-4 h-4" />
+              <Gauge className="w-4 h-4 shrink-0" />
               <span>3. Rota & Execução</span>
             </button>
 
             {/* Quick Print Romaneio Button inside Subtab Bar */}
-            <div className="ml-auto flex items-center gap-1.5">
+            <div className="ml-auto flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={handlePrintRomaneio}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold shadow-xs active:scale-95 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                 title="Imprimir Romaneio de Carga em PDF"
               >
                 <Printer className="w-4 h-4" />
@@ -536,7 +534,7 @@ export default function DeliveryModal() {
           </div>
 
           {/* Form / Content Area */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6 custom-scrollbar">
             
             {/* ======================================================== */}
             {/* TAB 1: DADOS GERAIS DA ENTREGA                          */}
@@ -553,48 +551,77 @@ export default function DeliveryModal() {
                     <input 
                       type="text" 
                       required
+                      disabled={isMotorista}
                       value={formData.cliente}
                       onChange={(e) => setFormData(prev => ({ ...prev, cliente: e.target.value }))}
                       placeholder="Nome do cliente ou empresa" 
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold" 
+                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold ${isMotorista ? 'bg-slate-50 text-slate-800' : ''}`}
                     />
                   </div>
 
-                  {/* Telefone */}
+                  {/* Telefone com link para chamada */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Telefone / Contato
-                    </label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-xs font-bold text-slate-700">
+                        Telefone / Contato
+                      </label>
+                      {formData.telefone && (
+                        <a 
+                          href={`tel:${formData.telefone.replace(/\D/g, '')}`}
+                          className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">call</span>
+                          Ligar
+                        </a>
+                      )}
+                    </div>
                     <input 
                       type="text" 
+                      disabled={isMotorista}
                       value={formData.telefone}
                       onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
                       placeholder="(00) 00000-0000" 
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs" 
+                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs ${isMotorista ? 'bg-slate-50 text-slate-800' : ''}`}
                     />
                   </div>
 
-                  {/* Endereço com botão mapa */}
+                  {/* Endereço com botão mapa e rota */}
                   <div className="md:col-span-2">
                     <div className="flex justify-between items-center mb-1">
                       <label className="block text-xs font-bold text-slate-700">
                         Endereço de Entrega
                       </label>
-                      <button 
-                        type="button" 
-                        onClick={() => setMapPickerOpen(true)}
-                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                      >
-                        <MapPin className="w-3.5 h-3.5" />
-                        Buscar no Mapa
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {formData.endereco && (
+                          <a 
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(formData.endereco)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-0.5"
+                          >
+                            <span className="material-symbols-outlined text-[13px]">directions</span>
+                            Traçar Rota
+                          </a>
+                        )}
+                        {!isMotorista && (
+                          <button 
+                            type="button" 
+                            onClick={() => setMapPickerOpen(true)}
+                            className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                          >
+                            <MapPin className="w-3.5 h-3.5" />
+                            Buscar no Mapa
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <input 
                       type="text" 
+                      disabled={isMotorista}
                       value={formData.endereco}
                       onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
                       placeholder="Rua, Número, Bairro, Cidade - UF" 
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs" 
+                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs ${isMotorista ? 'bg-slate-50 text-slate-800 font-medium' : ''}`}
                     />
                   </div>
 
@@ -603,16 +630,25 @@ export default function DeliveryModal() {
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Placa do Veículo / Motorista
                     </label>
-                    <select 
-                      value={formData.placa}
-                      onChange={(e) => setFormData(prev => ({ ...prev, placa: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold cursor-pointer"
-                    >
-                      <option value="">Selecione o veículo...</option>
-                      {PLACAS_OPTIONS.map(p => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
+                    {isMotorista ? (
+                      <input 
+                        type="text"
+                        disabled
+                        value={formData.placa || 'Sem placa definida'}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 text-xs font-semibold"
+                      />
+                    ) : (
+                      <select 
+                        value={formData.placa}
+                        onChange={(e) => setFormData(prev => ({ ...prev, placa: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold cursor-pointer"
+                      >
+                        <option value="">Selecione o veículo...</option>
+                        {PLACAS_OPTIONS.map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   {/* Boleto / NF */}
@@ -622,10 +658,11 @@ export default function DeliveryModal() {
                     </label>
                     <input 
                       type="text" 
+                      disabled={isMotorista}
                       value={formData.boleto}
                       onChange={(e) => setFormData(prev => ({ ...prev, boleto: e.target.value }))}
                       placeholder="Ex: BOL-12345" 
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-mono" 
+                      className={`w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-mono ${isMotorista ? 'bg-slate-50 text-slate-800 font-bold' : ''}`}
                     />
                   </div>
 
@@ -634,18 +671,27 @@ export default function DeliveryModal() {
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Vendedor Responsável
                     </label>
-                    <select 
-                      value={formData.vendedor}
-                      onChange={(e) => setFormData(prev => ({ ...prev, vendedor: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-bold cursor-pointer"
-                    >
-                      <option value="">Selecione o vendedor...</option>
-                      {VENDEDORES_OPTIONS.map(v => (
-                        <option key={v.name} value={v.name} className={v.colorClass}>
-                          {v.name}
-                        </option>
-                      ))}
-                    </select>
+                    {isMotorista ? (
+                      <input 
+                        type="text"
+                        disabled
+                        value={formData.vendedor || 'Vendedor N/D'}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 text-xs font-bold"
+                      />
+                    ) : (
+                      <select 
+                        value={formData.vendedor}
+                        onChange={(e) => setFormData(prev => ({ ...prev, vendedor: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-bold cursor-pointer"
+                      >
+                        <option value="">Selecione o vendedor...</option>
+                        {VENDEDORES_OPTIONS.map(v => (
+                          <option key={v.name} value={v.name} className={v.colorClass}>
+                            {v.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   {/* Local de Saída */}
@@ -653,47 +699,59 @@ export default function DeliveryModal() {
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Local de Carregamento
                     </label>
-                    <select 
-                      value={formData.local_carregamento}
-                      onChange={(e) => setFormData(prev => ({ ...prev, local_carregamento: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-bold cursor-pointer"
-                    >
-                      <option value="MATRIZ">MATRIZ</option>
-                      <option value="FILIAL">FILIAL</option>
-                    </select>
+                    {isMotorista ? (
+                      <input 
+                        type="text"
+                        disabled
+                        value={formData.local_carregamento || 'MATRIZ'}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 text-xs font-bold"
+                      />
+                    ) : (
+                      <select 
+                        value={formData.local_carregamento}
+                        onChange={(e) => setFormData(prev => ({ ...prev, local_carregamento: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-bold cursor-pointer"
+                      >
+                        <option value="MATRIZ">MATRIZ</option>
+                        <option value="FILIAL">FILIAL</option>
+                      </select>
+                    )}
                   </div>
 
-                  {/* Quem Cadastrou */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Quem Cadastrou (Gestor)
-                    </label>
-                    <select 
-                      value={formData.cadastrador_entrega}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cadastrador_entrega: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold cursor-pointer"
-                    >
-                      <option value="">Selecione o responsável...</option>
-                      {CADASTRADORES_ENTREGA.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Admin-only fields: Quem Cadastrou e Frete */}
+                  {!isMotorista && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Quem Cadastrou (Gestor)
+                        </label>
+                        <select 
+                          value={formData.cadastrador_entrega}
+                          onChange={(e) => setFormData(prev => ({ ...prev, cadastrador_entrega: e.target.value }))}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold cursor-pointer"
+                        >
+                          <option value="">Selecione o responsável...</option>
+                          {CADASTRADORES_ENTREGA.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                  {/* Frete R$ */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Valor do Frete (R$)
-                    </label>
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      value={formData.frete}
-                      onChange={(e) => setFormData(prev => ({ ...prev, frete: e.target.value }))}
-                      placeholder="0,00" 
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-mono font-bold" 
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Valor do Frete (R$)
+                        </label>
+                        <input 
+                          type="number" 
+                          step="0.01"
+                          value={formData.frete}
+                          onChange={(e) => setFormData(prev => ({ ...prev, frete: e.target.value }))}
+                          placeholder="0,00" 
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-mono font-bold" 
+                        />
+                      </div>
+                    </>
+                  )}
 
                 </div>
               </div>
@@ -708,27 +766,31 @@ export default function DeliveryModal() {
                 {/* Banner Header do Romaneio */}
                 <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0">
                       <FileSpreadsheet className="w-5 h-5" />
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-indigo-950">
-                        Romaneio de Carga & Itens Transportados
+                        {isMotorista ? 'Conferência de Carga do Romaneio' : 'Romaneio de Carga & Itens Transportados'}
                       </h4>
                       <p className="text-xs text-indigo-700/80">
-                        Adicione os materiais que compõem a carga desta entrega para conferência e emissão do PDF
+                        {isMotorista 
+                          ? 'Confira os materiais físicos e quantidades a serem entregues ao cliente' 
+                          : 'Adicione os materiais que compõem a carga desta entrega para conferência e emissão do PDF'}
                       </p>
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleAddItem}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm active:scale-95 transition-all self-start sm:self-auto"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Adicionar Material</span>
-                  </button>
+                  {!isMotorista && (
+                    <button
+                      type="button"
+                      onClick={handleAddItem}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm active:scale-95 transition-all self-start sm:self-auto cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Adicionar Material</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Tabela de Itens */}
@@ -737,20 +799,20 @@ export default function DeliveryModal() {
                     <thead className="bg-slate-100/80 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                       <tr>
                         <th className="p-3 w-10 text-center">#</th>
-                        <th className="p-3 min-w-[200px]">Material / Descrição</th>
-                        <th className="p-3 w-24 text-center">Qtd</th>
-                        <th className="p-3 w-28 text-right">Peso Unit (kg)</th>
-                        <th className="p-3 w-28 text-right">Peso Total</th>
-                        <th className="p-3 w-28 text-right">Vlr Unit (R$)</th>
-                        <th className="p-3 w-28 text-right">Vlr Total</th>
-                        <th className="p-3 w-12 text-center"></th>
+                        <th className="p-3 min-w-[180px]">Material / Descrição</th>
+                        <th className="p-3 w-20 text-center">Qtd</th>
+                        <th className="p-3 w-24 text-right">Peso Total</th>
+                        {!isMotorista && <th className="p-3 w-24 text-right">Peso Unit</th>}
+                        {!isMotorista && <th className="p-3 w-24 text-right">Vlr Unit</th>}
+                        {!isMotorista && <th className="p-3 w-24 text-right">Vlr Total</th>}
+                        {!isMotorista && <th className="p-3 w-12 text-center"></th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {romaneioItens.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="p-6 text-center text-slate-400">
-                            Nenhum item adicionado ao romaneio. Clique em "+ Adicionar Material".
+                          <td colSpan={isMotorista ? 4 : 8} className="p-6 text-center text-slate-400">
+                            {isMotorista ? 'Nenhum item discriminado no romaneio desta entrega.' : 'Nenhum item adicionado ao romaneio. Clique em "+ Adicionar Material".'}
                           </td>
                         </tr>
                       ) : (
@@ -761,80 +823,100 @@ export default function DeliveryModal() {
                             </td>
 
                             <td className="p-3">
-                              <div className="flex flex-col gap-1">
-                                {materials.length > 0 && (
-                                  <select
-                                    value={item.material_id || ''}
-                                    onChange={(e) => handleItemChange(idx, 'material_id', e.target.value)}
-                                    className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold bg-slate-50 focus:ring-1 focus:ring-indigo-500 outline-none"
-                                  >
-                                    <option value="">Selecionar do catálogo...</option>
-                                    {materials.map(m => (
-                                      <option key={m.id} value={m.id}>
-                                        {m.codigo} - {m.nome}
-                                      </option>
-                                    ))}
-                                  </select>
-                                )}
-                                <input
-                                  type="text"
-                                  placeholder="Descrição do material..."
-                                  value={item.nome_material || ''}
-                                  onChange={(e) => handleItemChange(idx, 'nome_material', e.target.value)}
-                                  className="w-full px-2 py-1 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
-                                />
-                              </div>
+                              {isMotorista ? (
+                                <span className="font-bold text-slate-800 text-xs">
+                                  {item.nome_material || item.codigo_material || 'Material sem descrição'}
+                                </span>
+                              ) : (
+                                <div className="flex flex-col gap-1">
+                                  {materials.length > 0 && (
+                                    <select
+                                      value={item.material_id || ''}
+                                      onChange={(e) => handleItemChange(idx, 'material_id', e.target.value)}
+                                      className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold bg-slate-50 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                    >
+                                      <option value="">Selecionar do catálogo...</option>
+                                      {materials.map(m => (
+                                        <option key={m.id} value={m.id}>
+                                          {m.codigo} - {m.nome}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                  <input
+                                    type="text"
+                                    placeholder="Descrição do material..."
+                                    value={item.nome_material || ''}
+                                    onChange={(e) => handleItemChange(idx, 'nome_material', e.target.value)}
+                                    className="w-full px-2 py-1 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                                  />
+                                </div>
+                              )}
                             </td>
 
                             <td className="p-3 text-center">
-                              <input
-                                type="number"
-                                min="1"
-                                step="1"
-                                value={item.quantidade}
-                                onChange={(e) => handleItemChange(idx, 'quantidade', e.target.value)}
-                                className="w-16 px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-center font-bold focus:ring-1 focus:ring-indigo-500 outline-none"
-                              />
-                            </td>
-
-                            <td className="p-3 text-right">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.peso_unitario_kg}
-                                onChange={(e) => handleItemChange(idx, 'peso_unitario_kg', e.target.value)}
-                                className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono focus:ring-1 focus:ring-indigo-500 outline-none"
-                              />
+                              {isMotorista ? (
+                                <span className="inline-block px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 font-extrabold text-xs border border-blue-200">
+                                  {item.quantidade} un
+                                </span>
+                              ) : (
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={item.quantidade}
+                                  onChange={(e) => handleItemChange(idx, 'quantidade', e.target.value)}
+                                  className="w-16 px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-center font-bold focus:ring-1 focus:ring-indigo-500 outline-none"
+                                />
+                              )}
                             </td>
 
                             <td className="p-3 text-right font-mono font-bold text-slate-700">
                               {(Number(item.peso_total_kg) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg
                             </td>
 
-                            <td className="p-3 text-right">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.valor_unitario}
-                                onChange={(e) => handleItemChange(idx, 'valor_unitario', e.target.value)}
-                                className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono focus:ring-1 focus:ring-indigo-500 outline-none"
-                              />
-                            </td>
+                            {!isMotorista && (
+                              <td className="p-3 text-right">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.peso_unitario_kg}
+                                  onChange={(e) => handleItemChange(idx, 'peso_unitario_kg', e.target.value)}
+                                  className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono focus:ring-1 focus:ring-indigo-500 outline-none"
+                                />
+                              </td>
+                            )}
 
-                            <td className="p-3 text-right font-mono font-bold text-indigo-700">
-                              R$ {(Number(item.valor_total) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </td>
+                            {!isMotorista && (
+                              <td className="p-3 text-right">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.valor_unitario}
+                                  onChange={(e) => handleItemChange(idx, 'valor_unitario', e.target.value)}
+                                  className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono focus:ring-1 focus:ring-indigo-500 outline-none"
+                                />
+                              </td>
+                            )}
 
-                            <td className="p-3 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveItem(idx)}
-                                className="p-1 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                                title="Remover item"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
+                            {!isMotorista && (
+                              <td className="p-3 text-right font-mono font-bold text-indigo-700">
+                                R$ {(Number(item.valor_total) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </td>
+                            )}
+
+                            {!isMotorista && (
+                              <td className="p-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveItem(idx)}
+                                  className="p-1 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                                  title="Remover item"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))
                       )}
@@ -843,7 +925,7 @@ export default function DeliveryModal() {
                 </div>
 
                 {/* Resumo de Totais do Romaneio */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-slate-900 text-white shadow-md">
+                <div className={`grid grid-cols-1 ${isMotorista ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-3 p-4 rounded-2xl bg-slate-900 text-white shadow-md`}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-white/10 text-cyan-400 flex items-center justify-center">
                       <Package className="w-5 h-5" />
@@ -872,19 +954,21 @@ export default function DeliveryModal() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/10 text-emerald-400 flex items-center justify-center">
-                      <DollarSign className="w-5 h-5" />
+                  {!isMotorista && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white/10 text-emerald-400 flex items-center justify-center">
+                        <DollarSign className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                          Valor Total da Carga
+                        </span>
+                        <span className="text-base font-bold font-mono text-emerald-400">
+                          R$ {romaneioTotalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                        Valor Total da Carga
-                      </span>
-                      <span className="text-base font-bold font-mono text-emerald-400">
-                        R$ {romaneioTotalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Observações do Romaneio */}
@@ -892,13 +976,19 @@ export default function DeliveryModal() {
                   <label className="text-xs font-bold text-slate-700">
                     Observações do Romaneio (Impressas no Documento)
                   </label>
-                  <textarea
-                    rows={2}
-                    value={romaneioObs}
-                    onChange={(e) => setRomaneioObs(e.target.value)}
-                    placeholder="Ex: Entregar com nota fiscal anexa; descarregar no portão 2..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
+                  {isMotorista ? (
+                    <div className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 min-h-[44px]">
+                      {romaneioObs || 'Nenhuma observação informada.'}
+                    </div>
+                  ) : (
+                    <textarea
+                      rows={2}
+                      value={romaneioObs}
+                      onChange={(e) => setRomaneioObs(e.target.value)}
+                      placeholder="Ex: Entregar com nota fiscal anexa; descarregar no portão 2..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  )}
                 </div>
 
               </div>
@@ -920,7 +1010,7 @@ export default function DeliveryModal() {
                     <button
                       type="button"
                       onClick={marcarInicioAgora}
-                      className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold transition-all"
+                      className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold transition-all cursor-pointer"
                     >
                       Marcar Agora
                     </button>
@@ -968,7 +1058,7 @@ export default function DeliveryModal() {
                     <button
                       type="button"
                       onClick={marcarConclusaoAgora}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-all"
+                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-all cursor-pointer"
                     >
                       Finalizar Agora
                     </button>
@@ -1043,7 +1133,7 @@ export default function DeliveryModal() {
                 <button
                   type="button"
                   onClick={handlePrintRomaneio}
-                  className="px-3.5 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 flex-1 sm:flex-none"
+                  className="px-3.5 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 flex-1 sm:flex-none cursor-pointer"
                   title="Imprimir Romaneio de Carga Oficial"
                 >
                   <Printer className="w-4 h-4" />
@@ -1053,17 +1143,17 @@ export default function DeliveryModal() {
                 <button
                   type="button"
                   onClick={handleDownloadRomaneio}
-                  className="p-2.5 text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all shadow-xs flex items-center justify-center"
+                  className="p-2.5 text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all shadow-xs flex items-center justify-center cursor-pointer"
                   title="Baixar Romaneio em PDF"
                 >
                   <Download className="w-4 h-4" />
                 </button>
 
-                {isEditing && (
+                {isEditing && !isMotorista && (
                   <button 
                     type="button" 
                     onClick={handleDelete}
-                    className="p-2.5 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors text-center flex items-center justify-center shadow-xs" 
+                    className="p-2.5 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors text-center flex items-center justify-center shadow-xs cursor-pointer" 
                     title="Excluir Entrega"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1077,7 +1167,7 @@ export default function DeliveryModal() {
                   <button 
                     type="button" 
                     onClick={toggleConcluir}
-                    className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs ${
+                    className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer ${
                       isConcluido 
                         ? 'text-green-800 bg-green-100 hover:bg-green-200 border border-green-300' 
                         : 'text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-slate-200'
@@ -1091,7 +1181,7 @@ export default function DeliveryModal() {
                 <button 
                   type="button" 
                   onClick={() => setDeliveryModalOpen(false)} 
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl transition-colors shadow-xs"
+                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl transition-colors shadow-xs cursor-pointer"
                 >
                   Cancelar
                 </button>

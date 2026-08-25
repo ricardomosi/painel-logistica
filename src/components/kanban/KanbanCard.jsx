@@ -95,16 +95,6 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     borderLeftClass = TIPO_CONFIG[item.tipo].borderLeftClass;
   }
 
-  // Visual completed checkmark badge
-  let checkIcon = null;
-  if (isCompleted) {
-    checkIcon = (
-      <div className="absolute top-2 right-2 flex items-center justify-center w-5 h-5 rounded-full bg-green-600 text-white shadow-xs z-10">
-        <span className="material-symbols-outlined text-[13px] font-black">check</span>
-      </div>
-    );
-  }
-
   // Concluded footer
   let conclusaoText = null;
   if (isCompleted && item.data_conclusao) {
@@ -132,8 +122,6 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
       onClick={handleClick}
       className={`glass-card ${baseBg} w-full relative group hover:shadow-lg transition-all cursor-pointer rounded-2xl p-3 lg:p-2 border border-l-[5px] ${borderLeftClass} ${borderColor} active:scale-[0.98] ${opacityClass}`}
     >
-      {checkIcon}
-
       <div className="flex w-full h-full">
         <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full">
           
@@ -152,9 +140,16 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   <span>{item.tipo}</span>
                 </span>
                 
-                <div className="flex flex-col items-end shrink-0 ml-2 text-right">
-                  <span className="text-[10px] lg:text-[9px] font-bold text-slate-700">{dataExibicao}</span>
-                  <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500">{horaExibicao}</span>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2 text-right">
+                  {isCompleted && (
+                    <span className="flex items-center justify-center w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-green-600 text-white shadow-xs shrink-0" title="Coleta Concluída">
+                      <span className="material-symbols-outlined text-[11px] sm:text-[12px] font-black">check</span>
+                    </span>
+                  )}
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] lg:text-[9px] font-bold text-slate-700">{dataExibicao}</span>
+                    <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500">{horaExibicao}</span>
+                  </div>
                 </div>
               </div>
 
@@ -205,9 +200,16 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Entrega</span>
                 </div>
                 
-                <div className="flex flex-col items-end shrink-0 ml-2 text-right">
-                  <span className="text-[10px] lg:text-[9px] font-bold text-slate-700">{dataExibicao}</span>
-                  <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500">{horaExibicao}</span>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2 text-right">
+                  {isCompleted && (
+                    <span className="flex items-center justify-center w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-green-600 text-white shadow-xs shrink-0" title="Entrega Concluída">
+                      <span className="material-symbols-outlined text-[11px] sm:text-[12px] font-black">check</span>
+                    </span>
+                  )}
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] lg:text-[9px] font-bold text-slate-700">{dataExibicao}</span>
+                    <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500">{horaExibicao}</span>
+                  </div>
                 </div>
               </div>
               
@@ -250,7 +252,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                       {item.placa || 'Sem placa'}
                     </span>
                   </div>
-                  {item.frete ? (
+                  {item.frete && !isMotorista ? (
                     <div className="font-extrabold text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
                       <span className="material-symbols-outlined text-[10px] shrink-0">payments</span>
                       <span>Frete: R$ {item.frete}</span>
@@ -271,9 +273,14 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   {item.telefone && (
                     <div className="flex items-center gap-1 min-w-0">
                       <span className="material-symbols-outlined text-[13px] text-slate-500 shrink-0">call</span>
-                      <span className="font-semibold text-slate-700" style={{ wordBreak: 'break-word' }}>
+                      <a 
+                        href={`tel:${item.telefone.replace(/\D/g, '')}`} 
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-semibold text-slate-700 hover:text-blue-600 transition-colors" 
+                        style={{ wordBreak: 'break-word' }}
+                      >
                         {item.telefone}
-                      </span>
+                      </a>
                     </div>
                   )}
                 </div>
@@ -291,23 +298,25 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
 
               {conclusaoText}
 
-              {/* Action Romaneio & Cadastrador */}
+              {/* Action Romaneio (Desktop only for Gestor/Admin) & Cadastrador */}
               <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-1 w-full">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openRomaneio(item);
-                  }}
-                  className="flex items-center gap-1 text-[9.5px] font-extrabold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 px-2 py-0.5 rounded-lg transition-colors shadow-xs active:scale-95"
-                  title="Abrir e Emitir Romaneio de Carga"
-                >
-                  <span className="material-symbols-outlined text-[12px] text-indigo-600">receipt_long</span>
-                  <span>Romaneio</span>
-                </button>
+                {!isMotorista ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openRomaneio(item);
+                    }}
+                    className="hidden lg:flex items-center gap-1 text-[9.5px] font-extrabold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 px-2 py-0.5 rounded-lg transition-colors shadow-xs active:scale-95 cursor-pointer"
+                    title="Abrir e Emitir Romaneio de Carga"
+                  >
+                    <span className="material-symbols-outlined text-[12px] text-indigo-600">receipt_long</span>
+                    <span>Romaneio</span>
+                  </button>
+                ) : <div />}
 
                 {item.cadastrador_entrega && (
-                  <span className="text-[9px] font-extrabold text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1">
+                  <span className="text-[9px] font-extrabold text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ml-auto">
                     <span className="material-symbols-outlined text-[10px] text-slate-500">person</span>
                     {item.cadastrador_entrega}
                   </span>

@@ -136,7 +136,7 @@ export default function LoginPage() {
                 <img 
                   src={LOGO_LOGIN} 
                   alt="J Patricio Metais" 
-                  className="h-14 sm:h-16 w-auto object-contain bg-transparent drop-shadow-lg" 
+                  className="h-16 sm:h-20 w-auto object-contain bg-transparent drop-shadow-lg" 
                 />
                 <div className="flex flex-col justify-center">
                   <h1 className="font-extrabold text-base sm:text-lg text-white leading-tight tracking-wide">

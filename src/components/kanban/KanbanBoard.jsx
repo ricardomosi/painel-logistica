@@ -118,7 +118,7 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
       </div>
 
       {/* MOBILE: Single Active Column */}
-      <div className="lg:hidden flex-1 overflow-y-auto px-4 pb-20 no-scrollbar">
+      <div className="lg:hidden flex-1 overflow-y-auto px-3 sm:px-4 pb-24 no-scrollbar">
         {columns
           .filter((col) => col.key === mobileActiveColumnKey)
           .map((column) => (

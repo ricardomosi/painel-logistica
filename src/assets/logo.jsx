@@ -7,7 +7,7 @@ export const LOGO_ROMANEIO = 'https://res.cloudinary.com/dyw2bm0p4/image/upload/
 
 export default function Logo({ 
   variant = 'login', 
-  className = "h-10 sm:h-12", 
+  className = "h-12 sm:h-14", 
   alt = "J Patricio Metais" 
 }) {
   let src = LOGO_LOGIN;
