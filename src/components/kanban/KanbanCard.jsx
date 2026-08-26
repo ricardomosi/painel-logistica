@@ -35,11 +35,14 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     setSelectedDelivery, 
     setDeliveryModalOpen, 
     setSelectedCollection, 
-    setCollectionModalOpen
+    setCollectionModalOpen,
+    toggleDeliveryUrgent,
+    toggleCollectionUrgent
   } = useLogistics();
 
   const isColeta = type === 'coleta';
   const isCompleted = item.status === 'concluido';
+  const isUrgent = !!item.urgente;
   const isAtualizacoes = (item.coluna || '').includes('atualizacoes');
   const hasOccurrence = !isColeta && item.como_foi_entrega && item.como_foi_entrega !== 'Sem ocorrências';
 
@@ -50,6 +53,15 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     } else {
       setSelectedDelivery(item);
       setDeliveryModalOpen(true);
+    }
+  };
+
+  const handleToggleUrgent = (e) => {
+    e.stopPropagation();
+    if (isColeta) {
+      toggleCollectionUrgent(item.id, isUrgent);
+    } else {
+      toggleDeliveryUrgent(item.id, isUrgent);
     }
   };
 
@@ -85,6 +97,11 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     borderColor = 'border-green-300';
     titleClass = 'text-green-950 font-bold';
     opacityClass = 'opacity-95';
+  } else if (isUrgent) {
+    borderLeftClass = 'border-l-red-600';
+    baseBg = 'bg-gradient-to-br from-red-50/90 via-white to-amber-50/40 shadow-sm ring-1 ring-red-400/40';
+    borderColor = 'border-red-300';
+    titleClass = 'text-red-950 font-black';
   } else if (hasOccurrence) {
     borderLeftClass = 'border-l-red-600';
     baseBg = 'bg-red-50/70';
@@ -140,6 +157,13 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     <span>{item.tipo}</span>
                   </span>
 
+                  {isUrgent && !isCompleted && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black uppercase tracking-wider animate-pulse shadow-2xs">
+                      <span className="material-symbols-outlined text-[11px]">local_fire_department</span>
+                      <span>URGENTE</span>
+                    </span>
+                  )}
+
                   {isCompleted && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-green-100 border border-green-300 text-green-800 text-[9px] font-black shrink-0 shadow-2xs">
                       <span className="material-symbols-outlined text-[11px] text-green-700 font-bold">check_circle</span>
@@ -148,9 +172,25 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   )}
                 </div>
                 
-                <div className="flex flex-col items-end shrink-0 text-right">
-                  <span className="text-[10px] lg:text-[9px] font-bold text-slate-700 leading-tight">{dataExibicao}</span>
-                  <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500 leading-tight">{horaExibicao}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  {!isMotorista && !isCompleted && (
+                    <button
+                      type="button"
+                      onClick={handleToggleUrgent}
+                      title={isUrgent ? 'Remover urgência' : 'Marcar como Prioridade / Urgente'}
+                      className={`p-1 rounded-md transition-all cursor-pointer ${
+                        isUrgent 
+                          ? 'text-red-600 hover:text-red-700 bg-red-100/90 hover:bg-red-200' 
+                          : 'text-slate-400 hover:text-red-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+                    </button>
+                  )}
+                  <div className="flex flex-col items-end text-right">
+                    <span className="text-[10px] lg:text-[9px] font-bold text-slate-700 leading-tight">{dataExibicao}</span>
+                    <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500 leading-tight">{horaExibicao}</span>
+                  </div>
                 </div>
               </div>
 
@@ -223,6 +263,13 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Entrega</span>
                   </div>
 
+                  {isUrgent && !isCompleted && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black uppercase tracking-wider animate-pulse shadow-2xs">
+                      <span className="material-symbols-outlined text-[11px]">local_fire_department</span>
+                      <span>URGENTE</span>
+                    </span>
+                  )}
+
                   {isCompleted && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-green-100 border border-green-300 text-green-800 text-[9px] font-black shrink-0 shadow-2xs">
                       <span className="material-symbols-outlined text-[11px] text-green-700 font-bold">check_circle</span>
@@ -231,9 +278,25 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   )}
                 </div>
                 
-                <div className="flex flex-col items-end shrink-0 text-right">
-                  <span className="text-[10px] lg:text-[9px] font-bold text-slate-700 leading-tight">{dataExibicao}</span>
-                  <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500 leading-tight">{horaExibicao}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  {!isMotorista && !isCompleted && (
+                    <button
+                      type="button"
+                      onClick={handleToggleUrgent}
+                      title={isUrgent ? 'Remover urgência' : 'Marcar como Prioridade / Urgente'}
+                      className={`p-1 rounded-md transition-all cursor-pointer ${
+                        isUrgent 
+                          ? 'text-red-600 hover:text-red-700 bg-red-100/90 hover:bg-red-200' 
+                          : 'text-slate-400 hover:text-red-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+                    </button>
+                  )}
+                  <div className="flex flex-col items-end text-right">
+                    <span className="text-[10px] lg:text-[9px] font-bold text-slate-700 leading-tight">{dataExibicao}</span>
+                    <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500 leading-tight">{horaExibicao}</span>
+                  </div>
                 </div>
               </div>
               

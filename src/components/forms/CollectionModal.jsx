@@ -52,6 +52,7 @@ export default function CollectionModal() {
     telefone: '',
     coluna_kanban: 'atualizacoes',
     status: 'pendente',
+    urgente: false,
     data_conclusao: '',
     hora_conclusao: '',
   });
@@ -67,6 +68,7 @@ export default function CollectionModal() {
         telefone: selectedCollection.telefone || '',
         coluna_kanban: selectedCollection.coluna_kanban?.split('|')[0] || 'atualizacoes',
         status: selectedCollection.status || 'pendente',
+        urgente: !!selectedCollection.urgente,
         data_conclusao: selectedCollection.data_conclusao || '',
         hora_conclusao: selectedCollection.hora_conclusao || '',
       });
@@ -80,6 +82,7 @@ export default function CollectionModal() {
         telefone: '',
         coluna_kanban: 'atualizacoes',
         status: 'pendente',
+        urgente: false,
         data_conclusao: '',
         hora_conclusao: '',
       });
@@ -149,13 +152,34 @@ export default function CollectionModal() {
               </span>
               <span>{isEditing ? 'Editar Coleta / Atualização' : 'Nova Coleta / Atualização'}</span>
             </h3>
-            <button 
-              type="button" 
-              onClick={() => setCollectionModalOpen(false)} 
-              className="text-slate-400 hover:text-red-500 transition-colors focus:outline-none bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-sm">close</span>
-            </button>
+
+            <div className="flex items-center gap-2">
+              {!isMotorista && (
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, urgente: !prev.urgente }))}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 transition-all cursor-pointer border ${
+                    formData.urgente 
+                      ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white border-red-500 shadow-md shadow-red-500/25 animate-pulse' 
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-red-300 hover:text-red-600'
+                  }`}
+                  title="Marcar coleta como urgente para ficar no topo do painel"
+                >
+                  <span className={`material-symbols-outlined text-sm ${formData.urgente ? 'text-white' : 'text-red-500'}`}>
+                    local_fire_department
+                  </span>
+                  <span>{formData.urgente ? 'URGENTE' : 'Marcar Urgente'}</span>
+                </button>
+              )}
+
+              <button 
+                type="button" 
+                onClick={() => setCollectionModalOpen(false)} 
+                className="text-slate-400 hover:text-red-500 transition-colors focus:outline-none bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="p-5 sm:p-6 font-inter space-y-4">

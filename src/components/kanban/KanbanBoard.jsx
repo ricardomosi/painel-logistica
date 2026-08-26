@@ -42,6 +42,27 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
       }
     });
 
+    // Sort items in each column: URGENT first, pending before concluded, newest first
+    Object.keys(map).forEach(col => {
+      map[col].sort((a, b) => {
+        // 1. Urgente first
+        const aUrg = a.urgente ? 1 : 0;
+        const bUrg = b.urgente ? 1 : 0;
+        if (aUrg !== bUrg) return bUrg - aUrg;
+
+        // 2. Pendentes antes de concluídos
+        const aConcluido = a.status === 'concluido' ? 1 : 0;
+        const bConcluido = b.status === 'concluido' ? 1 : 0;
+        if (aConcluido !== bConcluido) return aConcluido - bConcluido;
+
+        // 3. Mais recentes primeiro
+        const timeA = new Date(a.created_at || a.data_registro || 0).getTime();
+        const timeB = new Date(b.created_at || b.data_registro || 0).getTime();
+        if (timeB !== timeA) return timeB - timeA;
+        return (Number(b.id) || 0) - (Number(a.id) || 0);
+      });
+    });
+
     return map;
   }, [items, type]);
 

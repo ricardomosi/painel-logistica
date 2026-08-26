@@ -43,6 +43,7 @@ export const collectionsService = {
       status: collectionData.status || 'pendente',
       coluna_kanban: collectionData.coluna_kanban || 'atualizacoes',
       board_type: 'coleta',
+      urgente: !!collectionData.urgente,
       data_registro: collectionData.data_registro || new Date().toISOString().split('T')[0],
       hora_registro: collectionData.hora_registro || new Date().toTimeString().split(' ')[0],
     };

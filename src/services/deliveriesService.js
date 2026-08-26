@@ -56,6 +56,7 @@ export const deliveriesService = {
       valor_entrega: deliveryData.valor_entrega ? parseFloat(deliveryData.valor_entrega) : 0,
       telefone: deliveryData.telefone || null,
       coluna: deliveryData.coluna || 'atualizacoes',
+      urgente: !!deliveryData.urgente,
       data_registro: deliveryData.data_registro || new Date().toISOString().split('T')[0],
       hora_registro: deliveryData.hora_registro || new Date().toTimeString().split(' ')[0],
     };

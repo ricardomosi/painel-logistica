@@ -10,7 +10,7 @@ const LogisticsContext = createContext(null);
 
 export function LogisticsProvider({ children }) {
   const { profile, isMotorista } = useAuth();
-  const { playSuccess, playAlert, playWarning, playClick } = useSound();
+  const { playSuccess, playAlert, playDriverAlert, playWarning, playClick } = useSound();
 
   // Data states
   const [deliveries, setDeliveries] = useState([]);
@@ -58,36 +58,37 @@ export function LogisticsProvider({ children }) {
     }
   });
 
-  const saveAddressToHistory = useCallback((addressStr) => {
-    if (!addressStr || addressStr.includes('http')) return;
-    const clean = addressStr.trim();
-    if (!clean) return;
+  const saveAddressToHistory = useCallback((address) => {
+    if (!address || address.trim().length < 3) return;
+    const cleanAddr = address.trim();
     setAddressHistory(prev => {
-      const updated = [clean, ...prev.filter(a => a !== clean)].slice(0, 50);
+      const filtered = prev.filter(a => a.toLowerCase() !== cleanAddr.toLowerCase());
+      const updated = [cleanAddr, ...filtered].slice(0, 20);
       localStorage.setItem('logisticsAddressHistory', JSON.stringify(updated));
       return updated;
     });
   }, []);
 
-  const addToast = useCallback((message, type = 'success') => {
-    const id = Date.now() + Math.random().toString(36).substring(2, 6);
-    setToasts(prev => [...prev.slice(-2), { id, message, type }]);
+  const addToast = useCallback((message, type = 'info', duration = 4000) => {
+    const id = Date.now() + Math.random().toString(36).substring(2, 5);
+    setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 5000);
+    }, duration);
   }, []);
 
   const removeToast = useCallback((id) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const showConfirm = useCallback(({ title, message, onConfirm, confirmText = 'Confirmar', isDestructive = false }) => {
+  const showConfirm = useCallback(({ title, message, confirmText, cancelText, onConfirm, isDestructive = false }) => {
     setConfirmDialog({
       isOpen: true,
       title,
       message,
+      confirmText: confirmText || 'Confirmar',
+      cancelText: cancelText || 'Cancelar',
       onConfirm,
-      confirmText,
       isDestructive,
     });
   }, []);
@@ -107,6 +108,13 @@ export function LogisticsProvider({ children }) {
 
   const closeAlert = useCallback(() => {
     setAlertDialog(prev => ({ ...prev, isOpen: false }));
+  }, []);
+
+  // Request browser notification permission
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
   }, []);
 
   // Fetch all core logistics data
@@ -140,16 +148,74 @@ export function LogisticsProvider({ children }) {
     loadData();
   }, [loadData]);
 
-  // Realtime handlers
-  const handleDeliveriesChange = useCallback(async () => {
+  // Realtime handlers with dedicated notifications for drivers & managers
+  const handleDeliveriesChange = useCallback(async (payload) => {
     const fresh = await deliveriesService.getAll().catch(() => []);
     setDeliveries(fresh);
-  }, []);
 
-  const handleCollectionsChange = useCallback(async () => {
+    if (payload?.eventType === 'INSERT' && payload.new) {
+      const isForCurrentDriver = isMotorista && (
+        payload.new.motorista_id === profile?.motorista_id ||
+        (profile?.placa && payload.new.placa && payload.new.placa.includes(profile.placa)) ||
+        (profile?.nome && payload.new.placa && payload.new.placa.toLowerCase().includes(profile.nome.toLowerCase()))
+      );
+
+      if (isForCurrentDriver) {
+        if (playDriverAlert) playDriverAlert();
+        addToast(`🚨 NOVA ENTREGA ATRIBUÍDA: ${payload.new.cliente || 'Cliente'}!`, 'success', 10000);
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('🚚 Nova Entrega Atribuída a Você!', {
+              body: `Destino: ${payload.new.cliente}\nEndereço: ${payload.new.endereco || 'A definir'}`,
+              icon: '/favicon.ico',
+            });
+          } catch (e) {}
+        }
+      } else if (!isMotorista) {
+        if (playAlert) playAlert();
+        addToast(`📦 Nova entrega registrada: ${payload.new.cliente || ''}`);
+      }
+    } else if (payload?.eventType === 'UPDATE' && payload.new) {
+      if (payload.new.status === 'concluido' && payload.old?.status !== 'concluido') {
+        if (playSuccess) playSuccess();
+        addToast(`✅ Entrega de ${payload.new.cliente || ''} concluída!`, 'info');
+      }
+    }
+  }, [isMotorista, profile, playDriverAlert, playAlert, playSuccess, addToast]);
+
+  const handleCollectionsChange = useCallback(async (payload) => {
     const fresh = await collectionsService.getAll().catch(() => []);
     setCollections(fresh);
-  }, []);
+
+    if (payload?.eventType === 'INSERT' && payload.new) {
+      const isForCurrentDriver = isMotorista && (
+        payload.new.motorista_id === profile?.motorista_id ||
+        (profile?.placa && payload.new.placa && payload.new.placa.includes(profile.placa)) ||
+        (profile?.nome && payload.new.placa && payload.new.placa.toLowerCase().includes(profile.nome.toLowerCase()))
+      );
+
+      if (isForCurrentDriver) {
+        if (playDriverAlert) playDriverAlert();
+        addToast(`🚨 NOVA COLETA ATRIBUÍDA: ${payload.new.fornecedor || 'Fornecedor'}!`, 'success', 10000);
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('📦 Nova Coleta Atribuída a Você!', {
+              body: `Fornecedor: ${payload.new.fornecedor}\nEndereço: ${payload.new.endereco || 'A definir'}`,
+              icon: '/favicon.ico',
+            });
+          } catch (e) {}
+        }
+      } else if (!isMotorista) {
+        if (playAlert) playAlert();
+        addToast(`📥 Nova coleta registrada: ${payload.new.fornecedor || ''}`);
+      }
+    } else if (payload?.eventType === 'UPDATE' && payload.new) {
+      if (payload.new.status === 'concluido' && payload.old?.status !== 'concluido') {
+        if (playSuccess) playSuccess();
+        addToast(`✅ Coleta de ${payload.new.fornecedor || ''} concluída!`, 'info');
+      }
+    }
+  }, [isMotorista, profile, playDriverAlert, playAlert, playSuccess, addToast]);
 
   const handleGeneralChange = useCallback(async (table) => {
     if (table === 'motoristas') {
@@ -321,18 +387,39 @@ export function LogisticsProvider({ children }) {
     }
   };
 
-  const concludeCollectionAction = async (id, data) => {
+  const toggleDeliveryUrgent = async (id, currentVal) => {
+    const nextVal = !currentVal;
+    setDeliveries(prev => prev.map(d => (d.id === id ? { ...d, urgente: nextVal } : d)));
     try {
-      const updated = await collectionsService.concludeCollection(id, data);
-      setCollections(prev => prev.map(c => (c.id === id ? { ...c, ...updated } : c)));
-      playSuccess();
-      addToast('Coleta finalizada com sucesso!');
-      return updated;
+      await deliveriesService.update(id, { urgente: nextVal });
+      if (nextVal) {
+        if (playAlert) playAlert();
+        addToast('🚨 Entrega marcada como URGENTE! Fixada no topo.', 'warning');
+      } else {
+        addToast('Urgência da entrega desmarcada.');
+      }
     } catch (err) {
-      console.error('Error concluding collection:', err);
-      playWarning();
-      addToast(`Erro ao concluir coleta: ${err.message || ''}`, 'error');
-      throw err;
+      console.error('Error toggling delivery urgency:', err);
+      loadData();
+      addToast('Erro ao atualizar urgência da entrega.', 'error');
+    }
+  };
+
+  const toggleCollectionUrgent = async (id, currentVal) => {
+    const nextVal = !currentVal;
+    setCollections(prev => prev.map(c => (c.id === id ? { ...c, urgente: nextVal } : c)));
+    try {
+      await collectionsService.update(id, { urgente: nextVal });
+      if (nextVal) {
+        if (playAlert) playAlert();
+        addToast('🚨 Coleta marcada como URGENTE! Fixada no topo.', 'warning');
+      } else {
+        addToast('Urgência da coleta desmarcada.');
+      }
+    } catch (err) {
+      console.error('Error toggling collection urgency:', err);
+      loadData();
+      addToast('Erro ao atualizar urgência da coleta.', 'error');
     }
   };
 
@@ -475,6 +562,8 @@ export function LogisticsProvider({ children }) {
         deleteCollection,
         moveCollectionColumn,
         concludeCollectionAction,
+        toggleDeliveryUrgent,
+        toggleCollectionUrgent,
       }}
     >
       {children}

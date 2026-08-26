@@ -8,11 +8,12 @@ const SUCCESS_SOUND_URL = 'https://res.cloudinary.com/dyw2bm0p4/video/upload/v17
 export function SoundProvider({ children }) {
   const [soundEnabled, setSoundEnabled] = useState(() => {
     const saved = localStorage.getItem('sound_enabled');
-    return saved !== null ? JSON.parse(saved) : false;
+    return saved !== null ? JSON.parse(saved) : true;
   });
 
   const alertAudioRef = useRef(null);
   const successAudioRef = useRef(null);
+  const audioCtxRef = useRef(null);
 
   useEffect(() => {
     alertAudioRef.current = new Audio(ALERT_SOUND_URL);
@@ -27,16 +28,65 @@ export function SoundProvider({ children }) {
     setSoundEnabled(prev => !prev);
   };
 
+  // Web Audio synth chime fallback
+  const playSynthBeep = (freq = 880, type = 'sine', duration = 0.25) => {
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {
+      // Audio context not allowed or unsupported
+    }
+  };
+
   const playAlert = () => {
-    if (!soundEnabled || !alertAudioRef.current) return;
-    alertAudioRef.current.currentTime = 0;
-    alertAudioRef.current.play().catch(e => console.warn('Audio alert play error:', e));
+    if (!soundEnabled) return;
+    if (alertAudioRef.current) {
+      alertAudioRef.current.currentTime = 0;
+      alertAudioRef.current.play().catch(() => {
+        // Fallback to synth alert chords
+        playSynthBeep(587.33, 'triangle', 0.2);
+        setTimeout(() => playSynthBeep(880, 'triangle', 0.35), 180);
+      });
+    } else {
+      playSynthBeep(880, 'triangle', 0.3);
+    }
   };
 
   const playSuccess = () => {
-    if (!soundEnabled || !successAudioRef.current) return;
-    successAudioRef.current.currentTime = 0;
-    successAudioRef.current.play().catch(e => console.warn('Audio success play error:', e));
+    if (!soundEnabled) return;
+    if (successAudioRef.current) {
+      successAudioRef.current.currentTime = 0;
+      successAudioRef.current.play().catch(() => {
+        playSynthBeep(523.25, 'sine', 0.15);
+        setTimeout(() => playSynthBeep(659.25, 'sine', 0.15), 120);
+        setTimeout(() => playSynthBeep(783.99, 'sine', 0.25), 240);
+      });
+    } else {
+      playSynthBeep(659.25, 'sine', 0.25);
+    }
+  };
+
+  const playDriverAlert = () => {
+    if (!soundEnabled) return;
+    playAlert();
+    // Repeating double chime for driver attention
+    setTimeout(() => playSynthBeep(987.77, 'sawtooth', 0.2), 350);
+    setTimeout(() => playSynthBeep(1174.66, 'sine', 0.3), 550);
   };
 
   const playClick = () => {
@@ -50,6 +100,7 @@ export function SoundProvider({ children }) {
         toggleSound,
         playAlert,
         playSuccess,
+        playDriverAlert,
         playClick,
       }}
     >
@@ -67,3 +118,4 @@ export function useSound() {
 }
 
 export default SoundContext;
+

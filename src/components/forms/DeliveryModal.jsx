@@ -25,7 +25,8 @@ import {
   Sparkles,
   ExternalLink,
   Info,
-  Check
+  Check,
+  Flame
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLogistics } from '../../contexts/LogisticsContext';
@@ -137,6 +138,7 @@ export default function DeliveryModal() {
     telefone: '',
     coluna: 'atualizacoes',
     status: 'pendente',
+    urgente: false,
     // Início
     data_inicio: '',
     hora_inicio: '',
@@ -185,6 +187,7 @@ export default function DeliveryModal() {
         telefone: selectedDelivery.telefone || '',
         coluna: selectedDelivery.coluna?.split('|')[0] || 'atualizacoes',
         status: selectedDelivery.status || 'pendente',
+        urgente: !!selectedDelivery.urgente,
         data_inicio: selectedDelivery.data_inicio || '',
         hora_inicio: selectedDelivery.hora_inicio || '',
         km_inicial: selectedDelivery.km_inicial ?? '',
@@ -233,6 +236,7 @@ export default function DeliveryModal() {
         telefone: '',
         coluna: 'atualizacoes',
         status: 'pendente',
+        urgente: false,
         data_inicio: '',
         hora_inicio: '',
         km_inicial: '',
@@ -667,7 +671,23 @@ export default function DeliveryModal() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
+              {!isMotorista && (
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, urgente: !prev.urgente }))}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer border ${
+                    formData.urgente 
+                      ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white border-red-500 shadow-md shadow-red-500/25 animate-pulse' 
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-red-300 hover:text-red-600'
+                  }`}
+                  title="Marcar entrega como urgente para ficar sempre no topo"
+                >
+                  <Flame className={`w-3.5 h-3.5 ${formData.urgente ? 'fill-white' : 'text-red-500'}`} />
+                  <span>{formData.urgente ? 'URGENTE / PRIORIDADE' : 'Marcar Urgente'}</span>
+                </button>
+              )}
+
               <button 
                 type="button"
                 onClick={() => setDeliveryModalOpen(false)} 
