@@ -162,7 +162,28 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 {item.fornecedor}
               </h3>
 
-              <div className="flex flex-col gap-1 text-[11px] lg:text-[9px] text-slate-700 font-medium w-full min-w-0">
+              <div className="flex flex-col gap-1 text-[11px] lg:text-[9.5px] text-slate-700 font-medium w-full min-w-0">
+                {/* Endereço + Traçar Rota */}
+                {item.endereco && (
+                  <div className="flex items-start gap-1 w-full min-w-0">
+                    <span className="material-symbols-outlined text-[13px] text-slate-500 mt-0.5 shrink-0">location_on</span> 
+                    <div className="flex flex-col w-full min-w-0">
+                      <span className="break-words whitespace-normal leading-tight min-w-0 w-full text-slate-800 font-semibold" style={{ wordBreak: 'break-word' }}>
+                        {item.endereco}
+                      </span>
+                      <a 
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.endereco)}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()} 
+                        className="text-emerald-700 font-bold hover:underline inline-flex items-center gap-0.5 mt-0.5 w-fit"
+                      >
+                        <span>Traçar rota</span>
+                        <span className="material-symbols-outlined text-[11px]">directions</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
                 {item.telefone && (
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="material-symbols-outlined text-[13px] text-slate-500">call</span>

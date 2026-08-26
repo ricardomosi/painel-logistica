@@ -33,6 +33,7 @@ export const collectionsService = {
   async create(collectionData) {
     const payload = {
       fornecedor: collectionData.fornecedor,
+      endereco: collectionData.endereco || null,
       responsavel: collectionData.responsavel,
       tipo: collectionData.tipo || 'Envio',
       placa: collectionData.placa || null,
