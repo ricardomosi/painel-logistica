@@ -471,7 +471,9 @@ export default function DeliveryModal() {
             >
               <X className="w-5 h-5" />
             </button>
-            {/* Subtabs Selector */}
+          </div>
+
+          {/* Subtabs Selector */}
           <div className="flex items-center gap-2 px-4 sm:px-6 pt-3 pb-2 bg-slate-50/80 border-b border-slate-200/60 shrink-0 overflow-x-auto no-scrollbar">
             <button
               type="button"
