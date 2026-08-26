@@ -13,6 +13,7 @@ export default function MaterialSearchInput({
   type = 'trazer', // 'trazer' | 'buscar'
   placeholder = 'Buscar material no catálogo SAGI...',
   disabled = false,
+  size = 'md', // 'sm' | 'md' | 'lg'
 }) {
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState([]);
@@ -45,7 +46,7 @@ export default function MaterialSearchInput({
     const timer = setTimeout(async () => {
       try {
         setLoading(true);
-        const data = await materialsService.searchMaterials(query, { limit: 20, type });
+        const data = await materialsService.searchMaterials(query, { limit: 25, type });
         setResults(data);
       } catch (err) {
         console.error('Erro na pesquisa de materiais:', err);
@@ -116,6 +117,8 @@ export default function MaterialSearchInput({
     }
   };
 
+  const isLg = size === 'lg';
+
   return (
     <div ref={containerRef} className="relative w-full">
       {/* Input Field with Icons */}
@@ -129,7 +132,11 @@ export default function MaterialSearchInput({
           onFocus={() => !disabled && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full pl-8 pr-16 py-1.5 rounded-lg border text-xs font-semibold outline-none transition-all ${
+          className={`w-full rounded-xl border font-semibold outline-none transition-all ${
+            isLg 
+              ? 'pl-9 pr-20 py-2.5 text-xs sm:text-sm shadow-xs' 
+              : 'pl-8 pr-16 py-1.5 text-xs'
+          } ${
             selectedMaterialId
               ? 'border-indigo-300 bg-indigo-50/40 text-indigo-950 focus:ring-2 focus:ring-indigo-500'
               : 'border-slate-200 bg-white text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
@@ -137,16 +144,16 @@ export default function MaterialSearchInput({
         />
 
         {/* Left Search Icon */}
-        <div className="absolute left-2.5 text-slate-400 pointer-events-none flex items-center">
+        <div className={`absolute pointer-events-none flex items-center text-slate-400 ${isLg ? 'left-3' : 'left-2.5'}`}>
           {loading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+            <Loader2 className={`${isLg ? 'w-4 h-4' : 'w-3.5 h-3.5'} animate-spin text-blue-500`} />
           ) : (
-            <Search className="w-3.5 h-3.5" />
+            <Search className={isLg ? 'w-4 h-4' : 'w-3.5 h-3.5'} />
           )}
         </div>
 
         {/* Right Badges / Clear */}
-        <div className="absolute right-2 flex items-center gap-1">
+        <div className={`absolute flex items-center gap-1 ${isLg ? 'right-2.5' : 'right-2'}`}>
           {codigoMaterial && (
             <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200" title={`Código SAGI: ${codigoMaterial}`}>
               {codigoMaterial}
@@ -157,7 +164,7 @@ export default function MaterialSearchInput({
             <button
               type="button"
               onClick={clearSelection}
-              className="p-0.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+              className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
               title="Limpar seleção"
             >
               <X className="w-3.5 h-3.5" />
@@ -168,10 +175,10 @@ export default function MaterialSearchInput({
 
       {/* Dropdown Popup */}
       {isOpen && !disabled && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-80 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 top-full mt-1.5 z-50 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden flex flex-col max-h-80 w-full min-w-[320px] md:min-w-[480px] animate-in fade-in zoom-in-95 duration-150">
           
           {/* Top Info Bar */}
-          <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
             <span className="font-semibold flex items-center gap-1.5">
               <Package className="w-3.5 h-3.5 text-blue-600" />
               {results.length > 0 ? `${results.length} materiais encontrados` : 'Nenhum material encontrado'}
@@ -193,7 +200,7 @@ export default function MaterialSearchInput({
           </div>
 
           {/* Results List */}
-          <div className="overflow-y-auto divide-y divide-slate-100 custom-scrollbar flex-1">
+          <div className="overflow-y-auto divide-y divide-slate-100 custom-scrollbar flex-1 max-h-64">
             {results.length === 0 && !loading ? (
               <div className="p-4 text-center">
                 <p className="text-xs font-semibold text-slate-600 mb-1">
@@ -224,25 +231,30 @@ export default function MaterialSearchInput({
                   ? (Number(mat.preco_buscar) || Number(mat.valor_padrao) || 0)
                   : (Number(mat.preco_trazer) || Number(mat.valor_padrao) || 0);
 
+                const unitLabel = mat.unidade || 'UN';
+                const pesoUnit = Number(mat.peso_padrao_kg) || 0;
+
                 return (
                   <div
                     key={mat.id}
                     onMouseEnter={() => setSelectedIndex(index)}
                     onClick={() => handleSelectMaterial(mat)}
-                    className={`px-3 py-2.5 transition-colors cursor-pointer flex items-center justify-between gap-2 ${
+                    className={`px-3.5 py-2.5 transition-colors cursor-pointer flex items-center justify-between gap-3 ${
                       isSelected
-                        ? 'bg-blue-50/80 text-blue-950'
+                        ? 'bg-blue-50/90 text-blue-950'
                         : isCurrentItem
-                        ? 'bg-indigo-50/50'
+                        ? 'bg-indigo-50/60'
                         : 'hover:bg-slate-50'
                     }`}
                   >
                     {/* Material Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                        <span className="font-mono font-bold text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                          {mat.codigo}
-                        </span>
+                        {mat.codigo && (
+                          <span className="font-mono font-bold text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                            {mat.codigo}
+                          </span>
+                        )}
                         
                         <span className="font-bold text-xs text-slate-800 truncate" title={mat.nome}>
                           {mat.nome}
@@ -266,14 +278,14 @@ export default function MaterialSearchInput({
                     <div className="flex items-center gap-1.5 shrink-0 text-right">
                       {/* Unidade */}
                       <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                        {mat.unidade || 'UN'}
+                        {unitLabel}
                       </span>
 
                       {/* Peso Padrão */}
-                      {Number(mat.peso_padrao_kg) > 0 && (
-                        <span className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200" title="Peso unitário padrão">
+                      {pesoUnit > 0 && (
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200" title={`Peso unitário padrão (${pesoUnit} kg por ${unitLabel})`}>
                           <Scale className="w-2.5 h-2.5" />
-                          {Number(mat.peso_padrao_kg).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg
+                          {pesoUnit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg/{unitLabel}
                         </span>
                       )}
 
@@ -310,7 +322,7 @@ export default function MaterialSearchInput({
                 className="w-full py-1.5 text-xs font-bold text-slate-700 hover:text-blue-700 hover:bg-blue-50/80 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Cadastrar Novo Material no Sistema
+                Cadastrar Novo Material no Catálogo
               </button>
             </div>
           )}
