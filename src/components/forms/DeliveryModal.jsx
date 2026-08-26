@@ -26,6 +26,8 @@ import { useLogistics } from '../../contexts/LogisticsContext';
 import MapPickerModal from '../common/MapPickerModal';
 import { romaneioService } from '../../services/romaneioService';
 import { printRomaneioPdf, downloadRomaneioPdf } from '../romaneio/RomaneioPdfDocument';
+import MaterialSearchInput from './MaterialSearchInput';
+import QuickCreateMaterialModal from './QuickCreateMaterialModal';
 
 const VENDEDORES_OPTIONS = [
   { name: 'BEBEZINHO (Filial)', colorClass: 'text-orange-600 font-bold' },
@@ -93,6 +95,9 @@ export default function DeliveryModal() {
   const [activeSubTab, setActiveSubTab] = useState('geral'); // 'geral' | 'romaneio' | 'rota'
   const [saving, setSaving] = useState(false);
   const [loadingRomaneio, setLoadingRomaneio] = useState(false);
+  const [quickMaterialModalOpen, setQuickMaterialModalOpen] = useState(false);
+  const [quickMaterialInitialName, setQuickMaterialInitialName] = useState('');
+  const [targetItemIndexForNewMaterial, setTargetItemIndexForNewMaterial] = useState(null);
   const isEditing = !!selectedDelivery?.id;
 
   const [formData, setFormData] = useState({
@@ -208,6 +213,7 @@ export default function DeliveryModal() {
           material_id: '',
           codigo_material: '',
           nome_material: '',
+          unidade: 'UN',
           quantidade: 1,
           peso_unitario_kg: 0,
           peso_total_kg: 0,
@@ -229,6 +235,7 @@ export default function DeliveryModal() {
         material_id: '',
         codigo_material: '',
         nome_material: '',
+        unidade: 'UN',
         quantidade: 1,
         peso_unitario_kg: 0,
         peso_total_kg: 0,
@@ -242,22 +249,31 @@ export default function DeliveryModal() {
     setRomaneioItens(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const handleSelectMaterialRow = (idx, material) => {
+    setRomaneioItens(prev => {
+      const updated = [...prev];
+      const row = { ...updated[idx] };
+      const qtd = parseFloat(row.quantidade) || 1;
+
+      row.material_id = material.id || null;
+      row.codigo_material = material.codigo || '';
+      row.nome_material = material.nome || '';
+      row.unidade = material.unidade || 'UN';
+      row.peso_unitario_kg = Number(material.peso_padrao_kg) || 0;
+      row.valor_unitario = Number(material.preco_trazer) || Number(material.preco_sugerido) || Number(material.valor_padrao) || 0;
+
+      row.peso_total_kg = Number((qtd * row.peso_unitario_kg).toFixed(2));
+      row.valor_total = Number((qtd * row.valor_unitario).toFixed(2));
+
+      updated[idx] = row;
+      return updated;
+    });
+  };
+
   const handleItemChange = (idx, field, val) => {
     setRomaneioItens(prev => {
       const updated = [...prev];
       const row = { ...updated[idx], [field]: val };
-
-      // Material catalogue selection
-      if (field === 'material_id') {
-        const mat = materials.find(m => m.id === val);
-        if (mat) {
-          row.material_id = mat.id;
-          row.codigo_material = mat.codigo;
-          row.nome_material = mat.nome;
-          row.peso_unitario_kg = Number(mat.peso_padrao_kg) || 0;
-          row.valor_unitario = Number(mat.valor_padrao) || 0;
-        }
-      }
 
       // Calculations
       const qtd = parseFloat(row.quantidade) || 0;
@@ -270,6 +286,13 @@ export default function DeliveryModal() {
       updated[idx] = row;
       return updated;
     });
+  };
+
+  const handleQuickMaterialCreated = (newMaterial) => {
+    if (targetItemIndexForNewMaterial !== null && targetItemIndexForNewMaterial >= 0) {
+      handleSelectMaterialRow(targetItemIndexForNewMaterial, newMaterial);
+    }
+    setTargetItemIndexForNewMaterial(null);
   };
 
   // Grand totals of Romaneio
@@ -801,8 +824,9 @@ export default function DeliveryModal() {
                     <thead className="bg-slate-100/80 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                       <tr>
                         <th className="p-3 w-10 text-center">#</th>
-                        <th className="p-3 min-w-[180px]">Material / Descrição</th>
+                        <th className="p-3 min-w-[220px]">Material / Descrição (Catálogo SAGI)</th>
                         <th className="p-3 w-20 text-center">Qtd</th>
+                        <th className="p-3 w-16 text-center">Unid</th>
                         <th className="p-3 w-24 text-right">Peso Total</th>
                         {!isMotorista && <th className="p-3 w-24 text-right">Peso Unit</th>}
                         {!isMotorista && <th className="p-3 w-24 text-right">Vlr Unit</th>}
@@ -813,7 +837,7 @@ export default function DeliveryModal() {
                     <tbody className="divide-y divide-slate-100">
                       {romaneioItens.length === 0 ? (
                         <tr>
-                          <td colSpan={isMotorista ? 4 : 8} className="p-6 text-center text-slate-400">
+                          <td colSpan={isMotorista ? 5 : 9} className="p-6 text-center text-slate-400">
                             {isMotorista ? 'Nenhum item discriminado no romaneio desta entrega.' : 'Nenhum item adicionado ao romaneio. Clique em "+ Adicionar Material".'}
                           </td>
                         </tr>
@@ -826,50 +850,76 @@ export default function DeliveryModal() {
 
                             <td className="p-3">
                               {isMotorista ? (
-                                <span className="font-bold text-slate-800 text-xs">
-                                  {item.nome_material || item.codigo_material || 'Material sem descrição'}
-                                </span>
-                              ) : (
-                                <div className="flex flex-col gap-1">
-                                  {materials.length > 0 && (
-                                    <select
-                                      value={item.material_id || ''}
-                                      onChange={(e) => handleItemChange(idx, 'material_id', e.target.value)}
-                                      className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold bg-slate-50 focus:ring-1 focus:ring-indigo-500 outline-none"
-                                    >
-                                      <option value="">Selecionar do catálogo...</option>
-                                      {materials.map(m => (
-                                        <option key={m.id} value={m.id}>
-                                          {m.codigo} - {m.nome}
-                                        </option>
-                                      ))}
-                                    </select>
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-slate-800 text-xs">
+                                    {item.nome_material || item.codigo_material || 'Material sem descrição'}
+                                  </span>
+                                  {item.codigo_material && (
+                                    <span className="text-[10px] font-mono text-slate-400">
+                                      Cód: {item.codigo_material}
+                                    </span>
                                   )}
-                                  <input
-                                    type="text"
-                                    placeholder="Descrição do material..."
-                                    value={item.nome_material || ''}
-                                    onChange={(e) => handleItemChange(idx, 'nome_material', e.target.value)}
-                                    className="w-full px-2 py-1 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
-                                  />
                                 </div>
+                              ) : (
+                                <MaterialSearchInput
+                                  value={item.nome_material || ''}
+                                  selectedMaterialId={item.material_id}
+                                  codigoMaterial={item.codigo_material}
+                                  unidade={item.unidade}
+                                  type="trazer"
+                                  onSelect={(mat) => handleSelectMaterialRow(idx, mat)}
+                                  onChangeText={(text) => handleItemChange(idx, 'nome_material', text)}
+                                  onAddNewMaterial={(initialText) => {
+                                    setTargetItemIndexForNewMaterial(idx);
+                                    setQuickMaterialInitialName(initialText);
+                                    setQuickMaterialModalOpen(true);
+                                  }}
+                                  placeholder="Digite o código ou nome do material..."
+                                />
                               )}
                             </td>
 
+                            {/* Quantidade */}
                             <td className="p-3 text-center">
                               {isMotorista ? (
                                 <span className="inline-block px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 font-extrabold text-xs border border-blue-200">
-                                  {item.quantidade} un
+                                  {item.quantidade}
                                 </span>
                               ) : (
                                 <input
                                   type="number"
-                                  min="1"
-                                  step="1"
+                                  min="0.01"
+                                  step="any"
                                   value={item.quantidade}
                                   onChange={(e) => handleItemChange(idx, 'quantidade', e.target.value)}
                                   className="w-16 px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-center font-bold focus:ring-1 focus:ring-indigo-500 outline-none"
                                 />
+                              )}
+                            </td>
+
+                            {/* Unidade */}
+                            <td className="p-3 text-center">
+                              {isMotorista ? (
+                                <span className="font-bold text-[11px] text-slate-700 bg-slate-100 px-2 py-1 rounded-md">
+                                  {item.unidade || 'UN'}
+                                </span>
+                              ) : (
+                                <select
+                                  value={item.unidade || 'UN'}
+                                  onChange={(e) => handleItemChange(idx, 'unidade', e.target.value)}
+                                  className="w-16 px-1.5 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold bg-slate-50 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer"
+                                >
+                                  <option value="UN">UN</option>
+                                  <option value="KG">KG</option>
+                                  <option value="MT">MT</option>
+                                  <option value="TN">TN</option>
+                                  <option value="LT">LT</option>
+                                  <option value="PR">PR</option>
+                                  <option value="M2">M²</option>
+                                  <option value="M3">M³</option>
+                                  <option value="PCT">PCT</option>
+                                  <option value="CX">CX</option>
+                                </select>
                               )}
                             </td>
 
@@ -1210,6 +1260,17 @@ export default function DeliveryModal() {
         initialAddress={formData.endereco}
         onConfirmAddress={(addr) => setFormData(prev => ({ ...prev, endereco: addr }))}
         onClose={() => setMapPickerOpen(false)}
+      />
+
+      {/* Quick Create Material Modal */}
+      <QuickCreateMaterialModal
+        isOpen={quickMaterialModalOpen}
+        initialName={quickMaterialInitialName}
+        onClose={() => {
+          setQuickMaterialModalOpen(false);
+          setTargetItemIndexForNewMaterial(null);
+        }}
+        onMaterialCreated={handleQuickMaterialCreated}
       />
     </>
   );

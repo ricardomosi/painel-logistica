@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { materialsService } from './materialsService';
 
 export const adminService = {
   // ---------------- DRIVERS ----------------
@@ -102,53 +103,30 @@ export const adminService = {
   },
 
   // ---------------- MATERIALS ----------------
-  async getMaterials() {
+  async getMaterials(params) {
+    if (params && (params.page || params.search || params.category)) {
+      return await materialsService.getMaterials(params);
+    }
     const { data, error } = await supabase
       .from('materiais')
       .select('*')
-      .order('codigo', { ascending: true });
+      .eq('ativo', true)
+      .order('nome', { ascending: true })
+      .limit(100);
     if (error) throw error;
     return data || [];
   },
 
   async createMaterial(material) {
-    const { data, error } = await supabase
-      .from('materiais')
-      .insert([{
-        codigo: material.codigo.trim(),
-        nome: material.nome.trim(),
-        unidade: material.unidade || 'UN',
-        peso_padrao_kg: parseFloat(material.peso_padrao_kg) || 0,
-        valor_padrao: parseFloat(material.valor_padrao) || 0,
-      }])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    return await materialsService.createMaterial(material);
   },
 
   async updateMaterial(id, updates) {
-    const payload = { ...updates };
-    if (payload.peso_padrao_kg !== undefined) payload.peso_padrao_kg = parseFloat(payload.peso_padrao_kg) || 0;
-    if (payload.valor_padrao !== undefined) payload.valor_padrao = parseFloat(payload.valor_padrao) || 0;
-
-    const { data, error } = await supabase
-      .from('materiais')
-      .update(payload)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    return await materialsService.updateMaterial(id, updates);
   },
 
   async deleteMaterial(id) {
-    const { error } = await supabase
-      .from('materiais')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
-    return true;
+    return await materialsService.deleteMaterial(id);
   },
 
   // ---------------- USERS & PROFILES ----------------

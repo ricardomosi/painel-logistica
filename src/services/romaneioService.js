@@ -67,6 +67,7 @@ export const romaneioService = {
         material_id: item.material_id || null,
         codigo_material: item.codigo_material || '',
         nome_material: item.nome_material || '',
+        unidade: item.unidade || 'UN',
         quantidade: parseFloat(item.quantidade) || 1,
         peso_unitario_kg: parseFloat(item.peso_unitario_kg) || 0,
         peso_total_kg: parseFloat(item.peso_total_kg) || 0,

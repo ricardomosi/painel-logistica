@@ -18,6 +18,7 @@ import {
 import { useLogistics } from '../../contexts/LogisticsContext';
 import { romaneioService } from '../../services/romaneioService';
 import { downloadRomaneioPdf, printRomaneioPdf } from './RomaneioPdfDocument';
+import MaterialSearchInput from '../forms/MaterialSearchInput';
 
 export default function RomaneioModal() {
   const { 
@@ -77,23 +78,23 @@ export default function RomaneioModal() {
 
   if (!romaneioModalOpen || !selectedRomaneioDelivery) return null;
 
-  // Handle Material selection from catalog
-  const handleMaterialSelect = (index, materialId) => {
-    const selectedMat = materials.find(m => m.id === materialId);
+  // Handle Material selection from catalog autocomplete
+  const handleMaterialSelectRow = (index, material) => {
     setItems(prev => {
       const updated = [...prev];
-      const item = updated[index];
-      if (selectedMat) {
-        item.material_id = selectedMat.id;
-        item.codigo_material = selectedMat.codigo;
-        item.nome_material = selectedMat.nome;
-        item.peso_unitario_kg = selectedMat.peso_padrao_kg || 0;
-        item.valor_unitario = selectedMat.valor_padrao || 0;
-        item.peso_total_kg = Number((item.quantidade * (selectedMat.peso_padrao_kg || 0)).toFixed(2));
-        item.valor_total = Number((item.quantidade * (selectedMat.valor_padrao || 0)).toFixed(2));
-      } else {
-        item.material_id = '';
-      }
+      const item = { ...updated[index] };
+      const qty = parseFloat(item.quantidade) || 1;
+
+      item.material_id = material.id || null;
+      item.codigo_material = material.codigo || '';
+      item.nome_material = material.nome || '';
+      item.unidade = material.unidade || 'UN';
+      item.peso_unitario_kg = Number(material.peso_padrao_kg) || 0;
+      item.valor_unitario = Number(material.preco_trazer) || Number(material.preco_sugerido) || Number(material.valor_padrao) || 0;
+      item.peso_total_kg = Number((qty * item.peso_unitario_kg).toFixed(2));
+      item.valor_total = Number((qty * item.valor_unitario).toFixed(2));
+
+      updated[index] = item;
       return updated;
     });
   };
@@ -123,6 +124,7 @@ export default function RomaneioModal() {
         material_id: '',
         codigo_material: '',
         nome_material: '',
+        unidade: 'UN',
         quantidade: 1,
         peso_unitario_kg: 0,
         peso_total_kg: 0,
@@ -280,9 +282,10 @@ export default function RomaneioModal() {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-900 text-slate-300 uppercase tracking-wider text-[11px] font-semibold border-b border-white/10">
                 <tr>
-                  <th className="p-3 w-40">Catálogo / Cód</th>
-                  <th className="p-3 min-w-[200px]">Descrição do Material</th>
+                  <th className="p-3 w-10 text-center">#</th>
+                  <th className="p-3 min-w-[240px]">Material / Descrição (Catálogo SAGI)</th>
                   <th className="p-3 w-20 text-center">Qtd</th>
+                  <th className="p-3 w-16 text-center">Unid</th>
                   <th className="p-3 w-28 text-right">Peso Unit (kg)</th>
                   <th className="p-3 w-28 text-right">Peso Total (kg)</th>
                   <th className="p-3 w-28 text-right">Preço Unit (R$)</th>
@@ -293,30 +296,21 @@ export default function RomaneioModal() {
               <tbody className="divide-y divide-white/5 text-slate-200">
                 {items.map((item, index) => (
                   <tr key={item.id || index} className="hover:bg-white/5 transition-colors">
-                    {/* Catalog Autocomplete Select */}
-                    <td className="p-2.5">
-                      <select
-                        value={item.material_id || ''}
-                        onChange={(e) => handleMaterialSelect(index, e.target.value)}
-                        className="w-full px-2 py-1.5 rounded-lg glass-input text-xs cursor-pointer font-mono"
-                      >
-                        <option value="" className="bg-slate-900">Custom / Selecionar</option>
-                        {materials.map((m) => (
-                          <option key={m.id} value={m.id} className="bg-slate-900">
-                            {m.codigo} - {m.nome}
-                          </option>
-                        ))}
-                      </select>
+                    <td className="p-3 text-center text-slate-400 font-mono font-bold">
+                      {index + 1}
                     </td>
 
-                    {/* Material Name */}
+                    {/* Catalog Autocomplete Search Input */}
                     <td className="p-2.5">
-                      <input
-                        type="text"
-                        value={item.nome_material}
-                        onChange={(e) => handleItemChange(index, 'nome_material', e.target.value)}
-                        placeholder="Nome ou especificação do material..."
-                        className="w-full px-2.5 py-1.5 rounded-lg glass-input text-xs"
+                      <MaterialSearchInput
+                        value={item.nome_material || ''}
+                        selectedMaterialId={item.material_id}
+                        codigoMaterial={item.codigo_material}
+                        unidade={item.unidade}
+                        type="trazer"
+                        onSelect={(mat) => handleMaterialSelectRow(index, mat)}
+                        onChangeText={(text) => handleItemChange(index, 'nome_material', text)}
+                        placeholder="Buscar no catálogo SAGI..."
                       />
                     </td>
 
@@ -324,19 +318,38 @@ export default function RomaneioModal() {
                     <td className="p-2.5 text-center">
                       <input
                         type="number"
-                        step="1"
-                        min="1"
+                        step="any"
+                        min="0.01"
                         value={item.quantidade}
                         onChange={(e) => handleItemChange(index, 'quantidade', e.target.value)}
                         className="w-16 px-2 py-1.5 rounded-lg glass-input text-xs text-center font-mono font-bold"
                       />
                     </td>
 
+                    {/* Unidade */}
+                    <td className="p-2.5 text-center">
+                      <select
+                        value={item.unidade || 'UN'}
+                        onChange={(e) => handleItemChange(index, 'unidade', e.target.value)}
+                        className="w-16 px-1 py-1.5 rounded-lg glass-input text-[11px] font-bold cursor-pointer bg-slate-900 text-white"
+                      >
+                        <option value="UN">UN</option>
+                        <option value="KG">KG</option>
+                        <option value="MT">MT</option>
+                        <option value="TN">TN</option>
+                        <option value="LT">LT</option>
+                        <option value="PR">PR</option>
+                        <option value="M2">M²</option>
+                        <option value="M3">M³</option>
+                        <option value="PCT">PCT</option>
+                      </select>
+                    </td>
+
                     {/* Unit Weight */}
                     <td className="p-2.5 text-right">
                       <input
                         type="number"
-                        step="0.01"
+                        step="0.001"
                         min="0"
                         value={item.peso_unitario_kg}
                         onChange={(e) => handleItemChange(index, 'peso_unitario_kg', e.target.value)}

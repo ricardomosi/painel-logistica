@@ -86,6 +86,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
       item.codigo_material || '-',
       item.nome_material || 'Material diverso',
       qtd.toLocaleString('pt-BR'),
+      item.unidade || 'UN',
       pesoUnit.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
       `${pesoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg`,
       `R$ ${valorUnit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
@@ -100,8 +101,8 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
 
   autoTable(doc, {
     startY: y + 43,
-    head: [['#', 'Cód.', 'Descrição do Material', 'Qtd', 'Peso Unit', 'Peso Total', 'Vlr Unit', 'Vlr Total']],
-    body: tableData.length > 0 ? tableData : [['-', '-', 'Nenhum item adicionado ao romaneio', '-', '-', '-', '-', '-']],
+    head: [['#', 'Cód.', 'Descrição do Material', 'Qtd', 'Unid', 'Peso Unit', 'Peso Total', 'Vlr Unit', 'Vlr Total']],
+    body: tableData.length > 0 ? tableData : [['-', '-', 'Nenhum item adicionado ao romaneio', '-', '-', '-', '-', '-', '-']],
     theme: 'grid',
     headStyles: {
       fillColor: [9, 9, 121],
@@ -112,13 +113,14 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
     },
     columnStyles: {
       0: { cellWidth: 8, halign: 'center' },
-      1: { cellWidth: 20, halign: 'center' },
-      2: { cellWidth: 58 },
-      3: { cellWidth: 16, halign: 'center' },
-      4: { cellWidth: 20, halign: 'right' },
-      5: { cellWidth: 22, halign: 'right' },
+      1: { cellWidth: 18, halign: 'center' },
+      2: { cellWidth: 50 },
+      3: { cellWidth: 14, halign: 'center' },
+      4: { cellWidth: 12, halign: 'center' },
+      5: { cellWidth: 18, halign: 'right' },
       6: { cellWidth: 20, halign: 'right' },
-      7: { cellWidth: 22, halign: 'right' },
+      7: { cellWidth: 20, halign: 'right' },
+      8: { cellWidth: 22, halign: 'right' },
     },
     styles: {
       fontSize: 8,
