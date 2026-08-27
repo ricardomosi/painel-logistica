@@ -62,18 +62,31 @@ export const romaneioService = {
 
     // 3. Insert items if any
     if (itens && itens.length > 0) {
-      const itemsPayload = itens.map(item => ({
-        romaneio_id: romaneioId,
-        material_id: item.material_id || null,
-        codigo_material: item.codigo_material || '',
-        nome_material: item.nome_material || '',
-        unidade: item.unidade || 'UN',
-        quantidade: parseFloat(item.quantidade) || 1,
-        peso_unitario_kg: parseFloat(item.peso_unitario_kg) || 0,
-        peso_total_kg: parseFloat(item.peso_total_kg) || 0,
-        valor_unitario: parseFloat(item.valor_unitario) || 0,
-        valor_total: parseFloat(item.valor_total) || 0,
-      }));
+      const itemsPayload = itens.map(item => {
+        const qtd = parseFloat(item.quantidade) || 1;
+        const pesoUnit = parseFloat(item.peso_unitario_kg) || 0;
+        const pesoTot = item.peso_total_kg !== undefined && item.peso_total_kg !== null && item.peso_total_kg !== ''
+          ? parseFloat(item.peso_total_kg)
+          : (qtd * pesoUnit);
+
+        const valUnit = parseFloat(item.valor_unitario) || 0;
+        const valTot = item.valor_total !== undefined && item.valor_total !== null && item.valor_total !== ''
+          ? parseFloat(item.valor_total)
+          : (qtd * valUnit);
+
+        return {
+          romaneio_id: romaneioId,
+          material_id: item.material_id || null,
+          codigo_material: item.codigo_material || '',
+          nome_material: item.nome_material || '',
+          unidade: item.unidade || 'UN',
+          quantidade: qtd,
+          peso_unitario_kg: pesoUnit,
+          peso_total_kg: isNaN(pesoTot) ? 0 : pesoTot,
+          valor_unitario: valUnit,
+          valor_total: isNaN(valTot) ? 0 : valTot,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('romaneio_itens')

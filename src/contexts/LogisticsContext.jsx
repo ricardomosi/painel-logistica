@@ -8,6 +8,42 @@ import { useSupabaseRealtime } from '../hooks/useSupabaseRealtime';
 
 const LogisticsContext = createContext(null);
 
+export const isItemForMotorista = (item, profile) => {
+  if (!item || !profile) return false;
+
+  // 1. Direct motorista_id match if both are present
+  if (item.motorista_id && profile.motorista_id && String(item.motorista_id) === String(profile.motorista_id)) {
+    return true;
+  }
+
+  // Normalization helper (lowercase alphanumeric only)
+  const norm = (str) => (str ? String(str).toLowerCase().replace(/[^a-z0-9]/g, '') : '');
+
+  const profPlaca = norm(profile.placa);
+  const itemPlaca = norm(item.placa);
+  const profEmailPrefix = norm(profile.email ? profile.email.split('@')[0] : '');
+  const profName = norm(profile.nome ? profile.nome.replace(/\(.*?\)/g, '') : '');
+
+  // 2. Match by vehicle plate (e.g. 'RGF9F21' inside 'RGF9F21 (Jefferson)')
+  if (profPlaca && itemPlaca && (itemPlaca.includes(profPlaca) || profPlaca.includes(itemPlaca))) {
+    return true;
+  }
+
+  // 3. Match by driver name in item plate/motorista fields (e.g. 'jefferson' inside 'RGF9F21 (Jefferson)')
+  if (profName && profName.length >= 3) {
+    if (itemPlaca && itemPlaca.includes(profName)) return true;
+    if (item.motorista?.nome && norm(item.motorista.nome).includes(profName)) return true;
+  }
+
+  // 4. Match by email prefix
+  if (profEmailPrefix && profEmailPrefix.length >= 3) {
+    if (itemPlaca && itemPlaca.includes(profEmailPrefix)) return true;
+    if (item.motorista?.nome && norm(item.motorista.nome).includes(profEmailPrefix)) return true;
+  }
+
+  return false;
+};
+
 export function LogisticsProvider({ children }) {
   const { profile, isMotorista } = useAuth();
   const { playSuccess, playAlert, playDriverAlert, playWarning, playClick } = useSound();
@@ -154,11 +190,7 @@ export function LogisticsProvider({ children }) {
     setDeliveries(fresh);
 
     if (payload?.eventType === 'INSERT' && payload.new) {
-      const isForCurrentDriver = isMotorista && (
-        payload.new.motorista_id === profile?.motorista_id ||
-        (profile?.placa && payload.new.placa && payload.new.placa.includes(profile.placa)) ||
-        (profile?.nome && payload.new.placa && payload.new.placa.toLowerCase().includes(profile.nome.toLowerCase()))
-      );
+      const isForCurrentDriver = isMotorista && isItemForMotorista(payload.new, profile);
 
       if (isForCurrentDriver) {
         if (playDriverAlert) playDriverAlert();
@@ -188,11 +220,7 @@ export function LogisticsProvider({ children }) {
     setCollections(fresh);
 
     if (payload?.eventType === 'INSERT' && payload.new) {
-      const isForCurrentDriver = isMotorista && (
-        payload.new.motorista_id === profile?.motorista_id ||
-        (profile?.placa && payload.new.placa && payload.new.placa.includes(profile.placa)) ||
-        (profile?.nome && payload.new.placa && payload.new.placa.toLowerCase().includes(profile.nome.toLowerCase()))
-      );
+      const isForCurrentDriver = isMotorista && isItemForMotorista(payload.new, profile);
 
       if (isForCurrentDriver) {
         if (playDriverAlert) playDriverAlert();
@@ -460,8 +488,10 @@ export function LogisticsProvider({ children }) {
   // ---------------- FILTERED DATA WITH RBAC ----------------
   const filteredDeliveries = (Array.isArray(deliveries) ? deliveries : []).filter(item => {
     if (!item) return false;
-    if (isMotorista && profile?.motorista_id) {
-      if (item.motorista_id !== profile.motorista_id) {
+    
+    // Se logado como motorista, exibe somente as entregas atribuídas a ele
+    if (isMotorista) {
+      if (!isItemForMotorista(item, profile)) {
         return false;
       }
     }
@@ -489,8 +519,10 @@ export function LogisticsProvider({ children }) {
 
   const filteredCollections = (Array.isArray(collections) ? collections : []).filter(item => {
     if (!item) return false;
-    if (isMotorista && profile?.motorista_id) {
-      if (item.motorista_id !== profile.motorista_id) {
+
+    // Se logado como motorista, exibe somente as coletas atribuídas a ele
+    if (isMotorista) {
+      if (!isItemForMotorista(item, profile)) {
         return false;
       }
     }
