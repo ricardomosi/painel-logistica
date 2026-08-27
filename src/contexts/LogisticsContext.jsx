@@ -12,11 +12,6 @@ const LogisticsContext = createContext(null);
 export const isItemForMotorista = (item, profile) => {
   if (!item || !profile) return false;
 
-  // 1. Direct motorista_id match if both are present
-  if (item.motorista_id && profile.motorista_id && String(item.motorista_id) === String(profile.motorista_id)) {
-    return true;
-  }
-
   // Normalization helper (lowercase alphanumeric only)
   const norm = (str) => (str ? String(str).toLowerCase().replace(/[^a-z0-9]/g, '') : '');
 
@@ -24,22 +19,45 @@ export const isItemForMotorista = (item, profile) => {
   const itemPlaca = norm(item.placa);
   const profEmailPrefix = norm(profile.email ? profile.email.split('@')[0] : '');
   const profName = norm(profile.nome ? profile.nome.replace(/\(.*?\)/g, '') : '');
+  const profMotoristaId = profile.motorista_id ? String(profile.motorista_id) : '';
+  const profUserId = profile.id ? String(profile.id) : '';
 
-  // 2. Match by vehicle plate (e.g. 'RGF9F21' inside 'RGF9F21 (Jefferson)')
+  // 1. Direct motorista_id match if both are present
+  if (item.motorista_id && profMotoristaId && String(item.motorista_id) === profMotoristaId) {
+    return true;
+  }
+
+  // 2. Direct user_id match
+  if (item.user_id && profUserId && String(item.user_id) === profUserId) {
+    return true;
+  }
+
+  // 3. Match by vehicle plate in either direction (e.g. 'RGF9F21' in 'RGF9F21 (Jefferson)')
   if (profPlaca && itemPlaca && (itemPlaca.includes(profPlaca) || profPlaca.includes(itemPlaca))) {
     return true;
   }
 
-  // 3. Match by driver name in item plate/motorista fields (e.g. 'jefferson' inside 'RGF9F21 (Jefferson)')
+  // 4. Match by driver name in item plate/motorista fields/responsavel
   if (profName && profName.length >= 3) {
     if (itemPlaca && itemPlaca.includes(profName)) return true;
     if (item.motorista?.nome && norm(item.motorista.nome).includes(profName)) return true;
+    if (item.responsavel && norm(item.responsavel).includes(profName)) return true;
   }
 
-  // 4. Match by email prefix
+  // 5. Match by email prefix
   if (profEmailPrefix && profEmailPrefix.length >= 3) {
     if (itemPlaca && itemPlaca.includes(profEmailPrefix)) return true;
     if (item.motorista?.nome && norm(item.motorista.nome).includes(profEmailPrefix)) return true;
+    if (item.responsavel && norm(item.responsavel).includes(profEmailPrefix)) return true;
+  }
+
+  // 6. Token matching: check individual words in profile name (e.g., "Jefferson" in "Jefferson (Motorista)")
+  if (profile.nome) {
+    const tokens = profile.nome.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(t => t.length >= 3 && t !== 'motorista');
+    for (const token of tokens) {
+      if (itemPlaca && itemPlaca.includes(token)) return true;
+      if (item.motorista?.nome && norm(item.motorista.nome).includes(token)) return true;
+    }
   }
 
   return false;
@@ -80,6 +98,11 @@ export function LogisticsProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+
+  // Refs for Tracking Previous Data & Realtime Sync State
+  const previousDeliveriesMapRef = useRef(new Map());
+  const previousCollectionsMapRef = useRef(new Map());
+  const isInitialLoadDoneRef = useRef(false);
 
   const clearPushNotification = useCallback(() => {
     setPushNotification(null);
@@ -159,7 +182,147 @@ export function LogisticsProvider({ children }) {
     }
   }, []);
 
-  // Fetch all core logistics data
+  // Real-time Delta Synchronizer (Compares new vs old to trigger notifications)
+  const performRealtimeSync = useCallback(async () => {
+    try {
+      const [freshDeliveries, freshCollections] = await Promise.all([
+        deliveriesService.getAll().catch(() => []),
+        collectionsService.getAll().catch(() => []),
+      ]);
+
+      if (Array.isArray(freshDeliveries)) {
+        if (isInitialLoadDoneRef.current) {
+          const prevMap = previousDeliveriesMapRef.current;
+          
+          for (const item of freshDeliveries) {
+            if (!prevMap.has(item.id)) {
+              // Brand new delivery created!
+              const isForCurrentDriver = isMotorista && isItemForMotorista(item, profile);
+
+              if (isForCurrentDriver) {
+                if (playDriverAlert) playDriverAlert();
+                addToast(`🚨 NOVA ENTREGA ATRIBUÍDA: ${item.cliente || 'Cliente'}!`, 'success', 10000);
+                
+                notificationService.triggerNotification({
+                  title: '🚚 Nova Entrega Atribuída a Você!',
+                  body: `Destino: ${item.cliente}\nEndereço: ${item.endereco || 'A definir'}`,
+                  tag: 'del-' + item.id,
+                  data: item,
+                });
+
+                setPushNotification({
+                  title: item.cliente || 'Nova Entrega',
+                  message: item.endereco ? `Endereço: ${item.endereco}` : 'Toque para abrir a entrega.',
+                  type: 'delivery',
+                  item: item,
+                  isForMe: true,
+                });
+              } else if (!isMotorista) {
+                if (playAlert) playAlert();
+                addToast(`📦 Nova entrega: ${item.cliente || ''}`);
+                
+                setPushNotification({
+                  title: `Nova entrega: ${item.cliente || 'Sem cliente'}`,
+                  message: item.endereco || 'Adicionada ao painel',
+                  type: 'delivery',
+                  item: item,
+                  isForMe: false,
+                });
+              }
+            } else {
+              // Existing item check: was it concluded?
+              const oldItem = prevMap.get(item.id);
+              if (item.status === 'concluido' && oldItem?.status !== 'concluido') {
+                if (playSuccess) playSuccess();
+                addToast(`✅ Entrega de ${item.cliente || ''} concluída!`, 'info');
+
+                if (!isMotorista) {
+                  notificationService.triggerNotification({
+                    title: '✅ Entrega Finalizada!',
+                    body: `O motorista concluiu a entrega de ${item.cliente || ''}`,
+                    tag: 'del-concl-' + item.id,
+                  });
+
+                  setPushNotification({
+                    title: `Entrega Concluída: ${item.cliente || ''}`,
+                    message: `KM Total: ${item.km_total || 0} km | ${item.como_foi_entrega || 'Concluída com sucesso'}`,
+                    type: 'concluded',
+                    item: item,
+                    isForMe: false,
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        const newMap = new Map();
+        freshDeliveries.forEach(d => newMap.set(d.id, d));
+        previousDeliveriesMapRef.current = newMap;
+        setDeliveries(freshDeliveries);
+      }
+
+      if (Array.isArray(freshCollections)) {
+        if (isInitialLoadDoneRef.current) {
+          const prevColMap = previousCollectionsMapRef.current;
+          
+          for (const item of freshCollections) {
+            if (!prevColMap.has(item.id)) {
+              const isForCurrentDriver = isMotorista && isItemForMotorista(item, profile);
+
+              if (isForCurrentDriver) {
+                if (playDriverAlert) playDriverAlert();
+                addToast(`🚨 NOVA COLETA ATRIBUÍDA: ${item.fornecedor || 'Fornecedor'}!`, 'success', 10000);
+                
+                notificationService.triggerNotification({
+                  title: '📦 Nova Coleta Atribuída a Você!',
+                  body: `Fornecedor: ${item.fornecedor}\nEndereço: ${item.endereco || 'A definir'}`,
+                  tag: 'col-' + item.id,
+                  data: item,
+                });
+
+                setPushNotification({
+                  title: item.fornecedor || 'Nova Coleta',
+                  message: item.endereco ? `Endereço: ${item.endereco}` : 'Toque para abrir a coleta.',
+                  type: 'collection',
+                  item: item,
+                  isForMe: true,
+                });
+              } else if (!isMotorista) {
+                if (playAlert) playAlert();
+                addToast(`📥 Nova coleta: ${item.fornecedor || ''}`);
+
+                setPushNotification({
+                  title: `Nova coleta: ${item.fornecedor || ''}`,
+                  message: item.endereco || 'Adicionada ao painel',
+                  type: 'collection',
+                  item: item,
+                  isForMe: false,
+                });
+              }
+            } else {
+              const oldItem = prevColMap.get(item.id);
+              if (item.status === 'concluido' && oldItem?.status !== 'concluido') {
+                if (playSuccess) playSuccess();
+                addToast(`✅ Coleta de ${item.fornecedor || ''} concluída!`, 'info');
+              }
+            }
+          }
+        }
+
+        const newColMap = new Map();
+        freshCollections.forEach(c => newColMap.set(c.id, c));
+        previousCollectionsMapRef.current = newColMap;
+        setCollections(freshCollections);
+      }
+
+      isInitialLoadDoneRef.current = true;
+    } catch (err) {
+      console.debug('Realtime delta sync notice:', err);
+    }
+  }, [isMotorista, profile, playDriverAlert, playAlert, playSuccess, addToast]);
+
+  // Initial Full Load Data
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -171,6 +334,16 @@ export function LogisticsProvider({ children }) {
         adminService.getMaterials().catch(() => []),
         adminService.getSellers().catch(() => []),
       ]);
+
+      const delMap = new Map();
+      dels.forEach(d => delMap.set(d.id, d));
+      previousDeliveriesMapRef.current = delMap;
+
+      const colMap = new Map();
+      cols.forEach(c => colMap.set(c.id, c));
+      previousCollectionsMapRef.current = colMap;
+
+      isInitialLoadDoneRef.current = true;
 
       setDeliveries(dels);
       setCollections(cols);
@@ -190,152 +363,46 @@ export function LogisticsProvider({ children }) {
     loadData();
   }, [loadData]);
 
-  // Realtime handlers with dedicated notifications for drivers & managers
-  const handleDeliveriesChange = useCallback(async (payload) => {
-    const fresh = await deliveriesService.getAll().catch(() => []);
-    setDeliveries(fresh);
+  // Real-time Background Polling (Every 3.5 seconds) + Focus/Visibility Handler
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      performRealtimeSync();
+    }, 3500);
 
-    if ((payload?.eventType === 'INSERT' || payload?.eventType === 'CREATED') && payload.new) {
-      const isForCurrentDriver = isMotorista && isItemForMotorista(payload.new, profile);
+    const handleFocusSync = () => {
+      performRealtimeSync();
+    };
 
-      if (isForCurrentDriver) {
-        if (playDriverAlert) playDriverAlert();
-        addToast(`🚨 NOVA ENTREGA ATRIBUÍDA: ${payload.new.cliente || 'Cliente'}!`, 'success', 10000);
-        
-        // Native mobile notification + in-app push banner
-        notificationService.triggerNotification({
-          title: '🚚 Nova Entrega Atribuída a Você!',
-          body: `Destino: ${payload.new.cliente}\nEndereço: ${payload.new.endereco || 'A definir'}`,
-          tag: 'del-' + payload.new.id,
-          data: payload.new,
-        });
+    window.addEventListener('focus', handleFocusSync);
+    window.addEventListener('online', handleFocusSync);
+    document.addEventListener('visibilitychange', handleFocusSync);
 
-        setPushNotification({
-          title: payload.new.cliente || 'Nova Entrega',
-          message: payload.new.endereco ? `Endereço: ${payload.new.endereco}` : 'Toque para abrir a entrega.',
-          type: 'delivery',
-          item: payload.new,
-          isForMe: true,
-        });
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener('focus', handleFocusSync);
+      window.removeEventListener('online', handleFocusSync);
+      document.removeEventListener('visibilitychange', handleFocusSync);
+    };
+  }, [performRealtimeSync]);
 
-      } else if (!isMotorista) {
-        if (playAlert) playAlert();
-        addToast(`📦 Nova entrega registrada: ${payload.new.cliente || ''}`);
-        
-        setPushNotification({
-          title: `Nova entrega: ${payload.new.cliente || 'Sem cliente'}`,
-          message: payload.new.endereco || 'Adicionada ao painel de entregas',
-          type: 'delivery',
-          item: payload.new,
-          isForMe: false,
-        });
-      }
-    } else if ((payload?.eventType === 'UPDATE' || payload?.eventType === 'CONCLUDED' || payload?.eventType === 'UPDATED') && payload.new) {
-      if (payload.new.status === 'concluido' && payload.old?.status !== 'concluido') {
-        if (playSuccess) playSuccess();
-        addToast(`✅ Entrega de ${payload.new.cliente || ''} concluída!`, 'info');
-
-        if (!isMotorista) {
-          notificationService.triggerNotification({
-            title: '✅ Entrega Finalizada!',
-            body: `O motorista concluiu a entrega de ${payload.new.cliente || ''}`,
-            tag: 'del-concl-' + payload.new.id,
-          });
-
-          setPushNotification({
-            title: `Entrega Concluída: ${payload.new.cliente || ''}`,
-            message: `KM Total: ${payload.new.km_total || 0} km | ${payload.new.como_foi_entrega || 'Concluída com sucesso'}`,
-            type: 'concluded',
-            item: payload.new,
-            isForMe: false,
-          });
-        }
-      }
-    }
-  }, [isMotorista, profile, playDriverAlert, playAlert, playSuccess, addToast]);
-
-  const handleCollectionsChange = useCallback(async (payload) => {
-    const fresh = await collectionsService.getAll().catch(() => []);
-    setCollections(fresh);
-
-    if ((payload?.eventType === 'INSERT' || payload?.eventType === 'CREATED') && payload.new) {
-      const isForCurrentDriver = isMotorista && isItemForMotorista(payload.new, profile);
-
-      if (isForCurrentDriver) {
-        if (playDriverAlert) playDriverAlert();
-        addToast(`🚨 NOVA COLETA ATRIBUÍDA: ${payload.new.fornecedor || 'Fornecedor'}!`, 'success', 10000);
-        
-        notificationService.triggerNotification({
-          title: '📦 Nova Coleta Atribuída a Você!',
-          body: `Fornecedor: ${payload.new.fornecedor}\nEndereço: ${payload.new.endereco || 'A definir'}`,
-          tag: 'col-' + payload.new.id,
-          data: payload.new,
-        });
-
-        setPushNotification({
-          title: payload.new.fornecedor || 'Nova Coleta',
-          message: payload.new.endereco ? `Endereço: ${payload.new.endereco}` : 'Toque para abrir a coleta.',
-          type: 'collection',
-          item: payload.new,
-          isForMe: true,
-        });
-
-      } else if (!isMotorista) {
-        if (playAlert) playAlert();
-        addToast(`📥 Nova coleta registrada: ${payload.new.fornecedor || ''}`);
-
-        setPushNotification({
-          title: `Nova coleta: ${payload.new.fornecedor || ''}`,
-          message: payload.new.endereco || 'Adicionada ao painel de coletas',
-          type: 'collection',
-          item: payload.new,
-          isForMe: false,
-        });
-      }
-    } else if ((payload?.eventType === 'UPDATE' || payload?.eventType === 'CONCLUDED' || payload?.eventType === 'UPDATED') && payload.new) {
-      if (payload.new.status === 'concluido' && payload.old?.status !== 'concluido') {
-        if (playSuccess) playSuccess();
-        addToast(`✅ Coleta de ${payload.new.fornecedor || ''} concluída!`, 'info');
-
-        if (!isMotorista) {
-          notificationService.triggerNotification({
-            title: '✅ Coleta Concluída!',
-            body: `Coleta de ${payload.new.fornecedor || ''} finalizada com sucesso`,
-            tag: 'col-concl-' + payload.new.id,
-          });
-
-          setPushNotification({
-            title: `Coleta Concluída: ${payload.new.fornecedor || ''}`,
-            message: 'Finalizada com sucesso pelo motorista.',
-            type: 'concluded',
-            item: payload.new,
-            isForMe: false,
-          });
-        }
-      }
-    }
-  }, [isMotorista, profile, playDriverAlert, playAlert, playSuccess, addToast]);
-
-  const handleGeneralChange = useCallback(async (table) => {
-    if (table === 'motoristas') {
-      const d = await adminService.getDrivers().catch(() => []);
-      setDrivers(d);
-    } else if (table === 'veiculos') {
-      const v = await adminService.getVehicles().catch(() => []);
-      setVehicles(v);
-    } else if (table === 'materiais') {
-      const m = await adminService.getMaterials().catch(() => []);
-      setMaterials(m);
-    } else if (table === 'romaneios') {
-      const freshDels = await deliveriesService.getAll().catch(() => []);
-      setDeliveries(freshDels);
-    }
-  }, []);
-
+  // Hook for Supabase WebSocket & Instant Broadcast Channels
   useSupabaseRealtime({
-    onDeliveriesChange: handleDeliveriesChange,
-    onCollectionsChange: handleCollectionsChange,
-    onGeneralChange: handleGeneralChange,
+    onDeliveriesChange: () => performRealtimeSync(),
+    onCollectionsChange: () => performRealtimeSync(),
+    onGeneralChange: async (table) => {
+      if (table === 'motoristas') {
+        const d = await adminService.getDrivers().catch(() => []);
+        setDrivers(d);
+      } else if (table === 'veiculos') {
+        const v = await adminService.getVehicles().catch(() => []);
+        setVehicles(v);
+      } else if (table === 'materiais') {
+        const m = await adminService.getMaterials().catch(() => []);
+        setMaterials(m);
+      } else {
+        performRealtimeSync();
+      }
+    },
   });
 
   // ---------------- DELIVERY ACTIONS ----------------

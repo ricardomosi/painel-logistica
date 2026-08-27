@@ -37,11 +37,16 @@ export default function CollectionModal() {
     createCollection, 
     updateCollection,
     deleteCollection,
-    showConfirm
+    showConfirm,
+    showAlert,
+    addToast,
+    drivers,
+    vehicles
   } = useLogistics();
 
   const isEditing = !!selectedCollection?.id;
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     fornecedor: '',
@@ -91,6 +96,34 @@ export default function CollectionModal() {
 
   if (!collectionModalOpen) return null;
 
+  const handlePlacaChange = (val) => {
+    let matchedDriverId = null;
+    let matchedVehId = null;
+    if (val) {
+      const normVal = val.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (Array.isArray(drivers)) {
+        const d = drivers.find(drv => {
+          const dName = (drv.nome || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return dName.length >= 3 && normVal.includes(dName);
+        });
+        if (d) matchedDriverId = d.id;
+      }
+      if (Array.isArray(vehicles)) {
+        const v = vehicles.find(veh => {
+          const vPlaca = (veh.placa || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return vPlaca.length >= 4 && normVal.includes(vPlaca);
+        });
+        if (v) matchedVehId = v.id;
+      }
+    }
+    setFormData(prev => ({
+      ...prev,
+      placa: val,
+      motorista_id: matchedDriverId || prev.motorista_id,
+      veiculo_id: matchedVehId || prev.veiculo_id,
+    }));
+  };
+
   const toggleConcluir = () => {
     setFormData(prev => {
       if (prev.status === 'concluido') {
@@ -129,12 +162,31 @@ export default function CollectionModal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isEditing) {
-      await updateCollection(selectedCollection.id, formData);
-    } else {
-      await createCollection(formData);
+    if (!formData.fornecedor || !formData.fornecedor.trim()) {
+      showAlert({ title: 'Campo obrigatório', message: 'O nome do fornecedor/cliente é obrigatório.' });
+      return;
     }
-    setCollectionModalOpen(false);
+
+    try {
+      setSaving(true);
+      if (isEditing) {
+        await updateCollection(selectedCollection.id, formData);
+        addToast('Coleta atualizada com sucesso!', 'success');
+      } else {
+        await createCollection(formData);
+        addToast('Coleta cadastrada com sucesso!', 'success');
+      }
+      setCollectionModalOpen(false);
+    } catch (err) {
+      console.error('Erro ao salvar coleta:', err);
+      showAlert({
+        title: 'Erro',
+        message: `Erro ao salvar coleta: ${err?.message || 'Verifique sua conexão e tente novamente'}`,
+        type: 'error'
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const isConcluido = formData.status === 'concluido';
@@ -266,7 +318,7 @@ export default function CollectionModal() {
               <select 
                 value={formData.placa}
                 disabled={isMotorista}
-                onChange={(e) => setFormData({ ...formData, placa: e.target.value })}
+                onChange={(e) => handlePlacaChange(e.target.value)}
                 className={`w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-xs font-semibold text-slate-700 cursor-pointer ${isMotorista ? 'bg-slate-50' : ''}`}
               >
                 <option value="">Selecione o veículo...</option>
@@ -416,10 +468,13 @@ export default function CollectionModal() {
                 
                 <button 
                   type="submit" 
-                  className="flex-1 sm:flex-none px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                  disabled={saving}
+                  className="flex-1 sm:flex-none px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-base">save</span>
-                  Salvar Coleta
+                  <span className="material-symbols-outlined text-base">
+                    {saving ? 'hourglass_top' : 'save'}
+                  </span>
+                  <span>{saving ? 'Salvando...' : 'Salvar Coleta'}</span>
                 </button>
               </div>
             </div>

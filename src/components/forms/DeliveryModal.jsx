@@ -108,6 +108,8 @@ export default function DeliveryModal() {
     updateDelivery, 
     deleteDelivery,
     materials,
+    drivers,
+    vehicles,
     showConfirm,
     showAlert,
     addToast
@@ -575,6 +577,34 @@ export default function DeliveryModal() {
     }
   };
 
+  const handlePlacaChange = (val) => {
+    let matchedDriverId = null;
+    let matchedVehId = null;
+    if (val) {
+      const normVal = val.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (Array.isArray(drivers)) {
+        const d = drivers.find(drv => {
+          const dName = (drv.nome || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return dName.length >= 3 && normVal.includes(dName);
+        });
+        if (d) matchedDriverId = d.id;
+      }
+      if (Array.isArray(vehicles)) {
+        const v = vehicles.find(veh => {
+          const vPlaca = (veh.placa || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return vPlaca.length >= 4 && normVal.includes(vPlaca);
+        });
+        if (v) matchedVehId = v.id;
+      }
+    }
+    setFormData(prev => ({
+      ...prev,
+      placa: val,
+      motorista_id: matchedDriverId || prev.motorista_id,
+      veiculo_id: matchedVehId || prev.veiculo_id,
+    }));
+  };
+
   const handleDelete = () => {
     showConfirm({
       title: 'Excluir Entrega',
@@ -610,6 +640,7 @@ export default function DeliveryModal() {
         ...formData,
         valor_entrega: finalValorEntrega,
       };
+      delete payload.km_total; // Generated column in Postgres
 
       let savedDelivery;
       if (isEditing) {
@@ -907,7 +938,7 @@ export default function DeliveryModal() {
                       ) : (
                         <select 
                           value={formData.placa}
-                          onChange={(e) => setFormData(prev => ({ ...prev, placa: e.target.value }))}
+                          onChange={(e) => handlePlacaChange(e.target.value)}
                           className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o veículo...</option>

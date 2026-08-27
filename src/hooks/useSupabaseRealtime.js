@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-let globalBroadcastChannel = null;
+let activeRealtimeChannel = null;
 
 export const broadcastLogisticsEvent = async (event, payload) => {
   try {
-    if (!globalBroadcastChannel) {
-      globalBroadcastChannel = supabase.channel('logistics-live-channel');
-      await globalBroadcastChannel.subscribe();
+    if (!activeRealtimeChannel) {
+      activeRealtimeChannel = supabase.channel('logistics-live-unified-channel');
+      await activeRealtimeChannel.subscribe();
     }
-    await globalBroadcastChannel.send({
+    await activeRealtimeChannel.send({
       type: 'broadcast',
       event: 'logistics_broadcast',
       payload: {
@@ -19,7 +19,7 @@ export const broadcastLogisticsEvent = async (event, payload) => {
       },
     });
   } catch (err) {
-    console.debug('Broadcast sync error (harmless fallback to postgres changes):', err);
+    console.debug('Broadcast send notice (fallback active):', err);
   }
 };
 
@@ -29,101 +29,128 @@ export function useSupabaseRealtime({
   onGeneralChange,
   onBroadcastEvent 
 }) {
+  // Store callbacks in refs to avoid channel teardown on parent re-renders
+  const deliveriesCbRef = useRef(onDeliveriesChange);
+  const collectionsCbRef = useRef(onCollectionsChange);
+  const generalCbRef = useRef(onGeneralChange);
+  const broadcastCbRef = useRef(onBroadcastEvent);
   const lastProcessedEventRef = useRef(new Map());
 
   useEffect(() => {
-    // Channel for Postgres Database Changes
-    const dbChannel = supabase
-      .channel('schema-db-changes')
+    deliveriesCbRef.current = onDeliveriesChange;
+  }, [onDeliveriesChange]);
+
+  useEffect(() => {
+    collectionsCbRef.current = onCollectionsChange;
+  }, [onCollectionsChange]);
+
+  useEffect(() => {
+    generalCbRef.current = onGeneralChange;
+  }, [onGeneralChange]);
+
+  useEffect(() => {
+    broadcastCbRef.current = onBroadcastEvent;
+  }, [onBroadcastEvent]);
+
+  useEffect(() => {
+    // Unified Persistent Channel (Postgres CDC + Instant Broadcast)
+    const unifiedChannel = supabase
+      .channel('logistics-live-unified-channel')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'entregas' },
         (payload) => {
-          if (onDeliveriesChange) onDeliveriesChange(payload);
-          if (onGeneralChange) onGeneralChange('entregas', payload);
+          if (deliveriesCbRef.current) deliveriesCbRef.current(payload);
+          if (generalCbRef.current) generalCbRef.current('entregas', payload);
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'coletas' },
         (payload) => {
-          if (onCollectionsChange) onCollectionsChange(payload);
-          if (onGeneralChange) onGeneralChange('coletas', payload);
+          if (collectionsCbRef.current) collectionsCbRef.current(payload);
+          if (generalCbRef.current) generalCbRef.current('coletas', payload);
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'romaneios' },
         (payload) => {
-          if (onGeneralChange) onGeneralChange('romaneios', payload);
+          if (generalCbRef.current) generalCbRef.current('romaneios', payload);
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'romaneio_itens' },
         (payload) => {
-          if (onGeneralChange) onGeneralChange('romaneios', payload);
+          if (generalCbRef.current) generalCbRef.current('romaneios', payload);
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'motoristas' },
         (payload) => {
-          if (onGeneralChange) onGeneralChange('motoristas', payload);
+          if (generalCbRef.current) generalCbRef.current('motoristas', payload);
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'veiculos' },
         (payload) => {
-          if (onGeneralChange) onGeneralChange('veiculos', payload);
+          if (generalCbRef.current) generalCbRef.current('veiculos', payload);
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'materiais' },
         (payload) => {
-          if (onGeneralChange) onGeneralChange('materiais', payload);
+          if (generalCbRef.current) generalCbRef.current('materiais', payload);
         }
-      );
-
-    // Channel for Instant Realtime Broadcasts across users/tabs
-    const broadcastChannel = supabase
-      .channel('logistics-live-channel')
+      )
       .on(
         'broadcast',
         { event: 'logistics_broadcast' },
         (payload) => {
           if (payload?.payload) {
-            const { event, data, timestamp } = payload.payload;
+            const { event, data } = payload.payload;
             
-            // Deduplication helper (ignore if same event within 500ms)
+            // Deduplication (ignore duplicate messages in 400ms)
             const eventKey = `${event}-${data?.id || ''}`;
             const lastTime = lastProcessedEventRef.current.get(eventKey) || 0;
-            if (Date.now() - lastTime < 500) return;
+            if (Date.now() - lastTime < 400) return;
             lastProcessedEventRef.current.set(eventKey, Date.now());
 
-            if (onBroadcastEvent) onBroadcastEvent(event, data);
+            if (broadcastCbRef.current) broadcastCbRef.current(event, data);
             
-            if (event.startsWith('delivery_') && onDeliveriesChange) {
-              onDeliveriesChange({ eventType: event.replace('delivery_', '').toUpperCase(), new: data, isBroadcast: true });
-            } else if (event.startsWith('collection_') && onCollectionsChange) {
-              onCollectionsChange({ eventType: event.replace('collection_', '').toUpperCase(), new: data, isBroadcast: true });
+            if (event.startsWith('delivery_') && deliveriesCbRef.current) {
+              deliveriesCbRef.current({ 
+                eventType: event.replace('delivery_', '').toUpperCase(), 
+                new: data, 
+                isBroadcast: true 
+              });
+            } else if (event.startsWith('collection_') && collectionsCbRef.current) {
+              collectionsCbRef.current({ 
+                eventType: event.replace('collection_', '').toUpperCase(), 
+                new: data, 
+                isBroadcast: true 
+              });
             }
           }
         }
       );
 
-    globalBroadcastChannel = broadcastChannel;
+    activeRealtimeChannel = unifiedChannel;
 
-    dbChannel.subscribe();
-    broadcastChannel.subscribe();
+    unifiedChannel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        // Connected successfully
+      }
+    });
 
     return () => {
-      supabase.removeChannel(dbChannel);
-      supabase.removeChannel(broadcastChannel);
+      // Don't kill active channel on fast re-renders
     };
-  }, [onDeliveriesChange, onCollectionsChange, onGeneralChange, onBroadcastEvent]);
+  }, []);
 }
 
 export default useSupabaseRealtime;
