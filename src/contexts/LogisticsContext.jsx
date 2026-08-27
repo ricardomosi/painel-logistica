@@ -423,6 +423,21 @@ export function LogisticsProvider({ children }) {
     }
   };
 
+  const concludeCollectionAction = async (id, data) => {
+    try {
+      const updated = await collectionsService.update(id, data);
+      setCollections(prev => (Array.isArray(prev) ? prev : []).map(c => (c.id === id ? { ...c, ...updated } : c)));
+      playSuccess();
+      addToast('Coleta finalizada com sucesso!');
+      return updated;
+    } catch (err) {
+      console.error('Error concluding collection:', err);
+      playWarning();
+      addToast(`Erro ao concluir coleta: ${err.message || ''}`, 'error');
+      throw err;
+    }
+  };
+
   // ---------------- LIMPAR SEMANA (CLEAR COMPLETED FROM VIEW) ----------------
   const clearBoard = useCallback(() => {
     showConfirm({
@@ -432,9 +447,9 @@ export function LogisticsProvider({ children }) {
       isDestructive: true,
       onConfirm: () => {
         if (activeTab === 'coletas') {
-          setCollections(prev => prev.filter(c => c.status !== 'concluido'));
+          setCollections(prev => (Array.isArray(prev) ? prev : []).filter(c => c.status !== 'concluido'));
         } else {
-          setDeliveries(prev => prev.filter(d => d.status !== 'concluido'));
+          setDeliveries(prev => (Array.isArray(prev) ? prev : []).filter(d => d.status !== 'concluido'));
         }
         playSuccess();
         addToast('Quadro limpo com sucesso!', 'success');
@@ -443,7 +458,8 @@ export function LogisticsProvider({ children }) {
   }, [activeTab, showConfirm, playSuccess, addToast]);
 
   // ---------------- FILTERED DATA WITH RBAC ----------------
-  const filteredDeliveries = deliveries.filter(item => {
+  const filteredDeliveries = (Array.isArray(deliveries) ? deliveries : []).filter(item => {
+    if (!item) return false;
     if (isMotorista && profile?.motorista_id) {
       if (item.motorista_id !== profile.motorista_id) {
         return false;
@@ -471,7 +487,8 @@ export function LogisticsProvider({ children }) {
     return true;
   });
 
-  const filteredCollections = collections.filter(item => {
+  const filteredCollections = (Array.isArray(collections) ? collections : []).filter(item => {
+    if (!item) return false;
     if (isMotorista && profile?.motorista_id) {
       if (item.motorista_id !== profile.motorista_id) {
         return false;

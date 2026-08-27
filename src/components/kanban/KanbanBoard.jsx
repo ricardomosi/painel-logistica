@@ -15,7 +15,8 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
   const { columns } = weekNav;
   const [mobileActiveColumnKey, setMobileActiveColumnKey] = useState('atualizacoes');
 
-  const items = type === 'entrega' ? filteredDeliveries : filteredCollections;
+  const rawItems = type === 'entrega' ? filteredDeliveries : filteredCollections;
+  const items = Array.isArray(rawItems) ? rawItems.filter(Boolean) : [];
 
   // Compute items per column and counts
   const itemsByColumn = useMemo(() => {
@@ -30,8 +31,9 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
     };
 
     items.forEach(item => {
+      if (!item) return;
       let colVal = (type === 'entrega' ? item.coluna : item.coluna_kanban) || 'atualizacoes';
-      if (colVal.includes('|')) {
+      if (typeof colVal === 'string' && colVal.includes('|')) {
         colVal = colVal.split('|')[0];
       }
 
@@ -45,6 +47,7 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
     // Sort items in each column: URGENT first, pending before concluded, newest first
     Object.keys(map).forEach(col => {
       map[col].sort((a, b) => {
+        if (!a || !b) return 0;
         // 1. Urgente first
         const aUrg = a.urgente ? 1 : 0;
         const bUrg = b.urgente ? 1 : 0;
@@ -56,8 +59,8 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
         if (aConcluido !== bConcluido) return aConcluido - bConcluido;
 
         // 3. Mais recentes primeiro
-        const timeA = new Date(a.created_at || a.data_registro || 0).getTime();
-        const timeB = new Date(b.created_at || b.data_registro || 0).getTime();
+        const timeA = new Date(a.created_at || a.data_registro || 0).getTime() || 0;
+        const timeB = new Date(b.created_at || b.data_registro || 0).getTime() || 0;
         if (timeB !== timeA) return timeB - timeA;
         return (Number(b.id) || 0) - (Number(a.id) || 0);
       });
