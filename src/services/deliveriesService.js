@@ -78,6 +78,14 @@ export const deliveriesService = {
   async update(id, updates) {
     const payload = { ...updates, updated_at: new Date().toISOString() };
     
+    // Strip nested relations or non-column fields that would break Supabase update
+    delete payload.motorista;
+    delete payload.veiculo;
+    delete payload.romaneio;
+    delete payload.itens;
+    delete payload.id;
+    delete payload.created_at;
+
     // Convert numeric fields if provided
     if (payload.frete !== undefined) payload.frete = parseFloat(payload.frete) || 0;
     if (payload.valor_entrega !== undefined) payload.valor_entrega = parseFloat(payload.valor_entrega) || 0;

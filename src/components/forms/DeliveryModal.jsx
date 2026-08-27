@@ -593,7 +593,7 @@ export default function DeliveryModal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.cliente.trim()) {
+    if (!formData.cliente || !formData.cliente.trim()) {
       showAlert({ title: 'Campo obrigatório', message: 'O nome do cliente é obrigatório.' });
       return;
     }
@@ -601,8 +601,8 @@ export default function DeliveryModal() {
     try {
       setSaving(true);
 
-      // Sincroniza o valor_entrega com o total do romaneio caso existam itens
-      const finalValorEntrega = romaneioTotalValor > 0 
+      // Sincroniza o valor_entrega com o total do romaneio se houver cálculo
+      const finalValorEntrega = (!isMotorista && romaneioTotalValor > 0)
         ? romaneioTotalValor 
         : (parseFloat(formData.valor_entrega) || 0);
 
@@ -618,19 +618,27 @@ export default function DeliveryModal() {
         savedDelivery = await createDelivery(payload);
       }
 
-      // Salva itens do Romaneio vinculado
-      if (savedDelivery?.id) {
-        await romaneioService.saveRomaneio(savedDelivery.id, {
-          observacoes: romaneioObs,
-          itens: romaneioItens,
-        });
+      // Salva itens do Romaneio vinculado apenas se não for motorista e houver romaneio definido
+      if (!isMotorista && savedDelivery?.id && (romaneioItens?.length > 0 || romaneioObs)) {
+        try {
+          await romaneioService.saveRomaneio(savedDelivery.id, {
+            observacoes: romaneioObs,
+            itens: romaneioItens,
+          });
+        } catch (romErr) {
+          console.warn('Aviso: romaneio não pôde ser salvo sincronizado:', romErr);
+        }
       }
 
-      addToast(isEditing ? 'Entrega e Romaneio atualizados!' : 'Entrega e Romaneio cadastrados com sucesso!', 'success');
+      addToast(isEditing ? 'Entrega atualizada com sucesso!' : 'Entrega cadastrada com sucesso!', 'success');
       setDeliveryModalOpen(false);
     } catch (err) {
-      console.error('Erro ao salvar entrega com romaneio:', err);
-      showAlert({ title: 'Erro', message: `Erro ao salvar entrega: ${err.message || ''}`, type: 'error' });
+      console.error('Erro ao salvar entrega:', err);
+      showAlert({ 
+        title: 'Erro', 
+        message: `Erro ao salvar entrega: ${err?.message || 'Verifique sua conexão e tente novamente'}`, 
+        type: 'error' 
+      });
     } finally {
       setSaving(false);
     }
@@ -666,7 +674,9 @@ export default function DeliveryModal() {
                   )}
                 </div>
                 <p className="text-xs text-slate-500">
-                  Gerencie os dados logísticos de transporte e a lista oficial de materiais do Romaneio de Carga
+                  {isMotorista 
+                    ? 'Visualize dados de entrega, trace rotas e registre a execução do transporte'
+                    : 'Gerencie os dados logísticos de transporte e a lista oficial de materiais do Romaneio de Carga'}
                 </p>
               </div>
             </div>
@@ -689,7 +699,7 @@ export default function DeliveryModal() {
               )}
 
               <button 
-                type="button"
+                type="button" 
                 onClick={() => setDeliveryModalOpen(false)} 
                 className="p-2.5 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none cursor-pointer"
                 title="Fechar janela"
@@ -715,25 +725,27 @@ export default function DeliveryModal() {
                 <span>1. Dados da Entrega</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('romaneio')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all relative cursor-pointer ${
-                  activeSubTab === 'romaneio'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                    : 'bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-200'
-                }`}
-              >
-                <FileSpreadsheet className="w-4 h-4 shrink-0" />
-                <span>2. Romaneio & Carga</span>
-                {romaneioItens.length > 0 && (
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    activeSubTab === 'romaneio' ? 'bg-white text-indigo-700' : 'bg-indigo-600 text-white'
-                  }`}>
-                    {romaneioItens.length}
-                  </span>
-                )}
-              </button>
+              {!isMotorista && (
+                <button
+                  type="button"
+                  onClick={() => setActiveSubTab('romaneio')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all relative cursor-pointer ${
+                    activeSubTab === 'romaneio'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                      : 'bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-200'
+                  }`}
+                >
+                  <FileSpreadsheet className="w-4 h-4 shrink-0" />
+                  <span>2. Romaneio & Carga</span>
+                  {romaneioItens.length > 0 && (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      activeSubTab === 'romaneio' ? 'bg-white text-indigo-700' : 'bg-indigo-600 text-white'
+                    }`}>
+                      {romaneioItens.length}
+                    </span>
+                  )}
+                </button>
+              )}
 
               <button
                 type="button"
@@ -745,20 +757,30 @@ export default function DeliveryModal() {
                 }`}
               >
                 <Gauge className="w-4 h-4 shrink-0" />
-                <span>3. Rota & Execução</span>
+                <span>{isMotorista ? '2. Rota & Execução' : '3. Rota & Execução'}</span>
               </button>
             </div>
 
-            {/* Quick Print Romaneio Button inside Subtab Bar */}
+            {/* Print & Download Romaneio Buttons inside Subtab Bar */}
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={handlePrintRomaneio}
+                onClick={handleDownloadRomaneio}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
-                title="Imprimir Romaneio de Carga em PDF"
+                title="Baixar Romaneio de Carga em PDF"
+              >
+                <Download className="w-4 h-4" />
+                <span>Baixar Romaneio</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintRomaneio}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
+                title="Imprimir Romaneio de Carga"
               >
                 <Printer className="w-4 h-4" />
-                <span className="hidden sm:inline">Imprimir Romaneio</span>
+                <span>Imprimir</span>
               </button>
             </div>
           </div>

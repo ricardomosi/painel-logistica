@@ -64,6 +64,12 @@ export const collectionsService = {
 
   async update(id, updates) {
     const payload = { ...updates, updated_at: new Date().toISOString() };
+    
+    // Strip nested relations or non-column fields
+    delete payload.motorista;
+    delete payload.veiculo;
+    delete payload.id;
+    delete payload.created_at;
 
     const { data, error } = await supabase
       .from('coletas')

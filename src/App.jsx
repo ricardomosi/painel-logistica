@@ -26,6 +26,7 @@ import UsersManagement from './components/admin/UsersManagement';
 import ModalConfirm from './components/common/ModalConfirm';
 import ModalAlert from './components/common/ModalAlert';
 import ToastContainer from './components/common/ToastContainer';
+import PushNotificationBanner from './components/common/PushNotificationBanner';
 
 // Icons
 import { UserCheck, Truck, Layers, ShieldCheck } from 'lucide-react';
@@ -199,6 +200,7 @@ export default function App() {
       />
 
       <ToastContainer />
+      <PushNotificationBanner />
 
     </div>
   );

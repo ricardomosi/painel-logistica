@@ -89,6 +89,12 @@ export function SoundProvider({ children }) {
     setTimeout(() => playSynthBeep(1174.66, 'sine', 0.3), 550);
   };
 
+  const playWarning = () => {
+    if (!soundEnabled) return;
+    playSynthBeep(440, 'sawtooth', 0.2);
+    setTimeout(() => playSynthBeep(370, 'sawtooth', 0.3), 150);
+  };
+
   const playClick = () => {
     // Subtle click feedback if enabled
   };
@@ -100,6 +106,7 @@ export function SoundProvider({ children }) {
         toggleSound,
         playAlert,
         playSuccess,
+        playWarning,
         playDriverAlert,
         playClick,
       }}

@@ -4,7 +4,8 @@ import { collectionsService } from '../services/collectionsService';
 import { adminService } from '../services/adminService';
 import { useAuth } from './AuthContext';
 import { useSound } from './SoundContext';
-import { useSupabaseRealtime } from '../hooks/useSupabaseRealtime';
+import { useSupabaseRealtime, broadcastLogisticsEvent } from '../hooks/useSupabaseRealtime';
+import { notificationService } from '../lib/notificationService';
 
 const LogisticsContext = createContext(null);
 
@@ -74,10 +75,15 @@ export function LogisticsProvider({ children }) {
   const [romaneioModalOpen, setRomaneioModalOpen] = useState(false);
   const [selectedRomaneioDelivery, setSelectedRomaneioDelivery] = useState(null);
   
-  // Custom dialogs & Toasts
+  // In-App Push Banner & Toasts
+  const [pushNotification, setPushNotification] = useState(null);
   const [toasts, setToasts] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+
+  const clearPushNotification = useCallback(() => {
+    setPushNotification(null);
+  }, []);
 
   // Quick helper to open delivery with romaneio
   const openRomaneio = useCallback((delivery) => {
@@ -146,10 +152,10 @@ export function LogisticsProvider({ children }) {
     setAlertDialog(prev => ({ ...prev, isOpen: false }));
   }, []);
 
-  // Request browser notification permission
+  // Request browser notification permission automatically
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {});
+    if (notificationService.isSupported() && notificationService.getPermission() === 'default') {
+      notificationService.requestPermission().catch(() => {});
     }
   }, []);
 
@@ -189,28 +195,61 @@ export function LogisticsProvider({ children }) {
     const fresh = await deliveriesService.getAll().catch(() => []);
     setDeliveries(fresh);
 
-    if (payload?.eventType === 'INSERT' && payload.new) {
+    if ((payload?.eventType === 'INSERT' || payload?.eventType === 'CREATED') && payload.new) {
       const isForCurrentDriver = isMotorista && isItemForMotorista(payload.new, profile);
 
       if (isForCurrentDriver) {
         if (playDriverAlert) playDriverAlert();
         addToast(`🚨 NOVA ENTREGA ATRIBUÍDA: ${payload.new.cliente || 'Cliente'}!`, 'success', 10000);
-        if ('Notification' in window && Notification.permission === 'granted') {
-          try {
-            new Notification('🚚 Nova Entrega Atribuída a Você!', {
-              body: `Destino: ${payload.new.cliente}\nEndereço: ${payload.new.endereco || 'A definir'}`,
-              icon: '/favicon.ico',
-            });
-          } catch (e) {}
-        }
+        
+        // Native mobile notification + in-app push banner
+        notificationService.triggerNotification({
+          title: '🚚 Nova Entrega Atribuída a Você!',
+          body: `Destino: ${payload.new.cliente}\nEndereço: ${payload.new.endereco || 'A definir'}`,
+          tag: 'del-' + payload.new.id,
+          data: payload.new,
+        });
+
+        setPushNotification({
+          title: payload.new.cliente || 'Nova Entrega',
+          message: payload.new.endereco ? `Endereço: ${payload.new.endereco}` : 'Toque para abrir a entrega.',
+          type: 'delivery',
+          item: payload.new,
+          isForMe: true,
+        });
+
       } else if (!isMotorista) {
         if (playAlert) playAlert();
         addToast(`📦 Nova entrega registrada: ${payload.new.cliente || ''}`);
+        
+        setPushNotification({
+          title: `Nova entrega: ${payload.new.cliente || 'Sem cliente'}`,
+          message: payload.new.endereco || 'Adicionada ao painel de entregas',
+          type: 'delivery',
+          item: payload.new,
+          isForMe: false,
+        });
       }
-    } else if (payload?.eventType === 'UPDATE' && payload.new) {
+    } else if ((payload?.eventType === 'UPDATE' || payload?.eventType === 'CONCLUDED' || payload?.eventType === 'UPDATED') && payload.new) {
       if (payload.new.status === 'concluido' && payload.old?.status !== 'concluido') {
         if (playSuccess) playSuccess();
         addToast(`✅ Entrega de ${payload.new.cliente || ''} concluída!`, 'info');
+
+        if (!isMotorista) {
+          notificationService.triggerNotification({
+            title: '✅ Entrega Finalizada!',
+            body: `O motorista concluiu a entrega de ${payload.new.cliente || ''}`,
+            tag: 'del-concl-' + payload.new.id,
+          });
+
+          setPushNotification({
+            title: `Entrega Concluída: ${payload.new.cliente || ''}`,
+            message: `KM Total: ${payload.new.km_total || 0} km | ${payload.new.como_foi_entrega || 'Concluída com sucesso'}`,
+            type: 'concluded',
+            item: payload.new,
+            isForMe: false,
+          });
+        }
       }
     }
   }, [isMotorista, profile, playDriverAlert, playAlert, playSuccess, addToast]);
@@ -219,28 +258,60 @@ export function LogisticsProvider({ children }) {
     const fresh = await collectionsService.getAll().catch(() => []);
     setCollections(fresh);
 
-    if (payload?.eventType === 'INSERT' && payload.new) {
+    if ((payload?.eventType === 'INSERT' || payload?.eventType === 'CREATED') && payload.new) {
       const isForCurrentDriver = isMotorista && isItemForMotorista(payload.new, profile);
 
       if (isForCurrentDriver) {
         if (playDriverAlert) playDriverAlert();
         addToast(`🚨 NOVA COLETA ATRIBUÍDA: ${payload.new.fornecedor || 'Fornecedor'}!`, 'success', 10000);
-        if ('Notification' in window && Notification.permission === 'granted') {
-          try {
-            new Notification('📦 Nova Coleta Atribuída a Você!', {
-              body: `Fornecedor: ${payload.new.fornecedor}\nEndereço: ${payload.new.endereco || 'A definir'}`,
-              icon: '/favicon.ico',
-            });
-          } catch (e) {}
-        }
+        
+        notificationService.triggerNotification({
+          title: '📦 Nova Coleta Atribuída a Você!',
+          body: `Fornecedor: ${payload.new.fornecedor}\nEndereço: ${payload.new.endereco || 'A definir'}`,
+          tag: 'col-' + payload.new.id,
+          data: payload.new,
+        });
+
+        setPushNotification({
+          title: payload.new.fornecedor || 'Nova Coleta',
+          message: payload.new.endereco ? `Endereço: ${payload.new.endereco}` : 'Toque para abrir a coleta.',
+          type: 'collection',
+          item: payload.new,
+          isForMe: true,
+        });
+
       } else if (!isMotorista) {
         if (playAlert) playAlert();
         addToast(`📥 Nova coleta registrada: ${payload.new.fornecedor || ''}`);
+
+        setPushNotification({
+          title: `Nova coleta: ${payload.new.fornecedor || ''}`,
+          message: payload.new.endereco || 'Adicionada ao painel de coletas',
+          type: 'collection',
+          item: payload.new,
+          isForMe: false,
+        });
       }
-    } else if (payload?.eventType === 'UPDATE' && payload.new) {
+    } else if ((payload?.eventType === 'UPDATE' || payload?.eventType === 'CONCLUDED' || payload?.eventType === 'UPDATED') && payload.new) {
       if (payload.new.status === 'concluido' && payload.old?.status !== 'concluido') {
         if (playSuccess) playSuccess();
         addToast(`✅ Coleta de ${payload.new.fornecedor || ''} concluída!`, 'info');
+
+        if (!isMotorista) {
+          notificationService.triggerNotification({
+            title: '✅ Coleta Concluída!',
+            body: `Coleta de ${payload.new.fornecedor || ''} finalizada com sucesso`,
+            tag: 'col-concl-' + payload.new.id,
+          });
+
+          setPushNotification({
+            title: `Coleta Concluída: ${payload.new.fornecedor || ''}`,
+            message: 'Finalizada com sucesso pelo motorista.',
+            type: 'concluded',
+            item: payload.new,
+            isForMe: false,
+          });
+        }
       }
     }
   }, [isMotorista, profile, playDriverAlert, playAlert, playSuccess, addToast]);
@@ -255,6 +326,9 @@ export function LogisticsProvider({ children }) {
     } else if (table === 'materiais') {
       const m = await adminService.getMaterials().catch(() => []);
       setMaterials(m);
+    } else if (table === 'romaneios') {
+      const freshDels = await deliveriesService.getAll().catch(() => []);
+      setDeliveries(freshDels);
     }
   }, []);
 
@@ -272,6 +346,7 @@ export function LogisticsProvider({ children }) {
       if (formData.endereco) saveAddressToHistory(formData.endereco);
       playAlert();
       addToast('Nova entrega registrada!');
+      broadcastLogisticsEvent('delivery_created', created);
       return created;
     } catch (err) {
       console.error('Error creating delivery:', err);
@@ -292,6 +367,7 @@ export function LogisticsProvider({ children }) {
         playSuccess();
       }
       addToast('Entrega atualizada com sucesso!');
+      broadcastLogisticsEvent(updates.status === 'concluido' ? 'delivery_concluded' : 'delivery_updated', updated);
       return updated;
     } catch (err) {
       console.error('Error updating delivery:', err);
@@ -307,6 +383,7 @@ export function LogisticsProvider({ children }) {
       setDeliveries(prev => prev.filter(d => d.id !== id));
       playSuccess();
       addToast('Entrega removida.');
+      broadcastLogisticsEvent('delivery_deleted', { id });
     } catch (err) {
       console.error('Error deleting delivery:', err);
       playWarning();
@@ -320,7 +397,8 @@ export function LogisticsProvider({ children }) {
     setDeliveries(prev => prev.map(d => d.id === id ? { ...d, coluna: newColumn } : d));
 
     try {
-      await deliveriesService.updateColumn(id, newColumn);
+      const updated = await deliveriesService.updateColumn(id, newColumn);
+      broadcastLogisticsEvent('delivery_updated', updated);
     } catch (err) {
       console.error('Error moving delivery column:', err);
       loadData();
@@ -334,6 +412,7 @@ export function LogisticsProvider({ children }) {
       setDeliveries(prev => prev.map(d => (d.id === id ? { ...d, ...updated } : d)));
       playSuccess();
       addToast('Entrega iniciada! Rota em andamento.');
+      broadcastLogisticsEvent('delivery_updated', updated);
       return updated;
     } catch (err) {
       console.error('Error starting delivery:', err);
@@ -349,6 +428,7 @@ export function LogisticsProvider({ children }) {
       setDeliveries(prev => prev.map(d => (d.id === id ? { ...d, ...updated } : d)));
       playSuccess();
       addToast('Entrega finalizada com sucesso!');
+      broadcastLogisticsEvent('delivery_concluded', updated);
       return updated;
     } catch (err) {
       console.error('Error concluding delivery:', err);
@@ -365,6 +445,7 @@ export function LogisticsProvider({ children }) {
       setCollections(prev => [created, ...prev]);
       playAlert();
       addToast('Nova coleta registrada!');
+      broadcastLogisticsEvent('collection_created', created);
       return created;
     } catch (err) {
       console.error('Error creating collection:', err);
@@ -380,6 +461,7 @@ export function LogisticsProvider({ children }) {
       setCollections(prev => prev.map(c => (c.id === id ? updated : c)));
       playSuccess();
       addToast('Coleta atualizada com sucesso!');
+      broadcastLogisticsEvent(updates.status === 'concluido' ? 'collection_concluded' : 'collection_updated', updated);
       return updated;
     } catch (err) {
       console.error('Error updating collection:', err);
@@ -395,6 +477,7 @@ export function LogisticsProvider({ children }) {
       setCollections(prev => prev.filter(c => c.id !== id));
       playSuccess();
       addToast('Coleta removida.');
+      broadcastLogisticsEvent('collection_deleted', { id });
     } catch (err) {
       console.error('Error deleting collection:', err);
       playWarning();
@@ -407,7 +490,8 @@ export function LogisticsProvider({ children }) {
     setCollections(prev => prev.map(c => c.id === id ? { ...c, coluna_kanban: newColumn } : c));
 
     try {
-      await collectionsService.updateColumn(id, newColumn);
+      const updated = await collectionsService.updateColumn(id, newColumn);
+      broadcastLogisticsEvent('collection_updated', updated);
     } catch (err) {
       console.error('Error moving collection column:', err);
       loadData();
@@ -419,7 +503,8 @@ export function LogisticsProvider({ children }) {
     const nextVal = !currentVal;
     setDeliveries(prev => prev.map(d => (d.id === id ? { ...d, urgente: nextVal } : d)));
     try {
-      await deliveriesService.update(id, { urgente: nextVal });
+      const updated = await deliveriesService.update(id, { urgente: nextVal });
+      broadcastLogisticsEvent('delivery_updated', updated);
       if (nextVal) {
         if (playAlert) playAlert();
         addToast('🚨 Entrega marcada como URGENTE! Fixada no topo.', 'warning');
@@ -437,7 +522,8 @@ export function LogisticsProvider({ children }) {
     const nextVal = !currentVal;
     setCollections(prev => prev.map(c => (c.id === id ? { ...c, urgente: nextVal } : c)));
     try {
-      await collectionsService.update(id, { urgente: nextVal });
+      const updated = await collectionsService.update(id, { urgente: nextVal });
+      broadcastLogisticsEvent('collection_updated', updated);
       if (nextVal) {
         if (playAlert) playAlert();
         addToast('🚨 Coleta marcada como URGENTE! Fixada no topo.', 'warning');
@@ -457,6 +543,7 @@ export function LogisticsProvider({ children }) {
       setCollections(prev => (Array.isArray(prev) ? prev : []).map(c => (c.id === id ? { ...c, ...updated } : c)));
       playSuccess();
       addToast('Coleta finalizada com sucesso!');
+      broadcastLogisticsEvent('collection_concluded', updated);
       return updated;
     } catch (err) {
       console.error('Error concluding collection:', err);
@@ -584,7 +671,10 @@ export function LogisticsProvider({ children }) {
         setSelectedRomaneioDelivery,
         openRomaneio,
 
-        // Dialogs & Toasts & History
+        // Push Notifications, Dialogs & Toasts
+        pushNotification,
+        clearPushNotification,
+        notificationService,
         addressHistory,
         saveAddressToHistory,
         toasts,

@@ -15,10 +15,11 @@ export const romaneioService = {
     return data;
   },
 
-  async saveRomaneio(deliveryId, { observacoes, itens }) {
+  async saveRomaneio(deliveryId, { observacoes, itens } = {}) {
+    const safeItens = Array.isArray(itens) ? itens : [];
     // 1. Calculate totals
-    const peso_total_kg = itens.reduce((sum, item) => sum + (parseFloat(item.peso_total_kg) || 0), 0);
-    const valor_total = itens.reduce((sum, item) => sum + (parseFloat(item.valor_total) || 0), 0);
+    const peso_total_kg = safeItens.reduce((sum, item) => sum + (parseFloat(item?.peso_total_kg) || 0), 0);
+    const valor_total = safeItens.reduce((sum, item) => sum + (parseFloat(item?.valor_total) || 0), 0);
 
     // 2. Check if a romaneio already exists for this delivery
     const existing = await this.getByDeliveryId(deliveryId);
@@ -61,8 +62,8 @@ export const romaneioService = {
     }
 
     // 3. Insert items if any
-    if (itens && itens.length > 0) {
-      const itemsPayload = itens.map(item => {
+    if (safeItens.length > 0) {
+      const itemsPayload = safeItens.map(item => {
         const qtd = parseFloat(item.quantidade) || 1;
         const pesoUnit = parseFloat(item.peso_unitario_kg) || 0;
         const pesoTot = item.peso_total_kg !== undefined && item.peso_total_kg !== null && item.peso_total_kg !== ''

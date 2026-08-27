@@ -17,7 +17,9 @@ export function KanbanHeader({ weekNav }) {
     setSelectedCollection,
     deliveries,
     drivers,
-    showAlert
+    showAlert,
+    addToast,
+    notificationService
   } = useLogistics();
 
   const { formattedWeekRange } = weekNav;
@@ -100,6 +102,26 @@ export function KanbanHeader({ weekNav }) {
             >
               <span className="material-symbols-outlined text-sm">logout</span>
             </button>
+
+            {/* Notification Activation Button on Mobile if needed */}
+            {notificationService.isSupported() && notificationService.getPermission() !== 'granted' && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const p = await notificationService.requestPermission();
+                  if (p === 'granted') {
+                    addToast('Notificações no celular ativadas com sucesso!', 'success');
+                  } else {
+                    showAlert({ title: 'Permissão de Notificação', message: 'Permita as notificações nas configurações do seu navegador para receber alertas na barra do celular.' });
+                  }
+                }}
+                className="h-8 px-2.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] shadow-sm flex items-center gap-1 active:scale-95 animate-bounce"
+                title="Ativar Notificações no Celular"
+              >
+                <span className="material-symbols-outlined text-sm">notifications_active</span>
+                <span>Ativar Alertas</span>
+              </button>
+            )}
 
             {/* Add Button */}
             {!isMotorista && activeTab !== 'dashboard' && activeTab !== 'admin' && (
