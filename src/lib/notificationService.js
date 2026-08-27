@@ -36,7 +36,11 @@ export const notificationService = {
     // 2. Try Service Worker showNotification (Best on Android / Mobile Chrome)
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('SW timeout')), 1000))
+        ]).catch(() => null);
+
         if (registration && registration.showNotification) {
           await registration.showNotification(title, {
             body,
