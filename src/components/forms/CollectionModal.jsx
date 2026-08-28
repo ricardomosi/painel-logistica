@@ -169,11 +169,24 @@ export default function CollectionModal() {
 
     try {
       setSaving(true);
+      const cleanPayload = {
+        ...formData,
+        fornecedor: formData.fornecedor?.trim() || '',
+        endereco: formData.endereco?.trim() || null,
+        responsavel: formData.responsavel?.trim() || null,
+        placa: formData.placa?.trim() || null,
+        telefone: formData.telefone?.trim() || null,
+        motorista_id: formData.motorista_id || null,
+        veiculo_id: formData.veiculo_id || null,
+        data_conclusao: formData.data_conclusao?.trim() || null,
+        hora_conclusao: formData.hora_conclusao?.trim() || null,
+      };
+
       if (isEditing) {
-        await updateCollection(selectedCollection.id, formData);
+        await updateCollection(selectedCollection.id, cleanPayload);
         addToast('Coleta atualizada com sucesso!', 'success');
       } else {
-        await createCollection(formData);
+        await createCollection(cleanPayload);
         addToast('Coleta cadastrada com sucesso!', 'success');
       }
       setCollectionModalOpen(false);

@@ -28,9 +28,13 @@ export const adminService = {
   },
 
   async updateDriver(id, updates) {
+    const payload = { ...updates };
+    if (payload.telefone !== undefined) payload.telefone = payload.telefone?.trim() || null;
+    if (payload.cnh !== undefined) payload.cnh = payload.cnh?.trim() || null;
+
     const { data, error } = await supabase
       .from('motoristas')
-      .update(updates)
+      .update(payload)
       .eq('id', id)
       .select()
       .single();
@@ -65,7 +69,7 @@ export const adminService = {
       .from('veiculos')
       .insert([{
         placa: vehicle.placa.toUpperCase().trim(),
-        modelo: vehicle.modelo || null,
+        modelo: vehicle.modelo?.trim() || null,
         motorista_padrao_id: vehicle.motorista_padrao_id || null,
         ativo: vehicle.ativo !== undefined ? vehicle.ativo : true,
       }])
@@ -79,10 +83,15 @@ export const adminService = {
   },
 
   async updateVehicle(id, updates) {
-    if (updates.placa) updates.placa = updates.placa.toUpperCase().trim();
+    const payload = { ...updates };
+    if (payload.placa) payload.placa = payload.placa.toUpperCase().trim();
+    if (payload.modelo !== undefined) payload.modelo = payload.modelo?.trim() || null;
+    if (payload.motorista_padrao_id !== undefined) payload.motorista_padrao_id = payload.motorista_padrao_id || null;
+    delete payload.motorista_padrao;
+
     const { data, error } = await supabase
       .from('veiculos')
-      .update(updates)
+      .update(payload)
       .eq('id', id)
       .select(`
         *,

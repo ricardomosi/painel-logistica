@@ -638,7 +638,25 @@ export default function DeliveryModal() {
 
       const payload = {
         ...formData,
+        cliente: formData.cliente?.trim() || '',
+        endereco: formData.endereco?.trim() || '',
+        placa: formData.placa?.trim() || null,
+        boleto: formData.boleto?.trim() || null,
+        vendedor: formData.vendedor?.trim() || null,
+        local_carregamento: formData.local_carregamento || 'MATRIZ',
+        cadastrador_entrega: formData.cadastrador_entrega?.trim() || null,
+        telefone: formData.telefone?.trim() || null,
+        como_foi_entrega: formData.como_foi_entrega?.trim() || null,
+        motorista_id: formData.motorista_id || null,
+        veiculo_id: formData.veiculo_id || null,
         valor_entrega: finalValorEntrega,
+        frete: parseFloat(formData.frete) || 0,
+        km_inicial: parseFloat(formData.km_inicial) || 0,
+        km_final: parseFloat(formData.km_final) || 0,
+        data_inicio: formData.data_inicio?.trim() || null,
+        hora_inicio: formData.hora_inicio?.trim() || null,
+        data_conclusao: formData.data_conclusao?.trim() || null,
+        hora_conclusao: formData.hora_conclusao?.trim() || null,
       };
       delete payload.km_total; // Generated column in Postgres
 
