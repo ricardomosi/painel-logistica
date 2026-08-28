@@ -100,10 +100,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('drivers')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     adminActiveSubTab === 'drivers'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-white/40'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <UserCheck className="w-4 h-4" />
@@ -113,10 +113,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('vehicles')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     adminActiveSubTab === 'vehicles'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-white/40'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <Truck className="w-4 h-4" />
@@ -126,10 +126,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('materials')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     adminActiveSubTab === 'materials'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-white/40'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <Layers className="w-4 h-4" />
@@ -139,23 +139,23 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('sellers')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     adminActiveSubTab === 'sellers'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-white/40'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <UserCheck className="w-4 h-4 text-orange-500" />
+                  <UserCheck className="w-4 h-4 text-orange-400" />
                   <span>Equipe Comercial (Vendedores)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('users')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     adminActiveSubTab === 'users'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-white/40'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <ShieldCheck className="w-4 h-4" />

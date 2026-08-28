@@ -96,7 +96,7 @@ export default function UsersManagement() {
   };
 
   return (
-    <div className="p-6 rounded-3xl glass-panel border border-white/10 shadow-xl flex flex-col gap-6">
+    <div className="p-6 rounded-2xl bg-slate-900/90 border border-white/10 text-white shadow-xl flex flex-col gap-6 font-inter">
       
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -202,7 +202,7 @@ export default function UsersManagement() {
       {/* Users Table */}
       <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/40">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider text-[10px] font-semibold border-b border-white/10">
+          <thead className="bg-slate-900 text-slate-300 uppercase tracking-wider text-[10px] font-semibold border-b border-white/10">
             <tr>
               <th className="p-3">Nome</th>
               <th className="p-3">E-mail</th>

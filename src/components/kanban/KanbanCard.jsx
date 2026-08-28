@@ -5,26 +5,22 @@ import { useLogistics } from '../../contexts/LogisticsContext';
 const TIPO_CONFIG = {
   'Envio': { 
     colorText: 'text-emerald-700 font-bold', 
-    colorBgDesktop: 'bg-emerald-100 border-emerald-300 text-emerald-800 font-bold', 
-    borderLeftClass: 'border-l-emerald-500', 
+    colorBgDesktop: 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold', 
     icon: 'send' 
   },
   'Coleta': { 
     colorText: 'text-blue-700 font-bold', 
-    colorBgDesktop: 'bg-blue-100 border-blue-300 text-blue-800 font-bold', 
-    borderLeftClass: 'border-l-blue-500', 
+    colorBgDesktop: 'bg-blue-50 border-blue-200 text-blue-800 font-semibold', 
     icon: 'call_received' 
   },
   'Visita': { 
     colorText: 'text-purple-700 font-bold', 
-    colorBgDesktop: 'bg-purple-100 border-purple-300 text-purple-800 font-bold', 
-    borderLeftClass: 'border-l-purple-500', 
+    colorBgDesktop: 'bg-purple-50 border-purple-200 text-purple-800 font-semibold', 
     icon: 'group' 
   },
   'Cotação': { 
     colorText: 'text-amber-700 font-bold', 
-    colorBgDesktop: 'bg-amber-100 border-amber-300 text-amber-900 font-bold', 
-    borderLeftClass: 'border-l-amber-500', 
+    colorBgDesktop: 'bg-amber-50 border-amber-200 text-amber-900 font-semibold', 
     icon: 'paid' 
   },
 };
@@ -84,39 +80,33 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     }
   }
 
-  // Styles based on status
-  let borderLeftClass = isColeta ? 'border-l-emerald-500' : 'border-l-blue-500';
-  let baseBg = 'bg-white shadow-xs hover:shadow-md';
-  let borderColor = 'border-slate-200';
+  // Styles based on status (Clean, Anti-Slop, No lateral colored thick border)
+  let baseBg = 'bg-white hover:bg-slate-50/90 shadow-2xs hover:shadow-xs';
+  let borderColor = 'border-slate-200 hover:border-slate-300';
   let titleClass = 'text-slate-900';
   let opacityClass = 'opacity-100';
 
   if (isCompleted) {
-    borderLeftClass = 'border-l-green-600';
-    baseBg = 'bg-green-50/70';
-    borderColor = 'border-green-300';
-    titleClass = 'text-green-950 font-bold';
+    baseBg = 'bg-emerald-50/40 hover:bg-emerald-50/60';
+    borderColor = 'border-emerald-200';
+    titleClass = 'text-emerald-950 font-bold';
     opacityClass = 'opacity-95';
   } else if (isUrgent) {
-    borderLeftClass = 'border-l-red-600';
-    baseBg = 'bg-gradient-to-br from-red-50/90 via-white to-amber-50/40 shadow-sm ring-1 ring-red-400/40';
-    borderColor = 'border-red-300';
-    titleClass = 'text-red-950 font-black';
+    baseBg = 'bg-white hover:bg-rose-50/20 shadow-2xs ring-1 ring-rose-300/80';
+    borderColor = 'border-rose-300';
+    titleClass = 'text-slate-900 font-bold';
   } else if (hasOccurrence) {
-    borderLeftClass = 'border-l-red-600';
-    baseBg = 'bg-red-50/70';
-    borderColor = 'border-red-300';
-    titleClass = 'text-red-950 font-bold';
-  } else if (isColeta && TIPO_CONFIG[item.tipo]) {
-    borderLeftClass = TIPO_CONFIG[item.tipo].borderLeftClass;
+    baseBg = 'bg-amber-50/30 hover:bg-amber-50/50 shadow-2xs ring-1 ring-amber-300/70';
+    borderColor = 'border-amber-300';
+    titleClass = 'text-slate-900 font-bold';
   }
 
   // Concluded footer
   let conclusaoText = null;
   if (isCompleted && item.data_conclusao) {
-    const colorC = (!isColeta && hasOccurrence) ? 'text-red-800 border-red-200 bg-red-100/50' : 'text-green-800 border-green-200 bg-green-100/50';
+    const colorC = (!isColeta && hasOccurrence) ? 'text-amber-800 border-amber-200 bg-amber-50' : 'text-emerald-800 border-emerald-200 bg-emerald-50';
     conclusaoText = (
-      <div className={`mt-1.5 p-1 rounded-md text-[9px] lg:text-[8px] font-bold flex items-center gap-1 border ${colorC}`}>
+      <div className={`mt-1.5 p-1 rounded text-[9px] font-semibold flex items-center gap-1 border ${colorC}`}>
         <span className="material-symbols-outlined text-[12px]">done_all</span>
         <span>Concluído: {item.data_conclusao} às {item.hora_conclusao || '--:--'}</span>
       </div>
@@ -125,9 +115,8 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
 
   // Config for Coleta
   const config = TIPO_CONFIG[item.tipo] || { 
-    colorText: 'text-slate-800 font-bold', 
-    colorBgDesktop: 'bg-slate-100 border-slate-300 text-slate-800 font-bold', 
-    borderLeftClass: 'border-l-slate-400', 
+    colorText: 'text-slate-800 font-semibold', 
+    colorBgDesktop: 'bg-slate-50 border-slate-200 text-slate-800 font-semibold', 
     icon: 'check_box_outline_blank' 
   };
 
@@ -136,7 +125,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
       draggable={!isMotorista}
       onDragStart={(e) => onDragStart && onDragStart(e, item.id)}
       onClick={handleClick}
-      className={`glass-card ${baseBg} w-full relative group hover:shadow-lg transition-all cursor-pointer rounded-2xl p-3 lg:p-2 border border-l-[5px] ${borderLeftClass} ${borderColor} active:scale-[0.98] ${opacityClass}`}
+      className={`w-full relative group transition-all cursor-pointer rounded-xl p-2.5 lg:p-2 border ${borderColor} ${baseBg} active:scale-[0.99] ${opacityClass} font-inter`}
     >
       <div className="flex w-full h-full">
         <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full">
@@ -152,21 +141,20 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     <span className={`text-[11px] font-bold ${config.colorText} uppercase tracking-wider`}>{item.tipo}</span>
                   </div>
                   {/* Desktop Type */}
-                  <span className={`hidden lg:flex text-[9px] font-bold px-1.5 py-0.5 rounded-md border items-center gap-1 shrink-0 ${config.colorBgDesktop}`}>
+                  <span className={`hidden lg:flex text-[9px] font-semibold px-1.5 py-0.5 rounded border items-center gap-1 shrink-0 ${config.colorBgDesktop}`}>
                     <span className="material-symbols-outlined text-[12px]">{config.icon}</span> 
                     <span>{item.tipo}</span>
                   </span>
 
                   {isUrgent && !isCompleted && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black uppercase tracking-wider animate-pulse shadow-2xs">
-                      <span className="material-symbols-outlined text-[11px]">local_fire_department</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 text-[9px] font-bold uppercase tracking-wider shrink-0">
                       <span>URGENTE</span>
                     </span>
                   )}
 
                   {isCompleted && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-green-100 border border-green-300 text-green-800 text-[9px] font-black shrink-0 shadow-2xs">
-                      <span className="material-symbols-outlined text-[11px] text-green-700 font-bold">check_circle</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[9px] font-bold shrink-0">
+                      <span className="material-symbols-outlined text-[11px] text-emerald-700 font-bold">check_circle</span>
                       <span>Concluído</span>
                     </span>
                   )}
@@ -177,25 +165,29 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     <button
                       type="button"
                       onClick={handleToggleUrgent}
-                      title={isUrgent ? 'Remover urgência' : 'Marcar como Prioridade / Urgente'}
-                      className={`p-1 rounded-md transition-all cursor-pointer ${
+                      title={isUrgent ? 'Remover urgência' : 'Marcar como Urgente'}
+                      className={`p-1 rounded transition-colors cursor-pointer ${
                         isUrgent 
-                          ? 'text-red-600 hover:text-red-700 bg-red-100/90 hover:bg-red-200' 
-                          : 'text-slate-400 hover:text-red-500 hover:bg-slate-100'
+                          ? 'text-rose-600 hover:bg-rose-50' 
+                          : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+                      <span className="material-symbols-outlined text-[13px]">
+                        {isUrgent ? 'local_fire_department' : 'outlined_flag'}
+                      </span>
                     </button>
                   )}
-                  <div className="flex flex-col items-end text-right">
-                    <span className="text-[10px] lg:text-[9px] font-bold text-slate-700 leading-tight">{dataExibicao}</span>
-                    <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500 leading-tight">{horaExibicao}</span>
+                  <div className="flex items-center text-right">
+                    <span className="text-[10px] lg:text-[9px] font-semibold text-slate-500">{dataExibicao}</span>
+                    {horaExibicao && (
+                      <span className="text-[9px] lg:text-[8px] text-slate-400 ml-1 font-mono">{horaExibicao}</span>
+                    )}
                   </div>
                 </div>
               </div>
 
               <h3 
-                className={`text-sm lg:text-xs font-extrabold leading-tight break-words whitespace-normal w-full min-w-0 ${titleClass} mb-1.5`}
+                className={`text-xs font-bold leading-tight break-words whitespace-normal w-full min-w-0 ${titleClass} mb-1`}
                 style={{ wordBreak: 'break-word' }}
                 title={item.fornecedor}
               >
@@ -206,9 +198,9 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 {/* Endereço + Traçar Rota */}
                 {item.endereco && (
                   <div className="flex items-start gap-1 w-full min-w-0">
-                    <span className="material-symbols-outlined text-[13px] text-slate-500 mt-0.5 shrink-0">location_on</span> 
+                    <span className="material-symbols-outlined text-[13px] text-slate-400 mt-0.5 shrink-0">location_on</span> 
                     <div className="flex flex-col w-full min-w-0">
-                      <span className="break-words whitespace-normal leading-tight min-w-0 w-full text-slate-800 font-semibold" style={{ wordBreak: 'break-word' }}>
+                      <span className="break-words whitespace-normal leading-tight min-w-0 w-full text-slate-700 font-medium" style={{ wordBreak: 'break-word' }}>
                         {item.endereco}
                       </span>
                       <a 
@@ -216,7 +208,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()} 
-                        className="text-emerald-700 font-bold hover:underline inline-flex items-center gap-0.5 mt-0.5 w-fit"
+                        className="text-blue-600 font-semibold hover:underline inline-flex items-center gap-0.5 mt-0.5 w-fit text-[10px]"
                       >
                         <span>Traçar rota</span>
                         <span className="material-symbols-outlined text-[11px]">directions</span>
@@ -226,14 +218,14 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 )}
                 {item.telefone && (
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="material-symbols-outlined text-[13px] text-slate-500">call</span>
-                    <span className="font-semibold truncate text-slate-800">{item.telefone}</span>
+                    <span className="material-symbols-outlined text-[13px] text-slate-400">call</span>
+                    <span className="font-medium truncate text-slate-700">{item.telefone}</span>
                   </div>
                 )}
                 {item.placa && (
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="material-symbols-outlined text-[13px] text-slate-500">directions_car</span>
-                    <span className="font-bold truncate text-slate-800">{item.placa}</span>
+                    <span className="material-symbols-outlined text-[13px] text-slate-400">directions_car</span>
+                    <span className="font-semibold truncate text-slate-800">{item.placa}</span>
                   </div>
                 )}
               </div>
@@ -241,9 +233,9 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
               {conclusaoText}
 
               {item.responsavel && (
-                <div className="mt-2 pt-1.5 border-t border-slate-100 flex justify-end w-full">
-                  <span className="text-[9px] lg:text-[8px] font-extrabold text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[11px] text-slate-500">person</span>
+                <div className="mt-1.5 pt-1 border-t border-slate-100 flex justify-end w-full">
+                  <span className="text-[9px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded uppercase tracking-wide flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[11px] text-slate-400">person</span>
                     {item.responsavel}
                   </span>
                 </div>
@@ -254,7 +246,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
             <div className="w-full min-w-0">
               <div className="flex justify-between items-center mb-1.5 w-full gap-2">
                 <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                  <span className="hidden lg:flex text-[9px] font-bold px-1.5 py-0.5 rounded-md border items-center gap-1 shrink-0 bg-blue-100 border-blue-300 text-blue-900">
+                  <span className="hidden lg:flex text-[9px] font-semibold px-1.5 py-0.5 rounded border items-center gap-1 shrink-0 bg-blue-50 border-blue-200 text-blue-800">
                     <span className="material-symbols-outlined text-[12px]">local_shipping</span> 
                     <span>Entrega</span>
                   </span>
@@ -264,15 +256,14 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   </div>
 
                   {isUrgent && !isCompleted && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black uppercase tracking-wider animate-pulse shadow-2xs">
-                      <span className="material-symbols-outlined text-[11px]">local_fire_department</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 text-[9px] font-bold uppercase tracking-wider shrink-0">
                       <span>URGENTE</span>
                     </span>
                   )}
 
                   {isCompleted && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-green-100 border border-green-300 text-green-800 text-[9px] font-black shrink-0 shadow-2xs">
-                      <span className="material-symbols-outlined text-[11px] text-green-700 font-bold">check_circle</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[9px] font-bold shrink-0">
+                      <span className="material-symbols-outlined text-[11px] text-emerald-700 font-bold">check_circle</span>
                       <span>Concluído</span>
                     </span>
                   )}
@@ -283,25 +274,29 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     <button
                       type="button"
                       onClick={handleToggleUrgent}
-                      title={isUrgent ? 'Remover urgência' : 'Marcar como Prioridade / Urgente'}
-                      className={`p-1 rounded-md transition-all cursor-pointer ${
+                      title={isUrgent ? 'Remover urgência' : 'Marcar como Urgente'}
+                      className={`p-1 rounded transition-colors cursor-pointer ${
                         isUrgent 
-                          ? 'text-red-600 hover:text-red-700 bg-red-100/90 hover:bg-red-200' 
-                          : 'text-slate-400 hover:text-red-500 hover:bg-slate-100'
+                          ? 'text-rose-600 hover:bg-rose-50' 
+                          : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+                      <span className="material-symbols-outlined text-[13px]">
+                        {isUrgent ? 'local_fire_department' : 'outlined_flag'}
+                      </span>
                     </button>
                   )}
-                  <div className="flex flex-col items-end text-right">
-                    <span className="text-[10px] lg:text-[9px] font-bold text-slate-700 leading-tight">{dataExibicao}</span>
-                    <span className="text-[9px] lg:text-[8px] font-semibold text-slate-500 leading-tight">{horaExibicao}</span>
+                  <div className="flex items-center text-right">
+                    <span className="text-[10px] lg:text-[9px] font-semibold text-slate-500">{dataExibicao}</span>
+                    {horaExibicao && (
+                      <span className="text-[9px] lg:text-[8px] text-slate-400 ml-1 font-mono">{horaExibicao}</span>
+                    )}
                   </div>
                 </div>
               </div>
               
               <h3 
-                className={`text-sm lg:text-xs font-extrabold leading-tight break-words whitespace-normal w-full min-w-0 ${titleClass} mb-1.5`}
+                className={`text-xs font-bold leading-tight break-words whitespace-normal w-full min-w-0 ${titleClass} mb-1`}
                 style={{ wordBreak: 'break-word' }}
                 title={item.cliente}
               >
@@ -312,9 +307,9 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 {/* Endereço + Traçar Rota */}
                 {item.endereco && (
                   <div className="flex items-start gap-1 w-full min-w-0">
-                    <span className="material-symbols-outlined text-[13px] text-slate-500 mt-0.5 shrink-0">location_on</span> 
+                    <span className="material-symbols-outlined text-[13px] text-slate-400 mt-0.5 shrink-0">location_on</span> 
                     <div className="flex flex-col w-full min-w-0">
-                      <span className="break-words whitespace-normal leading-tight min-w-0 w-full text-slate-800 font-semibold" style={{ wordBreak: 'break-word' }}>
+                      <span className="break-words whitespace-normal leading-tight min-w-0 w-full text-slate-700 font-medium" style={{ wordBreak: 'break-word' }}>
                         {item.endereco}
                       </span>
                       <a 
@@ -322,10 +317,10 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()} 
-                        className="mt-1 self-start flex items-center gap-0.5 text-[9px] font-extrabold text-blue-700 bg-blue-50 border border-blue-300 px-1.5 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                        className="text-blue-600 font-semibold hover:underline inline-flex items-center gap-0.5 mt-0.5 w-fit text-[10px]"
                       >
+                        <span>Traçar rota</span>
                         <span className="material-symbols-outlined text-[11px]">directions</span>
-                        Traçar Rota
                       </a>
                     </div>
                   </div>
@@ -334,13 +329,13 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 {/* Placa e Frete */}
                 <div className="flex flex-wrap items-center justify-between gap-1 w-full min-w-0 mt-0.5">
                   <div className="flex items-center gap-1 min-w-0">
-                    <span className="material-symbols-outlined text-[13px] text-slate-500 shrink-0">directions_car</span>
-                    <span className="font-bold break-words whitespace-normal min-w-0 text-slate-800" style={{ wordBreak: 'break-word' }}>
+                    <span className="material-symbols-outlined text-[13px] text-slate-400 shrink-0">directions_car</span>
+                    <span className="font-semibold break-words whitespace-normal min-w-0 text-slate-800" style={{ wordBreak: 'break-word' }}>
                       {item.placa || 'Sem placa'}
                     </span>
                   </div>
                   {item.frete && !isMotorista ? (
-                    <div className="font-extrabold text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                    <div className="font-bold text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded flex items-center gap-0.5">
                       <span className="material-symbols-outlined text-[10px] shrink-0">payments</span>
                       <span>Frete: R$ {item.frete}</span>
                     </div>
@@ -351,19 +346,19 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 <div className="flex flex-wrap items-center justify-between gap-1 w-full min-w-0">
                   {item.boleto && (
                     <div className="flex items-center gap-1 min-w-0">
-                      <span className="material-symbols-outlined text-[13px] text-slate-500 shrink-0">receipt_long</span>
-                      <span className="font-bold text-slate-700 font-mono" style={{ wordBreak: 'break-word' }}>
+                      <span className="material-symbols-outlined text-[13px] text-slate-400 shrink-0">receipt_long</span>
+                      <span className="font-semibold text-slate-600 font-mono" style={{ wordBreak: 'break-word' }}>
                         {item.boleto}
                       </span>
                     </div>
                   )}
                   {item.telefone && (
                     <div className="flex items-center gap-1 min-w-0">
-                      <span className="material-symbols-outlined text-[13px] text-slate-500 shrink-0">call</span>
+                      <span className="material-symbols-outlined text-[13px] text-slate-400 shrink-0">call</span>
                       <a 
                         href={`tel:${item.telefone.replace(/\D/g, '')}`} 
                         onClick={(e) => e.stopPropagation()}
-                        className="font-semibold text-slate-700 hover:text-blue-600 transition-colors" 
+                        className="font-medium text-slate-600 hover:text-blue-600 transition-colors" 
                         style={{ wordBreak: 'break-word' }}
                       >
                         {item.telefone}
@@ -373,11 +368,11 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 </div>
                 
                 {/* Footer Vendedor & Local Carregamento */}
-                <div className="flex items-center justify-between mt-1 pt-1 border-t border-slate-200 w-full min-w-0 gap-2">
-                  <span className={`font-extrabold text-[10px] ${item.vendedor && item.vendedor.includes('Filial') ? 'text-orange-700' : 'text-blue-700'} break-words whitespace-normal min-w-0`} style={{ wordBreak: 'break-word' }}>
+                <div className="flex items-center justify-between mt-1 pt-1 border-t border-slate-100 w-full min-w-0 gap-2">
+                  <span className="font-semibold text-[10px] text-slate-700 break-words whitespace-normal min-w-0" style={{ wordBreak: 'break-word' }}>
                     {item.vendedor || 'Vendedor N/D'}
                   </span>
-                  <span className="font-extrabold bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded text-[9px] shrink-0 whitespace-nowrap border border-slate-300">
+                  <span className="font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[9px] shrink-0 whitespace-nowrap border border-slate-200">
                     {item.local_carregamento || 'MATRIZ'}
                   </span>
                 </div>
@@ -386,9 +381,9 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
               {conclusaoText}
 
               {item.cadastrador_entrega && (
-                <div className="mt-2 pt-1.5 border-t border-slate-100 flex justify-end w-full">
-                  <span className="text-[9px] font-extrabold text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[10px] text-slate-500">person</span>
+                <div className="mt-1.5 pt-1 border-t border-slate-100 flex justify-end w-full">
+                  <span className="text-[9px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded uppercase tracking-wide flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[10px] text-slate-400">person</span>
                     {item.cadastrador_entrega}
                   </span>
                 </div>
@@ -401,3 +396,4 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     </div>
   );
 }
+

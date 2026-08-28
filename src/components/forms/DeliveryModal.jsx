@@ -985,8 +985,8 @@ export default function DeliveryModal() {
                           onChange={(e) => setFormData(prev => ({ ...prev, local_carregamento: e.target.value }))}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-bold bg-white cursor-pointer"
                         >
-                          <option value="MATRIZ">MATRIZ (Natal/RN)</option>
-                          <option value="FILIAL">FILIAL (Parnamirim/RN)</option>
+                          <option value="MATRIZ">MATRIZ (Mossoró/RN)</option>
+                          <option value="FILIAL">FILIAL (Mossoró/RN)</option>
                         </select>
                       )}
                     </div>

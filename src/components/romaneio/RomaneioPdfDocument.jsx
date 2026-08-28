@@ -10,7 +10,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
 
   const isMatriz = (delivery?.local_carregamento || 'MATRIZ') === 'MATRIZ';
   const cnpj = isMatriz ? '09.528.239/0001-08' : '09.528.239/0002-80';
-  const unidadeTexto = isMatriz ? 'Matriz - Natal/RN' : 'Filial - Parnamirim/RN';
+  const unidadeTexto = isMatriz ? 'Matriz - Mossoró/RN' : 'Filial - Mossoró/RN';
   const romaneioNum = romaneio?.numero_romaneio || delivery?.id || 1;
   const numFormatado = String(romaneioNum).padStart(7, '0');
   
@@ -38,7 +38,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   doc.setTextColor(60, 60, 60);
   doc.text('logistica@jpatricio.com.br', startX, currentY + 9);
   doc.text(`CNPJ: ${cnpj} (${unidadeTexto})`, startX, currentY + 13);
-  doc.text('Rua Dr. Mário Negócio, Alecrim - Natal / RN', startX, currentY + 17);
+  doc.text('Mossoró / RN', startX, currentY + 17);
   doc.text('Fone: (84) 3205-0000', startX, currentY + 21);
 
   // Right: Título, Número e Data de Geração

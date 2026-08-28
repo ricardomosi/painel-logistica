@@ -57,8 +57,8 @@ export default function PushNotificationBanner() {
         onClick={handleOpenItem}
         className={`pointer-events-auto w-full max-w-lg rounded-2xl bg-gradient-to-r ${bannerGradient} shadow-2xl p-4 border border-white/20 backdrop-blur-xl flex items-start gap-3.5 cursor-pointer transform active:scale-[0.99] transition-all hover:shadow-cyan-500/20`}
       >
-        {/* Animated Icon Avatar */}
-        <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-inner ring-2 ring-white/30 animate-pulse">
+        {/* Icon Avatar */}
+        <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-inner ring-1 ring-white/30">
           <IconComponent className="w-5 h-5 text-white" />
         </div>
 
