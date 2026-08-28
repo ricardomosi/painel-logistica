@@ -697,27 +697,27 @@ export default function DeliveryModal() {
 
   return (
     <>
-      <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-50 transition-opacity p-2 sm:p-4 md:p-6 font-inter animate-in fade-in duration-200">
+      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-50 transition-opacity p-2 sm:p-4 md:p-6 font-inter animate-in fade-in duration-200">
         
         {/* Modal Container: Expanded width to fully leverage wide screens */}
         <div 
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-[96vw] xl:max-w-[1400px] 2xl:max-w-[1550px] max-h-[94vh] flex flex-col overflow-hidden border border-slate-100/80"
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-[96vw] xl:max-w-[1400px] 2xl:max-w-[1550px] max-h-[94vh] flex flex-col overflow-hidden border border-slate-200"
           onClick={(e) => e.stopPropagation()}
         >
           
           {/* Header */}
-          <div className="flex justify-between items-center px-6 sm:px-8 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-blue-50/40 shrink-0">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25">
-                <Truck className="w-6 h-6" />
+          <div className="flex justify-between items-center px-5 sm:px-6 py-3.5 border-b border-slate-200 bg-slate-50/70 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                <Truck className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h3 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                     {isEditing ? `Entrega #${String(selectedDelivery.id).padStart(4, '0')} - ${formData.cliente}` : 'Nova Entrega com Romaneio'}
                   </h3>
                   {isConcluido && (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-300 flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-green-100 text-green-800 border border-green-200 flex items-center gap-1">
                       <Check className="w-3 h-3" /> Concluída
                     </span>
                   )}
@@ -730,27 +730,27 @@ export default function DeliveryModal() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               {!isMotorista && (
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, urgente: !prev.urgente }))}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer border ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
                     formData.urgente 
-                      ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white border-red-500 shadow-md shadow-red-500/25 animate-pulse' 
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-red-300 hover:text-red-600'
+                      ? 'bg-red-600 text-white border-red-600 shadow-2xs' 
+                      : 'bg-white text-slate-600 border-slate-300 hover:border-red-300 hover:text-red-600'
                   }`}
                   title="Marcar entrega como urgente para ficar sempre no topo"
                 >
                   <Flame className={`w-3.5 h-3.5 ${formData.urgente ? 'fill-white' : 'text-red-500'}`} />
-                  <span>{formData.urgente ? 'URGENTE / PRIORIDADE' : 'Marcar Urgente'}</span>
+                  <span>{formData.urgente ? 'URGENTE' : 'Marcar Urgente'}</span>
                 </button>
               )}
 
               <button 
                 type="button" 
                 onClick={() => setDeliveryModalOpen(false)} 
-                className="p-2.5 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
                 title="Fechar janela"
               >
                 <X className="w-5 h-5" />
@@ -759,18 +759,18 @@ export default function DeliveryModal() {
           </div>
 
           {/* Subtabs Selector Bar */}
-          <div className="flex items-center justify-between gap-2 px-6 sm:px-8 py-2.5 bg-slate-50/90 border-b border-slate-200/70 shrink-0 overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between gap-2 px-5 sm:px-6 py-2 bg-white border-b border-slate-200 shrink-0 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveSubTab('geral')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   activeSubTab === 'geral'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                <Truck className="w-4 h-4 shrink-0" />
+                <Truck className="w-3.5 h-3.5 shrink-0" />
                 <span>1. Dados da Entrega</span>
               </button>
 
@@ -778,17 +778,17 @@ export default function DeliveryModal() {
                 <button
                   type="button"
                   onClick={() => setActiveSubTab('romaneio')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all relative cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all relative cursor-pointer ${
                     activeSubTab === 'romaneio'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                      : 'bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-200'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >
-                  <FileSpreadsheet className="w-4 h-4 shrink-0" />
+                  <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
                   <span>2. Romaneio & Carga</span>
                   {romaneioItens.length > 0 && (
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      activeSubTab === 'romaneio' ? 'bg-white text-indigo-700' : 'bg-indigo-600 text-white'
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      activeSubTab === 'romaneio' ? 'bg-white text-blue-700' : 'bg-blue-600 text-white'
                     }`}>
                       {romaneioItens.length}
                     </span>
@@ -799,61 +799,61 @@ export default function DeliveryModal() {
               <button
                 type="button"
                 onClick={() => setActiveSubTab('rota')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   activeSubTab === 'rota'
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                <Gauge className="w-4 h-4 shrink-0" />
+                <Gauge className="w-3.5 h-3.5 shrink-0" />
                 <span>{isMotorista ? '2. Rota & Execução' : '3. Rota & Execução'}</span>
               </button>
             </div>
 
             {/* Print & Download Romaneio Buttons inside Subtab Bar */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={handleDownloadRomaneio}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
                 title="Baixar Romaneio de Carga em PDF"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3.5 h-3.5 text-slate-600" />
                 <span>Baixar Romaneio</span>
               </button>
 
               <button
                 type="button"
                 onClick={handlePrintRomaneio}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
+                className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
                 title="Imprimir Romaneio de Carga"
               >
-                <Printer className="w-4 h-4" />
+                <Printer className="w-3.5 h-3.5 text-slate-600" />
                 <span>Imprimir</span>
               </button>
             </div>
           </div>
 
           {/* Main Form Content Area */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 custom-scrollbar">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 space-y-4 custom-scrollbar">
             
             {/* ======================================================== */}
             {/* TAB 1: DADOS GERAIS DA ENTREGA (3 Organized Cards)       */}
             {/* ======================================================== */}
             {activeSubTab === 'geral' && (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   
                   {/* Card 1: Destinatário & Localização */}
-                  <div className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
-                    <div className="flex items-center gap-2 text-blue-900 border-b border-slate-200/80 pb-3">
+                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <div className="flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2.5">
                       <MapPin className="w-4 h-4 text-blue-600" />
                       <h4 className="text-xs font-bold uppercase tracking-wider">Destinatário & Localização</h4>
                     </div>
 
                     {/* Cliente */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Cliente / Destinatário *
                       </label>
                       <input 
@@ -863,20 +863,20 @@ export default function DeliveryModal() {
                         value={formData.cliente}
                         onChange={(e) => setFormData(prev => ({ ...prev, cliente: e.target.value }))}
                         placeholder="Nome do cliente ou empresa destinatária" 
-                        className={`w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
+                        className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
                       />
                     </div>
 
                     {/* Telefone */}
                     <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label className="block text-xs font-bold text-slate-700">
+                        <label className="block text-xs font-semibold text-slate-700">
                           Telefone / Contato
                         </label>
                         {formData.telefone && (
                           <a 
                             href={`tel:${formData.telefone.replace(/\D/g, '')}`}
-                            className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                            className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
                           >
                             <Phone className="w-3 h-3" />
                             Ligar
@@ -889,14 +889,14 @@ export default function DeliveryModal() {
                         value={formData.telefone}
                         onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
                         placeholder="(00) 00000-0000" 
-                        className={`w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
+                        className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
                       />
                     </div>
 
                     {/* Endereço */}
                     <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label className="block text-xs font-bold text-slate-700">
+                        <label className="block text-xs font-semibold text-slate-700">
                           Endereço de Entrega
                         </label>
                         <div className="flex items-center gap-2">
@@ -905,17 +905,17 @@ export default function DeliveryModal() {
                               href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(formData.endereco)}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-[11px] font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-0.5"
+                              className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-0.5"
                             >
                               <ExternalLink className="w-3 h-3" />
-                              Traçar Rota
+                              Rota
                             </a>
                           )}
                           {!isMotorista && (
                             <button 
                               type="button" 
                               onClick={() => setMapPickerOpen(true)}
-                              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
+                              className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
                             >
                               <MapPin className="w-3 h-3" />
                               Mapa
@@ -929,21 +929,21 @@ export default function DeliveryModal() {
                         value={formData.endereco}
                         onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
                         placeholder="Rua, Número, Bairro, Cidade - UF" 
-                        className={`w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs ${isMotorista ? 'bg-slate-100 text-slate-800 font-medium' : 'bg-white'}`}
+                        className={`w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs ${isMotorista ? 'bg-slate-100 text-slate-800 font-medium' : 'bg-white'}`}
                       />
                     </div>
                   </div>
 
                   {/* Card 2: Logística & Transporte */}
-                  <div className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
-                    <div className="flex items-center gap-2 text-indigo-900 border-b border-slate-200/80 pb-3">
-                      <Truck className="w-4 h-4 text-indigo-600" />
+                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <div className="flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2.5">
+                      <Truck className="w-4 h-4 text-blue-600" />
                       <h4 className="text-xs font-bold uppercase tracking-wider">Logística & Transporte</h4>
                     </div>
 
                     {/* Placa / Motorista */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Placa do Veículo / Motorista
                       </label>
                       {isMotorista ? (
@@ -951,13 +951,13 @@ export default function DeliveryModal() {
                           type="text"
                           disabled
                           value={formData.placa || 'Sem veículo definido'}
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-800 text-xs font-semibold"
                         />
                       ) : (
                         <select 
                           value={formData.placa}
                           onChange={(e) => handlePlacaChange(e.target.value)}
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs font-semibold bg-white cursor-pointer"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o veículo...</option>
                           {PLACAS_OPTIONS.map(p => (
@@ -969,7 +969,7 @@ export default function DeliveryModal() {
 
                     {/* Local de Saída */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Local de Carregamento
                       </label>
                       {isMotorista ? (
@@ -977,13 +977,13 @@ export default function DeliveryModal() {
                           type="text"
                           disabled
                           value={formData.local_carregamento || 'MATRIZ'}
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-800 text-xs font-bold"
                         />
                       ) : (
                         <select 
                           value={formData.local_carregamento}
                           onChange={(e) => setFormData(prev => ({ ...prev, local_carregamento: e.target.value }))}
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs font-bold bg-white cursor-pointer"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-bold bg-white cursor-pointer"
                         >
                           <option value="MATRIZ">MATRIZ (Natal/RN)</option>
                           <option value="FILIAL">FILIAL (Parnamirim/RN)</option>
@@ -994,13 +994,13 @@ export default function DeliveryModal() {
                     {/* Quem Cadastrou */}
                     {!isMotorista && (
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
                           Quem Cadastrou (Gestor)
                         </label>
                         <select 
                           value={formData.cadastrador_entrega}
                           onChange={(e) => setFormData(prev => ({ ...prev, cadastrador_entrega: e.target.value }))}
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs font-semibold bg-white cursor-pointer"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o responsável...</option>
                           {CADASTRADORES_ENTREGA.map(c => (
@@ -1012,15 +1012,15 @@ export default function DeliveryModal() {
                   </div>
 
                   {/* Card 3: Faturamento & Frete */}
-                  <div className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
-                    <div className="flex items-center gap-2 text-emerald-900 border-b border-slate-200/80 pb-3">
-                      <Receipt className="w-4 h-4 text-emerald-600" />
+                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <div className="flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2.5">
+                      <Receipt className="w-4 h-4 text-blue-600" />
                       <h4 className="text-xs font-bold uppercase tracking-wider">Faturamento & Vendas</h4>
                     </div>
 
                     {/* Boleto / NF */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Número do Boleto / NF / Pedido
                       </label>
                       <input 
@@ -1029,13 +1029,13 @@ export default function DeliveryModal() {
                         value={formData.boleto}
                         onChange={(e) => setFormData(prev => ({ ...prev, boleto: e.target.value }))}
                         placeholder="Ex: BOL-12345 / NF-890" 
-                        className={`w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-mono ${isMotorista ? 'bg-slate-100 text-slate-800 font-bold' : 'bg-white'}`}
+                        className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-mono ${isMotorista ? 'bg-slate-100 text-slate-800 font-bold' : 'bg-white'}`}
                       />
                     </div>
 
                     {/* Vendedor */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Vendedor Responsável
                       </label>
                       {isMotorista ? (
@@ -1043,13 +1043,13 @@ export default function DeliveryModal() {
                           type="text"
                           disabled
                           value={formData.vendedor || 'Vendedor N/D'}
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-800 text-xs font-bold"
                         />
                       ) : (
                         <select 
                           value={formData.vendedor}
                           onChange={(e) => setFormData(prev => ({ ...prev, vendedor: e.target.value }))}
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs font-bold bg-white cursor-pointer"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-bold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o vendedor...</option>
                           {VENDEDORES_OPTIONS.map(v => (
@@ -1064,7 +1064,7 @@ export default function DeliveryModal() {
                     {/* Valor do Frete */}
                     {!isMotorista && (
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
                           Valor do Frete Cobrado (R$)
                         </label>
                         <input 
@@ -1073,7 +1073,7 @@ export default function DeliveryModal() {
                           value={formData.frete}
                           onChange={(e) => setFormData(prev => ({ ...prev, frete: e.target.value }))}
                           placeholder="0,00" 
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-xs font-mono font-bold bg-white" 
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-mono font-bold bg-white" 
                         />
                       </div>
                     )}
@@ -1084,27 +1084,23 @@ export default function DeliveryModal() {
             )}
 
             {/* ======================================================== */}
-            {/* TAB 2: ROMANEIO DE CARGA EMBEDDED                       */}
+            {/* TAB 2: ROMANEIO DE CARGA EMBEDDED (HIGH-DENSITY & CLEAN) */}
             {/* ======================================================== */}
             {activeSubTab === 'romaneio' && (
-              <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-3.5 animate-in fade-in duration-200">
                 
-                {/* 1. Header Banner */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-50/80 via-blue-50/40 to-slate-50 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0">
-                      <FileSpreadsheet className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm sm:text-base font-bold text-indigo-950">
-                        {isMotorista ? 'Conferência de Carga do Romaneio' : 'Romaneio de Carga & Itens Transportados'}
-                      </h4>
-                      <p className="text-xs text-indigo-700/80">
-                        {isMotorista 
-                          ? 'Confira os materiais físicos e quantidades a serem entregues ao destinatário' 
-                          : 'Adicione e ajuste os materiais, quantidades e pesos que compõem a carga desta entrega'}
-                      </p>
-                    </div>
+                {/* 1. Header Toolbar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-1">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+                      <span>{isMotorista ? 'Conferência de Carga do Romaneio' : 'Romaneio de Carga & Materiais'}</span>
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      {isMotorista 
+                        ? 'Confira os materiais físicos e quantidades desta entrega' 
+                        : 'Adicione ou edite os materiais, pesos e valores que compõem esta carga'}
+                    </p>
                   </div>
 
                   {!isMotorista && (
@@ -1115,43 +1111,41 @@ export default function DeliveryModal() {
                         setTargetItemIndexForNewMaterial(null);
                         setQuickMaterialModalOpen(true);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 text-xs font-bold shadow-xs active:scale-95 transition-all self-start sm:self-auto cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold shadow-2xs active:scale-95 transition-all self-start sm:self-auto cursor-pointer"
                     >
-                      <Plus className="w-4 h-4 text-indigo-600" />
+                      <Plus className="w-3.5 h-3.5 text-blue-600" />
                       <span>Cadastrar Material no Catálogo</span>
                     </button>
                   )}
                 </div>
 
-                {/* 2. DEDICATED QUICK-ADD MATERIAL CARD (Espaço amplo para busca e adição) */}
+                {/* 2. DEDICATED QUICK-ADD MATERIAL INLINE BAR */}
                 {!isMotorista && (
-                  <div className="p-5 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
-                      <div className="flex items-center gap-2 text-cyan-400">
-                        <Sparkles className="w-4 h-4" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                          Adicionar Novo Item à Carga
-                        </h4>
-                      </div>
+                  <div className="p-3 sm:p-3.5 rounded-xl bg-slate-50/90 border border-slate-200 shadow-2xs space-y-2.5">
+                    <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                      <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Package className="w-3.5 h-3.5 text-blue-600" />
+                        Adicionar Item ao Romaneio
+                      </span>
                       <span className="text-[11px] text-slate-400">
-                        Busque pelo código SAGI, nome ou digite uma descrição personalizada
+                        Busque pelo código SAGI ou nome do material
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end">
                       
-                      {/* Campo de Busca de Material (Grande e Confortável) */}
-                      <div className="md:col-span-4 lg:col-span-5">
-                        <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
-                          <span>Material / Descrição (Catálogo SAGI) *</span>
+                      {/* Material Search */}
+                      <div className="md:col-span-5">
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                          <span>Material / Descrição *</span>
                           {quickItem.codigo_material && (
-                            <span className="text-[10px] font-mono text-cyan-400 font-bold">
+                            <span className="text-[10px] font-mono text-slate-500 font-bold">
                               Cód: {quickItem.codigo_material}
                             </span>
                           )}
                         </label>
                         <MaterialSearchInput
-                          size="lg"
+                          size="md"
                           value={quickItem.nome_material}
                           selectedMaterialId={quickItem.material_id}
                           codigoMaterial={quickItem.codigo_material}
@@ -1163,13 +1157,13 @@ export default function DeliveryModal() {
                             setQuickMaterialInitialName(initialText);
                             setQuickMaterialModalOpen(true);
                           }}
-                          placeholder="Digite o código (ex: TUB100) ou nome do material..."
+                          placeholder="Digite o código (ex: TUB100) ou nome..."
                         />
                       </div>
 
                       {/* Quantidade */}
                       <div className="md:col-span-2 lg:col-span-1">
-                        <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1 text-center">
                           Qtd *
                         </label>
                         <input
@@ -1179,19 +1173,19 @@ export default function DeliveryModal() {
                           value={quickItem.quantidade}
                           onChange={(e) => handleQuickItemFieldChange('quantidade', e.target.value)}
                           placeholder="1"
-                          className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold text-xs focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none text-center"
+                          className="w-full px-2 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-bold text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-center"
                         />
                       </div>
 
                       {/* Unidade */}
                       <div className="md:col-span-2 lg:col-span-1">
-                        <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1 text-center">
                           Unid *
                         </label>
                         <select
                           value={quickItem.unidade}
                           onChange={(e) => handleQuickItemFieldChange('unidade', e.target.value)}
-                          className="w-full px-2 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold text-xs focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer"
+                          className="w-full px-2 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-semibold text-xs focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-center"
                         >
                           {UNIDADES_MEDIDA.map(u => (
                             <option key={u.value} value={u.value}>{u.value}</option>
@@ -1199,11 +1193,11 @@ export default function DeliveryModal() {
                         </select>
                       </div>
 
-                      {/* Peso Unitário & Peso Total (com suporte a MT e não-KG) */}
-                      <div className="md:col-span-4 lg:col-span-3 grid grid-cols-2 gap-2">
+                      {/* Peso Unitário & Peso Total */}
+                      <div className="md:col-span-3 grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-xs font-bold text-amber-300 mb-1.5 truncate" title={`Peso Unitário (kg por ${quickItem.unidade})`}>
-                            Peso Unit. (kg/{quickItem.unidade})
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1 truncate" title={`Peso Unitário (kg/${quickItem.unidade})`}>
+                            Peso Unit. (kg)
                           </label>
                           <input
                             type="number"
@@ -1211,12 +1205,12 @@ export default function DeliveryModal() {
                             value={quickItem.peso_unitario_kg}
                             onChange={(e) => handleQuickItemFieldChange('peso_unitario_kg', e.target.value)}
                             placeholder="0,00"
-                            className="w-full px-2.5 py-2.5 rounded-xl bg-slate-800 border border-amber-500/40 text-amber-300 font-mono font-bold text-xs focus:ring-2 focus:ring-amber-500 outline-none text-right"
+                            className="w-full px-2 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none text-right"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-amber-300 mb-1.5 truncate" title="Peso Total do Item (kg)">
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1 truncate" title="Peso Total (kg)">
                             Peso Total (kg)
                           </label>
                           <input
@@ -1225,19 +1219,19 @@ export default function DeliveryModal() {
                             value={quickItem.peso_total_kg}
                             onChange={(e) => handleQuickItemFieldChange('peso_total_kg', e.target.value)}
                             placeholder="0,00"
-                            className="w-full px-2.5 py-2.5 rounded-xl bg-slate-800/80 border border-amber-500/40 text-amber-200 font-mono font-bold text-xs focus:ring-2 focus:ring-amber-500 outline-none text-right"
+                            className="w-full px-2 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono font-semibold text-xs focus:ring-2 focus:ring-blue-500 outline-none text-right"
                           />
                         </div>
                       </div>
 
-                      {/* Botão de Inserir no Romaneio */}
-                      <div className="md:col-span-12 lg:col-span-2 flex items-center gap-2">
+                      {/* Action Button */}
+                      <div className="md:col-span-12 lg:col-span-2">
                         <button
                           type="button"
                           onClick={handleInsertQuickItem}
-                          className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          className="w-full py-1.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-2xs active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer h-[34px]"
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="w-3.5 h-3.5" />
                           <span>Inserir Item</span>
                         </button>
                       </div>
@@ -1246,31 +1240,31 @@ export default function DeliveryModal() {
                   </div>
                 )}
 
-                {/* 3. TABELA DE ITENS DO ROMANEIO (Full Width & Spacious) */}
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
+                {/* 3. TABELA DE ITENS DO ROMANEIO (Clean, High Density, Aligned) */}
+                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                    <thead className="bg-slate-50 text-slate-700 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-200">
                       <tr>
-                        <th className="py-3 px-4 w-12 text-center">#</th>
-                        <th className="py-3 px-4 min-w-[300px]">Material / Descrição</th>
-                        <th className="py-3 px-4 w-28 text-center">Quantidade</th>
-                        <th className="py-3 px-4 w-24 text-center">Unidade</th>
-                        <th className="py-3 px-4 w-32 text-right">Peso Unitário</th>
-                        <th className="py-3 px-4 w-36 text-right">Peso Total (kg)</th>
-                        {!isMotorista && <th className="py-3 px-4 w-32 text-right">Vlr Unit (R$)</th>}
-                        {!isMotorista && <th className="py-3 px-4 w-36 text-right">Vlr Total (R$)</th>}
-                        {!isMotorista && <th className="py-3 px-4 w-14 text-center"></th>}
+                        <th className="py-2.5 px-3 w-10 text-center text-slate-400 font-mono">#</th>
+                        <th className="py-2.5 px-3 min-w-[280px]">Material / Descrição</th>
+                        <th className="py-2.5 px-3 w-24 text-center">Quantidade</th>
+                        <th className="py-2.5 px-3 w-20 text-center">Unidade</th>
+                        <th className="py-2.5 px-3 w-28 text-right">Peso Unitário</th>
+                        <th className="py-2.5 px-3 w-32 text-right">Peso Total (kg)</th>
+                        {!isMotorista && <th className="py-2.5 px-3 w-28 text-right">Vlr Unit (R$)</th>}
+                        {!isMotorista && <th className="py-2.5 px-3 w-32 text-right">Vlr Total (R$)</th>}
+                        {!isMotorista && <th className="py-2.5 px-3 w-10 text-center"></th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {romaneioItens.length === 0 ? (
                         <tr>
-                          <td colSpan={isMotorista ? 6 : 9} className="py-12 px-4 text-center text-slate-400">
-                            <div className="flex flex-col items-center justify-center gap-2">
-                              <Package className="w-8 h-8 text-slate-300" />
-                              <p className="font-semibold text-slate-600">Nenhum material adicionado a esta carga ainda.</p>
+                          <td colSpan={isMotorista ? 6 : 9} className="py-8 px-4 text-center text-slate-400">
+                            <div className="flex flex-col items-center justify-center gap-1.5">
+                              <Package className="w-6 h-6 text-slate-300" />
+                              <p className="font-semibold text-slate-600 text-xs">Nenhum material adicionado a esta carga ainda.</p>
                               {!isMotorista && (
-                                <p className="text-xs text-slate-400 max-w-md">
+                                <p className="text-[11px] text-slate-400 max-w-md">
                                   Utilize o campo de busca acima para pesquisar no catálogo SAGI e adicionar itens ao Romaneio.
                                 </p>
                               )}
@@ -1282,17 +1276,17 @@ export default function DeliveryModal() {
                           const unit = item.unidade || 'UN';
 
                           return (
-                            <tr key={item.id || idx} className="hover:bg-blue-50/40 transition-colors">
+                            <tr key={item.id || idx} className="hover:bg-slate-50/70 transition-colors">
                               {/* # Row Number */}
-                              <td className="py-3 px-4 text-center text-slate-400 font-mono font-bold">
+                              <td className="py-2 px-3 text-center text-slate-400 font-mono font-semibold text-xs">
                                 {idx + 1}
                               </td>
 
                               {/* Material Description & Code */}
-                              <td className="py-3 px-4">
+                              <td className="py-2 px-3">
                                 {isMotorista ? (
                                   <div className="flex flex-col">
-                                    <span className="font-bold text-slate-800 text-xs">
+                                    <span className="font-semibold text-slate-800 text-xs">
                                       {item.nome_material || item.codigo_material || 'Material sem descrição'}
                                     </span>
                                     {item.codigo_material && (
@@ -1305,6 +1299,7 @@ export default function DeliveryModal() {
                                   <div className="flex items-center gap-2">
                                     <div className="flex-1">
                                       <MaterialSearchInput
+                                        size="sm"
                                         value={item.nome_material || ''}
                                         selectedMaterialId={item.material_id}
                                         codigoMaterial={item.codigo_material}
@@ -1317,7 +1312,7 @@ export default function DeliveryModal() {
                                           setQuickMaterialInitialName(initialText);
                                           setQuickMaterialModalOpen(true);
                                         }}
-                                        placeholder="Digite o código ou nome do material..."
+                                        placeholder="Digite o código ou nome..."
                                       />
                                     </div>
                                   </div>
@@ -1325,9 +1320,9 @@ export default function DeliveryModal() {
                               </td>
 
                               {/* Quantidade */}
-                              <td className="py-3 px-4 text-center">
+                              <td className="py-2 px-3 text-center">
                                 {isMotorista ? (
-                                  <span className="inline-block px-3 py-1 rounded-lg bg-blue-50 text-blue-800 font-extrabold text-xs border border-blue-200">
+                                  <span className="inline-block px-2.5 py-0.5 rounded bg-blue-50 text-blue-800 font-bold text-xs border border-blue-200">
                                     {item.quantidade}
                                   </span>
                                 ) : (
@@ -1337,22 +1332,22 @@ export default function DeliveryModal() {
                                     step="any"
                                     value={item.quantidade}
                                     onChange={(e) => handleItemChange(idx, 'quantidade', e.target.value)}
-                                    className="w-20 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-16 px-1.5 py-1 rounded border border-slate-300 text-xs text-center font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
                                   />
                                 )}
                               </td>
 
                               {/* Unidade */}
-                              <td className="py-3 px-4 text-center">
+                              <td className="py-2 px-3 text-center">
                                 {isMotorista ? (
-                                  <span className="font-bold text-[11px] text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md">
+                                  <span className="font-semibold text-[11px] text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
                                     {unit}
                                   </span>
                                 ) : (
                                   <select
                                     value={unit}
                                     onChange={(e) => handleItemChange(idx, 'unidade', e.target.value)}
-                                    className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                                    className="w-16 px-1.5 py-1 rounded border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer text-center"
                                   >
                                     {UNIDADES_MEDIDA.map(u => (
                                       <option key={u.value} value={u.value}>{u.value}</option>
@@ -1362,7 +1357,7 @@ export default function DeliveryModal() {
                               </td>
 
                               {/* Peso Unitário */}
-                              <td className="py-3 px-4 text-right">
+                              <td className="py-2 px-3 text-right">
                                 {isMotorista ? (
                                   <span className="text-slate-600 font-mono text-xs">
                                     {(Number(item.peso_unitario_kg) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg/{unit}
@@ -1374,17 +1369,17 @@ export default function DeliveryModal() {
                                       step="any"
                                       value={item.peso_unitario_kg}
                                       onChange={(e) => handleItemChange(idx, 'peso_unitario_kg', e.target.value)}
-                                      className="w-24 px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono focus:ring-2 focus:ring-indigo-500 outline-none"
+                                      className="w-20 px-1.5 py-1 rounded border border-slate-300 text-xs text-right font-mono focus:ring-1 focus:ring-blue-500 outline-none"
                                     />
-                                    <span className="text-[10px] text-slate-400 font-bold">/{unit}</span>
+                                    <span className="text-[10px] text-slate-400 font-medium">/{unit}</span>
                                   </div>
                                 )}
                               </td>
 
                               {/* Peso Total (kg) */}
-                              <td className="py-3 px-4 text-right">
+                              <td className="py-2 px-3 text-right">
                                 {isMotorista ? (
-                                  <span className="font-mono font-bold text-slate-800 text-xs">
+                                  <span className="font-mono font-semibold text-slate-800 text-xs">
                                     {(Number(item.peso_total_kg) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg
                                   </span>
                                 ) : (
@@ -1394,24 +1389,24 @@ export default function DeliveryModal() {
                                       step="any"
                                       value={item.peso_total_kg}
                                       onChange={(e) => handleItemChange(idx, 'peso_total_kg', e.target.value)}
-                                      className="w-24 px-2 py-1.5 rounded-lg border border-amber-200 bg-amber-50/40 text-xs text-right font-mono font-bold text-amber-900 focus:ring-2 focus:ring-amber-500 outline-none"
+                                      className="w-20 px-1.5 py-1 rounded border border-slate-300 text-xs text-right font-mono font-semibold text-slate-900 focus:ring-1 focus:ring-blue-500 outline-none"
                                     />
-                                    <span className="text-[10px] text-slate-400 font-bold">kg</span>
+                                    <span className="text-[10px] text-slate-400 font-medium">kg</span>
                                   </div>
                                 )}
                               </td>
 
                               {/* Valor Unitário (R$) */}
                               {!isMotorista && (
-                                <td className="py-3 px-4 text-right">
+                                <td className="py-2 px-3 text-right">
                                   <div className="flex items-center justify-end gap-1">
-                                    <span className="text-[10px] text-slate-400 font-bold">R$</span>
+                                    <span className="text-[10px] text-slate-400 font-medium">R$</span>
                                     <input
                                       type="number"
                                       step="any"
                                       value={item.valor_unitario}
                                       onChange={(e) => handleItemChange(idx, 'valor_unitario', e.target.value)}
-                                      className="w-24 px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono focus:ring-2 focus:ring-indigo-500 outline-none"
+                                      className="w-20 px-1.5 py-1 rounded border border-slate-300 text-xs text-right font-mono focus:ring-1 focus:ring-blue-500 outline-none"
                                     />
                                   </div>
                                 </td>
@@ -1419,8 +1414,8 @@ export default function DeliveryModal() {
 
                               {/* Valor Total (R$) */}
                               {!isMotorista && (
-                                <td className="py-3 px-4 text-right">
-                                  <span className="font-mono font-bold text-indigo-700 text-xs">
+                                <td className="py-2 px-3 text-right">
+                                  <span className="font-mono font-semibold text-slate-900 text-xs">
                                     R$ {(Number(item.valor_total) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                   </span>
                                 </td>
@@ -1428,14 +1423,14 @@ export default function DeliveryModal() {
 
                               {/* Action: Delete */}
                               {!isMotorista && (
-                                <td className="py-3 px-4 text-center">
+                                <td className="py-2 px-3 text-center">
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveItem(idx)}
-                                    className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                                    title="Remover item do romaneio"
+                                    className="p-1 text-slate-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors cursor-pointer"
+                                    title="Remover item"
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </td>
                               )}
@@ -1447,46 +1442,46 @@ export default function DeliveryModal() {
                   </table>
                 </div>
 
-                {/* 4. TOTALS RESUMO BAR */}
-                <div className={`grid grid-cols-1 ${isMotorista ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-xl`}>
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
-                      <Package className="w-6 h-6" />
+                {/* 4. TOTALS RESUMO BAR (Clean, Legible, Cohesive) */}
+                <div className={`grid grid-cols-1 ${isMotorista ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200`}>
+                  <div className="flex items-center gap-2.5 p-2 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                      <Package className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
                         Volume Total
                       </span>
-                      <span className="text-lg font-bold font-mono text-white">
+                      <span className="text-xs sm:text-sm font-bold font-mono text-slate-900">
                         {romaneioTotalQtd.toLocaleString('pt-BR')} {romaneioTotalQtd === 1 ? 'item' : 'itens'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-                      <Scale className="w-6 h-6" />
+                  <div className="flex items-center gap-2.5 p-2 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                      <Scale className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
                         Peso Bruto Total
                       </span>
-                      <span className="text-lg font-bold font-mono text-amber-300">
+                      <span className="text-xs sm:text-sm font-bold font-mono text-slate-900">
                         {romaneioTotalPeso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg
                       </span>
                     </div>
                   </div>
 
                   {!isMotorista && (
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
-                        <DollarSign className="w-6 h-6" />
+                    <div className="flex items-center gap-2.5 p-2 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                        <DollarSign className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
                           Valor Total da Carga
                         </span>
-                        <span className="text-lg font-bold font-mono text-emerald-400">
+                        <span className="text-xs sm:text-sm font-bold font-mono text-emerald-700">
                           R$ {romaneioTotalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
@@ -1495,13 +1490,13 @@ export default function DeliveryModal() {
                 </div>
 
                 {/* 5. Observações do Romaneio */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <Info className="w-4 h-4 text-slate-400" />
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-slate-400" />
                     <span>Observações do Romaneio (Impressas no Documento PDF)</span>
                   </label>
                   {isMotorista ? (
-                    <div className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 min-h-[48px]">
+                    <div className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 min-h-[40px]">
                       {romaneioObs || 'Nenhuma observação informada.'}
                     </div>
                   ) : (
@@ -1509,8 +1504,8 @@ export default function DeliveryModal() {
                       rows={2}
                       value={romaneioObs}
                       onChange={(e) => setRomaneioObs(e.target.value)}
-                      placeholder="Ex: Entregar com nota fiscal anexa; descarregar no galpão 2; conferir peso antes do descarregamento..."
-                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"
+                      placeholder="Ex: Entregar com nota fiscal anexa; conferir peso antes do descarregamento..."
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
                   )}
                 </div>
@@ -1522,100 +1517,100 @@ export default function DeliveryModal() {
             {/* TAB 3: ROTA & EXECUÇÃO                                  */}
             {/* ======================================================== */}
             {activeSubTab === 'rota' && (
-              <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-4 animate-in fade-in duration-200">
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Início de Rota */}
-                  <div className="p-5 rounded-2xl bg-blue-50/60 border border-blue-100 flex flex-col gap-4">
-                    <div className="flex items-center justify-between border-b border-blue-200/60 pb-3">
-                      <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-2">
+                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col gap-3">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                         <Clock className="w-4 h-4 text-blue-600" />
                         Início do Deslocamento
                       </h4>
                       <button
                         type="button"
                         onClick={marcarInicioAgora}
-                        className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                       >
                         Marcar Agora
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">Data Início</label>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">Data Início</label>
                         <input
                           type="date"
                           value={formData.data_inicio}
                           onChange={(e) => setFormData(prev => ({ ...prev, data_inicio: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white"
+                          className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">Hora Início</label>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">Hora Início</label>
                         <input
                           type="time"
                           value={formData.hora_inicio}
                           onChange={(e) => setFormData(prev => ({ ...prev, hora_inicio: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white"
+                          className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">KM Inicial</label>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">KM Inicial</label>
                         <input
                           type="number"
                           value={formData.km_inicial}
                           onChange={(e) => handleKmChange('km_inicial', e.target.value)}
                           placeholder="Ex: 50200"
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono bg-white"
+                          className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-mono bg-white focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Conclusão de Entrega */}
-                  <div className="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex flex-col gap-4">
-                    <div className="flex items-center justify-between border-b border-emerald-200/60 pb-3">
-                      <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
+                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col gap-3">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-emerald-600" />
                         Conclusão da Entrega
                       </h4>
                       <button
                         type="button"
                         onClick={marcarConclusaoAgora}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                       >
                         Finalizar Agora
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">Data Conclusão</label>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">Data Conclusão</label>
                         <input
                           type="date"
                           value={formData.data_conclusao}
                           onChange={(e) => setFormData(prev => ({ ...prev, data_conclusao: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white"
+                          className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">Hora Conclusão</label>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">Hora Conclusão</label>
                         <input
                           type="time"
                           value={formData.hora_conclusao}
                           onChange={(e) => setFormData(prev => ({ ...prev, hora_conclusao: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white"
+                          className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">KM Final</label>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">KM Final</label>
                         <input
                           type="number"
                           value={formData.km_final}
                           onChange={(e) => handleKmChange('km_final', e.target.value)}
                           placeholder="Ex: 50245"
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono bg-white"
+                          className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-mono bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
                         />
                       </div>
                     </div>
@@ -1623,29 +1618,29 @@ export default function DeliveryModal() {
                 </div>
 
                 {/* KM Total & Ocorrências */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">KM Total Rodado</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">KM Total Rodado</label>
                     <input
                       type="number"
                       disabled
                       value={formData.km_total}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-mono font-bold bg-white text-slate-800"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-mono font-bold bg-white text-slate-800"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Ocorrências / Como foi a Entrega
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Relato de Ocorrência / Como foi a Entrega
                     </label>
                     <select
-                      value={formData.como_foi_entrega}
+                      value={formData.como_foi_entrega || 'Sem ocorrências'}
                       onChange={(e) => setFormData(prev => ({ ...prev, como_foi_entrega: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold bg-white cursor-pointer"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                     >
-                      {OCORRENCIAS_OPTIONS.map(o => (
-                        <option key={o.value} value={o.value} className={o.color}>
-                          {o.label}
+                      {OCORRENCIAS_OPTIONS.map(oc => (
+                        <option key={oc.value} value={oc.value} className={oc.color}>
+                          {oc.label}
                         </option>
                       ))}
                     </select>
@@ -1656,54 +1651,54 @@ export default function DeliveryModal() {
             )}
 
             {/* Bottom Actions Bar */}
-            <div className="pt-4 mt-6 flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-slate-100">
+            <div className="pt-3 mt-4 flex flex-col sm:flex-row justify-between items-center gap-2.5 border-t border-slate-200">
               
               {/* Left Actions: Print, Download & Delete */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={handlePrintRomaneio}
-                  className="px-4 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 flex-1 sm:flex-none cursor-pointer"
+                  className="px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all shadow-2xs flex items-center justify-center gap-1.5 active:scale-95 flex-1 sm:flex-none cursor-pointer"
                   title="Imprimir Romaneio de Carga Oficial"
                 >
-                  <Printer className="w-4 h-4" />
+                  <Printer className="w-3.5 h-3.5 text-slate-600" />
                   <span>Imprimir Romaneio</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleDownloadRomaneio}
-                  className="p-2.5 text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all shadow-xs flex items-center justify-center cursor-pointer"
+                  className="p-2 text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-all shadow-2xs flex items-center justify-center cursor-pointer"
                   title="Baixar Romaneio em PDF"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5" />
                 </button>
 
                 {isEditing && !isMotorista && (
                   <button 
                     type="button" 
                     onClick={handleDelete}
-                    className="p-2.5 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors text-center flex items-center justify-center shadow-xs cursor-pointer" 
+                    className="p-2 text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-center flex items-center justify-center shadow-2xs cursor-pointer" 
                     title="Excluir Entrega"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
 
               {/* Right Actions: Concluir, Cancelar & Salvar */}
-              <div className="flex items-center gap-2.5 justify-end w-full sm:w-auto">
+              <div className="flex items-center gap-2 justify-end w-full sm:w-auto">
                 {isEditing && (
                   <button 
                     type="button" 
                     onClick={toggleConcluir}
-                    className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer ${
+                    className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer ${
                       isConcluido 
                         ? 'text-green-800 bg-green-100 hover:bg-green-200 border border-green-300' 
-                        : 'text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-slate-200'
+                        : 'text-slate-700 bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-slate-300'
                     }`}
                   >
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-3.5 h-3.5" />
                     <span>{isConcluido ? 'Entrega Concluída' : 'Marcar Concluída'}</span>
                   </button>
                 )}
@@ -1711,7 +1706,7 @@ export default function DeliveryModal() {
                 <button 
                   type="button" 
                   onClick={() => setDeliveryModalOpen(false)} 
-                  className="px-5 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl transition-colors shadow-xs cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -1719,9 +1714,9 @@ export default function DeliveryModal() {
                 <button 
                   type="submit" 
                   disabled={saving}
-                  className="px-6 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 rounded-xl transition-all shadow-md shadow-blue-500/25 flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
-                  <Save className="w-4 h-4" />
+                  <Save className="w-3.5 h-3.5" />
                   <span>{saving ? 'Salvando...' : 'Salvar Entrega'}</span>
                 </button>
               </div>

@@ -223,10 +223,10 @@ export default function CollectionModal() {
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, urgente: !prev.urgente }))}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 transition-all cursor-pointer border ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border ${
                     formData.urgente 
-                      ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white border-red-500 shadow-md shadow-red-500/25 animate-pulse' 
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-red-300 hover:text-red-600'
+                      ? 'bg-red-600 text-white border-red-600 shadow-2xs' 
+                      : 'bg-white text-slate-600 border-slate-300 hover:border-red-300 hover:text-red-600'
                   }`}
                   title="Marcar coleta como urgente para ficar no topo do painel"
                 >
@@ -240,7 +240,7 @@ export default function CollectionModal() {
               <button 
                 type="button" 
                 onClick={() => setCollectionModalOpen(false)} 
-                className="text-slate-400 hover:text-red-500 transition-colors focus:outline-none bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none p-1.5 rounded-lg border border-slate-200 shadow-2xs cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">close</span>
               </button>
@@ -482,7 +482,7 @@ export default function CollectionModal() {
                 <button 
                   type="submit" 
                   disabled={saving}
-                  className="flex-1 sm:flex-none px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="flex-1 sm:flex-none px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-base">
                     {saving ? 'hourglass_top' : 'save'}
