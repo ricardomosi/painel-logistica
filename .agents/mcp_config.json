@@ -1,19 +1,28 @@
 {
   "mcpServers": {
-    "playwright": {
-      "command": "npx",
+    "supabase": {
+      "command": "cmd",
       "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "YOUR_SUPABASE_ACCESS_TOKEN",
+        "--project-ref",
+        "vljftyhuzylljrgppmve"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "YOUR_SUPABASE_ACCESS_TOKEN"
+      }
+    },
+    "playwright": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
         "-y",
         "@executeautomation/playwright-mcp-server"
-      ]
-    },
-    "context7": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp",
-        "--api-key",
-        "YOUR_API_KEY"
       ]
     }
   }

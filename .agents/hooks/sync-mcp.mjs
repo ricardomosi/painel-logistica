@@ -75,7 +75,9 @@ export function planSync({root, target = 'suite', force = false}) {
   return {source, destination, workspace, merged: result, conflicts, placeholders: containsPlaceholder(workspace)};
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+import url from 'node:url';
+
+if (process.argv[1] && url.pathToFileURL(path.resolve(process.argv[1])).href.toLowerCase() === import.meta.url.toLowerCase()) {
   try {
     const options = parseArgs(process.argv.slice(2));
     const plan = planSync(options);
