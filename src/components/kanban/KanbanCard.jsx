@@ -80,37 +80,46 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     }
   }
 
-  // Styles based on status (Clean, Anti-Slop, No lateral colored thick border)
-  let baseBg = 'bg-white hover:bg-slate-50/90 shadow-2xs hover:shadow-xs';
+  // Concluded Date & Time formatting
+  let dataConclusaoFmt = '';
+  if (item.data_conclusao) {
+    const parts = item.data_conclusao.split('-');
+    if (parts.length === 3) {
+      dataConclusaoFmt = `${parts[2]}/${parts[1]}`;
+    } else {
+      dataConclusaoFmt = item.data_conclusao;
+    }
+  }
+
+  let horaConclusaoFmt = '';
+  if (item.hora_conclusao) {
+    const hParts = item.hora_conclusao.split(':');
+    if (hParts.length >= 2) {
+      horaConclusaoFmt = `${hParts[0]}:${hParts[1]}`;
+    } else {
+      horaConclusaoFmt = item.hora_conclusao;
+    }
+  }
+
+  // Styles based on status (Solid white background, crisp high contrast)
+  let baseBg = 'bg-white hover:bg-slate-50 shadow-2xs hover:shadow-xs';
   let borderColor = 'border-slate-200 hover:border-slate-300';
-  let titleClass = 'text-slate-900';
+  let titleClass = 'text-slate-900 font-bold';
   let opacityClass = 'opacity-100';
 
   if (isCompleted) {
-    baseBg = 'bg-emerald-50/40 hover:bg-emerald-50/60';
-    borderColor = 'border-emerald-200';
-    titleClass = 'text-emerald-950 font-bold';
-    opacityClass = 'opacity-95';
+    baseBg = 'bg-white hover:bg-emerald-50/10 shadow-2xs';
+    borderColor = 'border-emerald-300 ring-1 ring-emerald-100';
+    titleClass = 'text-slate-900 font-bold';
+    opacityClass = 'opacity-100';
   } else if (isUrgent) {
-    baseBg = 'bg-white hover:bg-rose-50/20 shadow-2xs ring-1 ring-rose-300/80';
+    baseBg = 'bg-white hover:bg-rose-50/10 shadow-2xs ring-1 ring-rose-300/80';
     borderColor = 'border-rose-300';
     titleClass = 'text-slate-900 font-bold';
   } else if (hasOccurrence) {
-    baseBg = 'bg-amber-50/30 hover:bg-amber-50/50 shadow-2xs ring-1 ring-amber-300/70';
+    baseBg = 'bg-white hover:bg-amber-50/10 shadow-2xs ring-1 ring-amber-300/70';
     borderColor = 'border-amber-300';
     titleClass = 'text-slate-900 font-bold';
-  }
-
-  // Concluded footer
-  let conclusaoText = null;
-  if (isCompleted && item.data_conclusao) {
-    const colorC = (!isColeta && hasOccurrence) ? 'text-amber-800 border-amber-200 bg-amber-50' : 'text-emerald-800 border-emerald-200 bg-emerald-50';
-    conclusaoText = (
-      <div className={`mt-1.5 p-1 rounded text-[9px] font-semibold flex items-center gap-1 border ${colorC}`}>
-        <span className="material-symbols-outlined text-[12px]">done_all</span>
-        <span>Concluído: {item.data_conclusao} às {item.hora_conclusao || '--:--'}</span>
-      </div>
-    );
   }
 
   // Config for Coleta
@@ -230,7 +239,15 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 )}
               </div>
 
-              {conclusaoText}
+              {/* Concluded Info */}
+              {isCompleted && item.data_conclusao && (
+                <div className="mt-1.5 pt-1 border-t border-slate-100 flex items-center justify-between text-[9px] text-emerald-700 font-semibold">
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[11px] text-emerald-600">done_all</span>
+                    <span>Concluído: {dataConclusaoFmt} {horaConclusaoFmt && `às ${horaConclusaoFmt}`}</span>
+                  </div>
+                </div>
+              )}
 
               {item.responsavel && (
                 <div className="mt-1.5 pt-1 border-t border-slate-100 flex justify-end w-full">
@@ -378,7 +395,20 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 </div>
               </div>
 
-              {conclusaoText}
+              {/* Concluded Info */}
+              {isCompleted && item.data_conclusao && (
+                <div className="mt-1.5 pt-1 border-t border-slate-100 flex items-center justify-between text-[9px] text-emerald-700 font-semibold">
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[11px] text-emerald-600">done_all</span>
+                    <span>Concluído: {dataConclusaoFmt} {horaConclusaoFmt && `às ${horaConclusaoFmt}`}</span>
+                  </div>
+                  {hasOccurrence && (
+                    <span className="text-amber-800 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded text-[8.5px] font-semibold">
+                      {item.como_foi_entrega}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {item.cadastrador_entrega && (
                 <div className="mt-1.5 pt-1 border-t border-slate-100 flex justify-end w-full">
@@ -396,4 +426,3 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     </div>
   );
 }
-
