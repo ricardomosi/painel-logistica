@@ -101,23 +101,23 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     }
   }
 
-  // Styles based on status (Solid white background, crisp high contrast)
-  let baseBg = 'bg-white hover:bg-slate-50 shadow-2xs hover:shadow-xs';
+  // Styles based on status (Soft light green for completed, subtle hover transitions)
+  let baseBg = 'bg-white hover:bg-slate-50/80 shadow-2xs hover:shadow-xs';
   let borderColor = 'border-slate-200 hover:border-slate-300';
   let titleClass = 'text-slate-900 font-bold';
   let opacityClass = 'opacity-100';
 
   if (isCompleted) {
-    baseBg = 'bg-white hover:bg-emerald-50/10 shadow-2xs';
-    borderColor = 'border-emerald-300 ring-1 ring-emerald-100';
+    baseBg = 'bg-emerald-50/75 hover:bg-emerald-100/60 shadow-2xs hover:shadow-xs';
+    borderColor = 'border-emerald-200 hover:border-emerald-300';
     titleClass = 'text-slate-900 font-bold';
     opacityClass = 'opacity-100';
   } else if (isUrgent) {
-    baseBg = 'bg-white hover:bg-rose-50/10 shadow-2xs ring-1 ring-rose-300/80';
+    baseBg = 'bg-white hover:bg-rose-50/20 shadow-2xs hover:shadow-xs ring-1 ring-rose-200';
     borderColor = 'border-rose-300';
     titleClass = 'text-slate-900 font-bold';
   } else if (hasOccurrence) {
-    baseBg = 'bg-white hover:bg-amber-50/10 shadow-2xs ring-1 ring-amber-300/70';
+    baseBg = 'bg-white hover:bg-amber-50/20 shadow-2xs hover:shadow-xs ring-1 ring-amber-200';
     borderColor = 'border-amber-300';
     titleClass = 'text-slate-900 font-bold';
   }
@@ -134,7 +134,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
       draggable={!isMotorista}
       onDragStart={(e) => onDragStart && onDragStart(e, item.id)}
       onClick={handleClick}
-      className={`w-full relative group transition-all cursor-pointer rounded-xl p-2.5 lg:p-2 border ${borderColor} ${baseBg} active:scale-[0.99] ${opacityClass} font-inter`}
+      className={`w-full relative group transition-all duration-200 cursor-pointer rounded-xl p-2.5 lg:p-2 border ${borderColor} ${baseBg} active:scale-[0.99] ${opacityClass} font-inter`}
     >
       <div className="flex w-full h-full">
         <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full">
@@ -361,7 +361,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                 
                 {/* Boleto e Telefone */}
                 <div className="flex flex-wrap items-center justify-between gap-1 w-full min-w-0">
-                  {item.boleto && (
+                  {item.boleto && !isMotorista && (
                     <div className="flex items-center gap-1 min-w-0">
                       <span className="material-symbols-outlined text-[13px] text-slate-400 shrink-0">receipt_long</span>
                       <span className="font-semibold text-slate-600 font-mono" style={{ wordBreak: 'break-word' }}>
