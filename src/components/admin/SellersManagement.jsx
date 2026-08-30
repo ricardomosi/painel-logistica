@@ -97,7 +97,6 @@ export default function SellersManagement() {
   );
 
   return (
-  return (
     <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter">
       {/* Header Bar */}
       <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low/50">
