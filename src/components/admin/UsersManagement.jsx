@@ -96,82 +96,86 @@ export default function UsersManagement() {
   };
 
   return (
-    <div className="p-6 rounded-2xl bg-slate-900/90 border border-white/10 text-white shadow-xl flex flex-col gap-6 font-inter">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter">
       
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header Controls & Info */}
+      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-surface-container-low/50">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-            <ShieldCheck className="w-6 h-6" />
+          <div className="p-2 rounded bg-surface-container-high text-primary border border-grid-line shrink-0">
+            <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-white text-base">Controle de Acessos & Usuários (RBAC)</h3>
-            <p className="text-xs text-slate-400">Atribua permissões (Admin, Gestor ou Motorista) e vincule cadastros</p>
+            <h3 className="text-on-surface font-semibold text-sm">Controle de Acessos & Usuários (RBAC)</h3>
+            <p className="text-on-surface-variant text-xs">Atribua permissões e vincule usuários a motoristas cadastrados</p>
           </div>
+        </div>
+
+        <div className="text-[11px] font-data-mono text-on-surface-variant px-2.5 py-1 rounded bg-surface-container-lowest border border-grid-line">
+          Total: <span className="text-primary font-bold">{profiles.length}</span>
         </div>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSave} className="p-4 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-4">
-        <div className="text-xs font-bold uppercase tracking-wider text-cyan-300">
-          {editingId ? 'Editar Usuário / Permissões' : 'Adicionar Novo Usuário'}
+      <form onSubmit={handleSave} className="m-4 p-4 rounded-lg bg-surface-container-low border border-grid-line flex flex-col gap-3.5">
+        <div className="text-xs font-bold uppercase tracking-wider text-primary font-label-caps">
+          {editingId ? 'Editar Permissões do Usuário' : 'Cadastrar Novo Usuário'}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-300">Nome do Usuário *</label>
+            <label className="text-[11px] font-medium text-on-surface-variant">Nome do Usuário *</label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/50" />
               <input
                 type="text"
                 required
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 placeholder="Ex: Ana Lima"
-                className="w-full pl-9 pr-3 py-2 rounded-xl glass-input text-xs"
+                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-300">E-mail de Acesso *</label>
+            <label className="text-[11px] font-medium text-on-surface-variant">E-mail de Acesso *</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/50" />
               <input
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="usuario@jpatricio.com.br"
-                className="w-full pl-9 pr-3 py-2 rounded-xl glass-input text-xs"
+                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40 font-data-mono"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-300">Nível de Acesso (Role) *</label>
+            <label className="text-[11px] font-medium text-on-surface-variant">Nível de Acesso (Role) *</label>
             <select
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="px-3 py-2 rounded-xl glass-input text-xs cursor-pointer font-bold"
+              className="px-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-medium cursor-pointer"
             >
-              <option value="admin" className="bg-slate-900 text-cyan-400">👑 Administrador Geral</option>
-              <option value="gestor" className="bg-slate-900 text-blue-400">📋 Gestor de Logística</option>
-              <option value="motorista" className="bg-slate-900 text-emerald-400">🚚 Motorista (Restrito)</option>
+              <option value="admin" className="bg-surface">👑 Administrador Geral</option>
+              <option value="gestor" className="bg-surface">📋 Gestor de Logística</option>
+              <option value="motorista" className="bg-surface">🚚 Motorista (Restrito)</option>
             </select>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-300">Vincular a Motorista</label>
+            <label className="text-[11px] font-medium text-on-surface-variant">Vincular a Motorista</label>
             <select
               disabled={formData.role !== 'motorista'}
               value={formData.motorista_id}
               onChange={(e) => setFormData({ ...formData, motorista_id: e.target.value })}
-              className="px-3 py-2 rounded-xl glass-input text-xs cursor-pointer disabled:opacity-40"
+              className="px-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer disabled:opacity-30"
             >
-              <option value="" className="bg-slate-900">Nenhum / Não aplicável</option>
+              <option value="" className="bg-surface">Nenhum / Não aplicável</option>
               {drivers.map((d) => (
-                <option key={d.id} value={d.id} className="bg-slate-900">
+                <option key={d.id} value={d.id} className="bg-surface">
                   {d.nome}
                 </option>
               ))}
@@ -179,19 +183,19 @@ export default function UsersManagement() {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="flex items-center justify-end gap-2 pt-1">
           {editingId && (
             <button
               type="button"
               onClick={handleCancel}
-              className="px-3 py-1.5 rounded-xl text-xs text-slate-300 hover:text-white"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:text-on-surface bg-surface-container-high border border-grid-line transition-colors"
             >
               Cancelar
             </button>
           )}
           <button
             type="submit"
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl glass-btn-primary text-xs font-bold"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary-container text-xs font-bold transition-colors"
           >
             {editingId ? <Check className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
             <span>{editingId ? 'Salvar Permissões' : 'Cadastrar Usuário'}</span>
@@ -200,58 +204,60 @@ export default function UsersManagement() {
       </form>
 
       {/* Users Table */}
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/40">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-900 text-slate-300 uppercase tracking-wider text-[10px] font-semibold border-b border-white/10">
-            <tr>
-              <th className="p-3">Nome</th>
-              <th className="p-3">E-mail</th>
-              <th className="p-3 text-center">Nível (Role)</th>
-              <th className="p-3">Motorista Vinculado</th>
-              <th className="p-3 text-center w-24">Ações</th>
+      <div className="border-t border-grid-line overflow-x-auto">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+              <th className="py-2.5 px-4">NOME</th>
+              <th className="py-2.5 px-4">E-MAIL</th>
+              <th className="py-2.5 px-4 text-center">NÍVEL (ROLE)</th>
+              <th className="py-2.5 px-4">MOTORISTA VINCULADO</th>
+              <th className="py-2.5 px-4 text-right w-24">AÇÕES</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5 text-slate-200">
+          <tbody className="divide-y divide-grid-line text-on-surface">
             {profiles.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-slate-500">
+                <td colSpan={5} className="py-6 text-center text-on-surface-variant">
                   {loading ? 'Carregando...' : 'Nenhum usuário cadastrado'}
                 </td>
               </tr>
             ) : (
               profiles.map((prof) => (
-                <tr key={prof.id} className="hover:bg-white/5 transition-colors">
-                  <td className="p-3 font-semibold text-white">
+                <tr key={prof.id} className="border-b border-grid-line hover:bg-primary-container/5 transition-colors group">
+                  <td className="py-2.5 px-4 font-semibold text-on-surface">
                     {prof.nome}
                   </td>
-                  <td className="p-3 text-slate-300 font-mono">
+                  <td className="py-2.5 px-4 text-on-surface-variant font-data-mono">
                     {prof.email}
                   </td>
-                  <td className="p-3 text-center">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  <td className="py-2.5 px-4 text-center">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
                       prof.role === 'admin'
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
                         : prof.role === 'gestor'
-                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        ? 'bg-primary/10 text-primary border border-primary/20'
+                        : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                     }`}>
-                      {prof.role === 'admin' ? '👑 Admin' : prof.role === 'gestor' ? '📋 Gestor' : '🚚 Motorista'}
+                      {prof.role === 'admin' ? 'Admin' : prof.role === 'gestor' ? 'Gestor' : 'Motorista'}
                     </span>
                   </td>
-                  <td className="p-3 text-slate-300">
+                  <td className="py-2.5 px-4 text-on-surface-variant">
                     {prof.motorista?.nome || '-'}
                   </td>
-                  <td className="p-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
+                  <td className="py-2.5 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => handleEdit(prof)}
-                        className="p-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-white/10"
+                        className="p-1 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                        title="Editar"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(prof)}
-                        className="p-1.5 rounded-lg text-slate-300 hover:text-rose-400 hover:bg-white/10"
+                        className="p-1 rounded text-on-surface-variant hover:text-rose-400 hover:bg-surface-container-high transition-colors"
+                        title="Excluir"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

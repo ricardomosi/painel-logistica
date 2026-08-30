@@ -95,62 +95,68 @@ export default function VehiclesManagement() {
     });
   };
 
+  const activeCount = vehicles.filter(v => v.ativo !== false).length;
+
   return (
-    <div className="p-6 rounded-2xl bg-slate-900/90 border border-white/10 text-white shadow-xl flex flex-col gap-6 font-inter">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter">
       
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header Controls & Info */}
+      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-surface-container-low/50">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-            <Truck className="w-6 h-6" />
+          <div className="p-2 rounded bg-surface-container-high text-primary border border-grid-line shrink-0">
+            <Truck className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-white text-base">Gestão de Veículos da Frota</h3>
-            <p className="text-xs text-slate-400">Gerencie caminhões, utilitários e motoristas vinculados</p>
+            <h3 className="text-on-surface font-semibold text-sm">Gestão de Veículos da Frota</h3>
+            <p className="text-on-surface-variant text-xs">{activeCount} veículos operacionais cadastrados</p>
           </div>
+        </div>
+
+        <div className="text-[11px] font-data-mono text-on-surface-variant px-2.5 py-1 rounded bg-surface-container-lowest border border-grid-line">
+          Total: <span className="text-primary font-bold">{vehicles.length}</span>
         </div>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSave} className="p-4 rounded-2xl bg-black/40 border border-white/10 flex flex-col gap-4">
-        <div className="text-xs font-bold uppercase tracking-wider text-cyan-300">
-          {editingId ? 'Editar Veículo' : 'Adicionar Novo Veículo'}
+      <form onSubmit={handleSave} className="m-4 p-4 rounded-lg bg-surface-container-low border border-grid-line flex flex-col gap-3.5">
+        <div className="text-xs font-bold uppercase tracking-wider text-primary font-label-caps">
+          {editingId ? 'Editar Veículo' : 'Cadastrar Novo Veículo'}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-300">Placa do Veículo *</label>
+            <label className="text-[11px] font-medium text-on-surface-variant">Placa do Veículo *</label>
             <input
               type="text"
               required
               value={formData.placa}
               onChange={(e) => setFormData({ ...formData, placa: e.target.value.toUpperCase() })}
               placeholder="Ex: ABC-1D23"
-              className="px-3 py-2 rounded-xl glass-input text-xs font-mono uppercase font-bold"
+              className="bg-surface border border-grid-line text-primary font-data-mono font-bold text-xs rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-300">Modelo / Tipo</label>
+            <label className="text-[11px] font-medium text-on-surface-variant">Modelo / Tipo</label>
             <input
               type="text"
               value={formData.modelo}
               onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
               placeholder="Ex: VW Constellation 24.280"
-              className="px-3 py-2 rounded-xl glass-input text-xs"
+              className="bg-surface border border-grid-line text-on-surface text-xs rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-300">Motorista Padrão</label>
+            <label className="text-[11px] font-medium text-on-surface-variant">Motorista Padrão</label>
             <select
               value={formData.motorista_padrao_id}
               onChange={(e) => setFormData({ ...formData, motorista_padrao_id: e.target.value })}
-              className="px-3 py-2 rounded-xl glass-input text-xs cursor-pointer"
+              className="bg-surface border border-grid-line text-on-surface text-xs rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer"
             >
-              <option value="" className="bg-slate-900">Nenhum (Rotativo)</option>
+              <option value="" className="bg-surface">Nenhum (Rotativo)</option>
               {drivers.map((d) => (
-                <option key={d.id} value={d.id} className="bg-slate-900">
+                <option key={d.id} value={d.id} className="bg-surface">
                   {d.nome}
                 </option>
               ))}
@@ -158,13 +164,13 @@ export default function VehiclesManagement() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+        <div className="flex items-center justify-between pt-1">
+          <label className="flex items-center gap-2 cursor-pointer text-xs text-on-surface-variant hover:text-on-surface transition-colors">
             <input
               type="checkbox"
               checked={formData.ativo}
               onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-              className="rounded bg-slate-900 border-white/20 text-cyan-500 focus:ring-0"
+              className="rounded bg-surface border-grid-line text-primary focus:ring-0"
             />
             <span>Veículo Ativo em Operação</span>
           </label>
@@ -174,73 +180,75 @@ export default function VehiclesManagement() {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-3 py-1.5 rounded-xl text-xs text-slate-300 hover:text-white"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:text-on-surface bg-surface-container-high border border-grid-line transition-colors"
               >
                 Cancelar
               </button>
             )}
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl glass-btn-primary text-xs font-bold"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary-container text-xs font-bold transition-colors"
             >
               {editingId ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-              <span>{editingId ? 'Salvar Edição' : 'Cadastrar'}</span>
+              <span>{editingId ? 'Salvar Edição' : 'Cadastrar Veículo'}</span>
             </button>
           </div>
         </div>
       </form>
 
       {/* Vehicles Table */}
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/40">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-900 text-slate-300 uppercase tracking-wider text-[10px] font-semibold border-b border-white/10">
-            <tr>
-              <th className="p-3">Placa</th>
-              <th className="p-3">Modelo</th>
-              <th className="p-3">Motorista Padrão</th>
-              <th className="p-3 text-center">Status</th>
-              <th className="p-3 text-center w-24">Ações</th>
+      <div className="border-t border-grid-line overflow-x-auto">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+              <th className="py-2.5 px-4">PLACA</th>
+              <th className="py-2.5 px-4">MODELO / TIPO</th>
+              <th className="py-2.5 px-4">CONDUTOR VINCULADO</th>
+              <th className="py-2.5 px-4 text-center">STATUS</th>
+              <th className="py-2.5 px-4 text-right w-24">AÇÕES</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5 text-slate-200">
+          <tbody className="divide-y divide-grid-line text-on-surface">
             {vehicles.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-slate-500">
-                  {loading ? 'Carregando...' : 'Nenhum veículo cadastrado'}
+                <td colSpan={5} className="py-6 text-center text-on-surface-variant">
+                  {loading ? 'Carregando veículos...' : 'Nenhum veículo cadastrado'}
                 </td>
               </tr>
             ) : (
               vehicles.map((veh) => (
-                <tr key={veh.id} className="hover:bg-white/5 transition-colors">
-                  <td className="p-3 font-mono font-bold text-cyan-300">
+                <tr key={veh.id} className="border-b border-grid-line hover:bg-primary-container/5 transition-colors group">
+                  <td className="py-2.5 px-4 font-data-mono font-bold text-primary">
                     {veh.placa}
                   </td>
-                  <td className="p-3 text-slate-300">
+                  <td className="py-2.5 px-4 text-on-surface">
                     {veh.modelo || '-'}
                   </td>
-                  <td className="p-3 text-slate-300">
+                  <td className="py-2.5 px-4 text-on-surface-variant">
                     {veh.motorista_padrao?.nome || 'Rotativo'}
                   </td>
-                  <td className="p-3 text-center">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  <td className="py-2.5 px-4 text-center">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${
                       veh.ativo !== false
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     }`}>
                       {veh.ativo !== false ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
-                  <td className="p-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
+                  <td className="py-2.5 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => handleEdit(veh)}
-                        className="p-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-white/10"
+                        className="p-1 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                        title="Editar"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(veh)}
-                        className="p-1.5 rounded-lg text-slate-300 hover:text-rose-400 hover:bg-white/10"
+                        className="p-1 rounded text-on-surface-variant hover:text-rose-400 hover:bg-surface-container-high transition-colors"
+                        title="Excluir"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

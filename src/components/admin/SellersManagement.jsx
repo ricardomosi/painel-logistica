@@ -97,100 +97,97 @@ export default function SellersManagement() {
   );
 
   return (
-    <div className="p-6 rounded-2xl bg-slate-900/90 border border-white/10 text-white shadow-xl flex flex-col gap-6 font-inter">
+  return (
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/10">
+      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center border border-orange-500/30">
+          <div className="p-2 rounded bg-surface-container-high text-secondary border border-grid-line shrink-0">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">
-              Quadro de Vendedores (Equipe Comercial)
+            <h2 className="text-sm font-semibold text-on-surface">
+              Equipe Comercial (Vendedores)
             </h2>
-            <p className="text-xs text-slate-400">
-              Gerencie os vendedores cadastrados para apropriação e KPIs de vendas
+            <p className="text-xs text-on-surface-variant">
+              Gerencie os vendedores cadastrados para apropriação e KPIs
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/60" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar vendedor..."
-              className="pl-9 pr-3 py-2 rounded-xl border border-white/10 bg-slate-950/60 text-white placeholder-slate-400 text-xs focus:ring-2 focus:ring-blue-500 outline-none w-44 sm:w-56"
+              className="pl-9 pr-3 py-1.5 rounded-lg bg-surface border border-grid-line text-on-surface placeholder:text-on-surface-variant/40 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none w-44 sm:w-56"
             />
           </div>
 
           <button
             type="button"
             onClick={handleOpenNew}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary-container text-xs font-bold transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span>Novo Vendedor</span>
           </button>
         </div>
       </div>
 
       {/* Sellers List Table */}
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-slate-950/40">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-900 text-slate-300 uppercase tracking-wider text-[10px] font-semibold border-b border-white/10">
-            <tr>
-              <th className="p-3.5">Nome do Vendedor</th>
-              <th className="p-3.5">Unidade</th>
-              <th className="p-3.5 text-center">Status</th>
-              <th className="p-3.5 text-right">Ações</th>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+              <th className="py-2.5 px-4">NOME DO VENDEDOR</th>
+              <th className="py-2.5 px-4">UNIDADE</th>
+              <th className="py-2.5 px-4 text-center">STATUS</th>
+              <th className="py-2.5 px-4 text-right">AÇÕES</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5 text-slate-200">
+          <tbody className="divide-y divide-grid-line text-on-surface">
             {loading ? (
               <tr>
-                <td colSpan={4} className="p-6 text-center text-slate-400">
+                <td colSpan={4} className="py-6 text-center text-on-surface-variant">
                   Carregando vendedores...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="p-6 text-center text-slate-400">
+                <td colSpan={4} className="py-6 text-center text-on-surface-variant">
                   Nenhum vendedor encontrado.
                 </td>
               </tr>
             ) : (
               filtered.map((seller) => (
-                <tr key={seller.id} className="hover:bg-white/5 transition-colors">
-                  <td className="p-3.5 font-semibold text-white">
+                <tr key={seller.id} className="border-b border-grid-line hover:bg-primary-container/5 transition-colors group">
+                  <td className="py-2.5 px-4 font-semibold text-on-surface">
                     {seller.nome}
                   </td>
-                  <td className="p-3.5">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                      seller.unidade === 'Matriz'
-                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                        : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                    }`}>
+                  <td className="py-2.5 px-4">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-surface-container-highest border border-grid-line text-on-surface">
                       {seller.unidade}
                     </span>
                   </td>
-                  <td className="p-3.5 text-center">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                  <td className="py-2.5 px-4 text-center">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
                       seller.ativo
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-slate-700/40 text-slate-400 border border-slate-600/40'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     }`}>
                       {seller.ativo ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
-                  <td className="p-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                  <td className="py-2.5 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
                         onClick={() => handleOpenEdit(seller)}
-                        className="p-1.5 rounded-lg text-slate-300 hover:text-cyan-400 hover:bg-white/10 transition-colors"
+                        className="p-1 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
                         title="Editar Vendedor"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -198,7 +195,7 @@ export default function SellersManagement() {
                       <button
                         type="button"
                         onClick={() => handleDelete(seller)}
-                        className="p-1.5 rounded-lg text-slate-300 hover:text-rose-400 hover:bg-white/10 transition-colors"
+                        className="p-1 rounded text-on-surface-variant hover:text-rose-400 hover:bg-surface-container-high transition-colors"
                         title="Excluir Vendedor"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -214,43 +211,43 @@ export default function SellersManagement() {
 
       {/* Edit / Create Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col gap-4 font-inter text-slate-800">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-deep/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md p-5 rounded-lg bg-surface-container border border-grid-line shadow-2xl flex flex-col gap-4 font-inter text-on-surface">
+            <div className="flex items-center justify-between border-b border-grid-line pb-3">
+              <h3 className="text-sm font-bold text-on-surface">
                 {editingSeller ? 'Editar Vendedor' : 'Novo Vendedor'}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-700">Nome do Vendedor</label>
+                <label className="text-[11px] font-medium text-on-surface-variant">Nome do Vendedor *</label>
                 <input
                   type="text"
                   required
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value.toUpperCase() })}
                   placeholder="Ex: MARCOS"
-                  className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none uppercase font-semibold text-slate-900"
+                  className="px-3 py-2 bg-surface border border-grid-line rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none uppercase font-semibold"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-700">Unidade de Lotação</label>
+                <label className="text-[11px] font-medium text-on-surface-variant">Unidade de Lotação</label>
                 <select
                   value={formData.unidade}
                   onChange={(e) => setFormData({ ...formData, unidade: e.target.value })}
-                  className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none font-semibold cursor-pointer text-slate-900 bg-white"
+                  className="px-3 py-2 bg-surface border border-grid-line rounded-lg text-xs text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none font-medium cursor-pointer"
                 >
-                  <option value="Matriz">Matriz (Mossoró)</option>
-                  <option value="Filial">Filial (Mossoró)</option>
+                  <option value="Matriz" className="bg-surface">Matriz (Mossoró)</option>
+                  <option value="Filial" className="bg-surface">Filial (Mossoró)</option>
                 </select>
               </div>
 
@@ -260,24 +257,24 @@ export default function SellersManagement() {
                   id="vendedorAtivo"
                   checked={formData.ativo}
                   onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                  className="rounded bg-surface border-grid-line text-primary focus:ring-0"
                 />
-                <label htmlFor="vendedorAtivo" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                <label htmlFor="vendedorAtivo" className="text-xs text-on-surface-variant hover:text-on-surface cursor-pointer">
                   Vendedor Ativo na Operação
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-grid-line">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:text-on-surface bg-surface-container-high border border-grid-line transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-primary-container hover:bg-primary text-on-primary-container transition-colors"
                 >
                   Salvar Vendedor
                 </button>

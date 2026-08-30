@@ -33,110 +33,102 @@ export default function MetricsGrid() {
   const totalKm = deliveries.reduce((acc, d) => acc + (Number(d.km_total) || 0), 0);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       
       {/* 1. Total Entregas */}
-      <div className="p-5 rounded-3xl glass-panel border border-cyan-500/20 shadow-xl flex flex-col justify-between relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+      <div className="p-4 rounded-lg bg-surface-container border border-grid-line flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Entregas</span>
-          <div className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-            <Truck className="w-5 h-5" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label-caps">Total Entregas</span>
+          <div className="p-2 rounded bg-surface-container-high text-primary border border-grid-line">
+            <Truck className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="mt-3">
-          <div className="text-3xl font-black text-white font-mono tracking-tight">
+        <div className="mt-2">
+          <div className="text-2xl font-bold text-on-surface font-data-mono tracking-tight">
             {totalDeliveries}
           </div>
-          <div className="flex items-center gap-2 mt-2 text-xs">
-            <span className="text-emerald-400 font-semibold">{completedDeliveries} concluídas</span>
-            <span className="text-slate-500">•</span>
-            <span className="text-cyan-400 font-semibold">{inProgressDeliveries} em rota</span>
+          <div className="flex items-center gap-2 mt-1.5 text-xs">
+            <span className="text-emerald-400 font-medium">{completedDeliveries} concluídas</span>
+            <span className="text-on-surface-variant/40">•</span>
+            <span className="text-primary font-medium">{inProgressDeliveries} em rota</span>
           </div>
         </div>
-
-        <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all" />
       </div>
 
       {/* 2. OTIF Rate */}
-      <div className="p-5 rounded-3xl glass-panel border border-emerald-500/20 shadow-xl flex flex-col justify-between relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+      <div className="p-4 rounded-lg bg-surface-container border border-grid-line flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Índice OTIF</span>
-          <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-            <TrendingUp className="w-5 h-5" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label-caps">Índice OTIF</span>
+          <div className="p-2 rounded bg-surface-container-high text-emerald-400 border border-grid-line">
+            <TrendingUp className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="mt-3">
-          <div className="text-3xl font-black text-emerald-300 font-mono tracking-tight">
+        <div className="mt-2">
+          <div className="text-2xl font-bold text-emerald-400 font-data-mono tracking-tight">
             {otifRate}%
           </div>
-          <div className="mt-2 text-xs text-slate-400">
+          <div className="mt-1.5 text-xs text-on-surface-variant">
             On-Time In-Full (Entregas sem desvio)
           </div>
         </div>
-
-        <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
       </div>
 
       {/* 3. Total Coletas */}
-      <div className="p-5 rounded-3xl glass-panel border border-pink-500/20 shadow-xl flex flex-col justify-between relative overflow-hidden group hover:border-pink-500/40 transition-all">
+      <div className="p-4 rounded-lg bg-surface-container border border-grid-line flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Coletas & Retiradas</span>
-          <div className="p-2.5 rounded-2xl bg-pink-500/20 text-pink-400 border border-pink-500/30">
-            <Package className="w-5 h-5" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label-caps">Coletas & Retiradas</span>
+          <div className="p-2 rounded bg-surface-container-high text-secondary border border-grid-line">
+            <Package className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="mt-3">
-          <div className="text-3xl font-black text-pink-300 font-mono tracking-tight">
+        <div className="mt-2">
+          <div className="text-2xl font-bold text-secondary font-data-mono tracking-tight">
             {totalCollections}
           </div>
-          <div className="flex items-center gap-2 mt-2 text-xs">
-            <span className="text-pink-400 font-semibold">{completedCollections} realizadas</span>
-            <span className="text-slate-500">•</span>
-            <span className="text-slate-400">{totalCollections - completedCollections} pendentes</span>
+          <div className="flex items-center gap-2 mt-1.5 text-xs">
+            <span className="text-secondary font-medium">{completedCollections} realizadas</span>
+            <span className="text-on-surface-variant/40">•</span>
+            <span className="text-on-surface-variant">{totalCollections - completedCollections} pendentes</span>
           </div>
         </div>
-
-        <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl group-hover:bg-pink-500/20 transition-all" />
       </div>
 
       {/* 4. Financial or Fleet KM */}
       {!isMotorista ? (
-        <div className="p-5 rounded-3xl glass-panel border border-amber-500/20 shadow-xl flex flex-col justify-between relative overflow-hidden group hover:border-amber-500/40 transition-all">
+        <div className="p-4 rounded-lg bg-surface-container border border-grid-line flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Carga & Frete Total</span>
-            <div className="p-2.5 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-              <DollarSign className="w-5 h-5" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label-caps">Carga & Frete Total</span>
+            <div className="p-2 rounded bg-surface-container-high text-primary border border-grid-line">
+              <DollarSign className="w-4 h-4" />
             </div>
           </div>
 
-          <div className="mt-3">
-            <div className="text-2xl font-black text-amber-300 font-mono tracking-tight">
+          <div className="mt-2">
+            <div className="text-xl font-bold text-on-surface font-data-mono tracking-tight">
               R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="mt-2 text-xs text-slate-400">
-              Fretes: <strong className="text-cyan-400">R$ {totalFreight.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+            <div className="mt-1.5 text-xs text-on-surface-variant">
+              Fretes: <strong className="text-primary font-medium">R$ {totalFreight.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
             </div>
           </div>
-
-          <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all" />
         </div>
       ) : (
-        <div className="p-5 rounded-3xl glass-panel border border-cyan-500/20 shadow-xl flex flex-col justify-between relative overflow-hidden group">
+        <div className="p-4 rounded-lg bg-surface-container border border-grid-line flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Quilometragem</span>
-            <div className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-              <Gauge className="w-5 h-5" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label-caps">Quilometragem</span>
+            <div className="p-2 rounded bg-surface-container-high text-primary border border-grid-line">
+              <Gauge className="w-4 h-4" />
             </div>
           </div>
 
-          <div className="mt-3">
-            <div className="text-3xl font-black text-cyan-300 font-mono tracking-tight">
+          <div className="mt-2">
+            <div className="text-2xl font-bold text-primary font-data-mono tracking-tight">
               {totalKm} km
             </div>
-            <div className="mt-2 text-xs text-slate-400">
+            <div className="mt-1.5 text-xs text-on-surface-variant">
               Total rodado nas entregas
             </div>
           </div>

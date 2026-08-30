@@ -82,32 +82,32 @@ export default function SellersTable() {
   const totalEntregas = filteredSellers.reduce((sum, s) => sum + s.totalVendas, 0);
 
   return (
-    <div className="p-6 rounded-3xl glass-panel border border-white/10 shadow-xl flex flex-col justify-between gap-4">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col gap-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low/50">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+          <div className="p-2 rounded bg-surface-container-high text-secondary border border-grid-line shrink-0">
             <Users className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-bold text-white text-sm uppercase tracking-wider">
+            <h3 className="font-semibold text-on-surface text-xs uppercase tracking-wider font-label-caps">
               Desempenho Comercial por Vendedor (KPI)
             </h3>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-[11px] text-on-surface-variant font-data-mono">
               {filteredSellers.length} Vendedores • Faturamento Total: R$ {totalFaturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-white/10 self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-surface-container-lowest p-1 rounded-lg border border-grid-line self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setFilterUnit('ALL')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
               filterUnit === 'ALL'
-                ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-primary-container text-on-primary-container font-bold'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             Todos
@@ -115,10 +115,10 @@ export default function SellersTable() {
           <button
             type="button"
             onClick={() => setFilterUnit('Matriz')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
               filterUnit === 'Matriz'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-primary-container text-on-primary-container font-bold'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             Matriz
@@ -126,10 +126,10 @@ export default function SellersTable() {
           <button
             type="button"
             onClick={() => setFilterUnit('Filial')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
               filterUnit === 'Filial'
-                ? 'bg-orange-500 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-secondary-container text-white font-bold'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             Filial
@@ -138,66 +138,62 @@ export default function SellersTable() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-2xl border border-white/5 bg-slate-950/40">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider text-[10px] font-semibold border-b border-white/10">
-            <tr>
-              <th className="p-3">Rank / Vendedor</th>
-              <th className="p-3 text-center">Unidade</th>
-              <th className="p-3 text-center">Nº Vendas / Entregas</th>
-              <th className="p-3 text-center">Concluídas</th>
-              <th className="p-3 text-right">Volume Faturado</th>
-              <th className="p-3 text-right">Ticket Médio</th>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+              <th className="py-2.5 px-4">RANK / VENDEDOR</th>
+              <th className="py-2.5 px-4 text-center">UNIDADE</th>
+              <th className="py-2.5 px-4 text-center">Nº VENDAS</th>
+              <th className="py-2.5 px-4 text-center">CONCLUÍDAS</th>
+              <th className="py-2.5 px-4 text-right">VOLUME FATURADO</th>
+              <th className="py-2.5 px-4 text-right">TICKET MÉDIO</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5 text-slate-200">
+          <tbody className="divide-y divide-grid-line text-on-surface">
             {filteredSellers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-4 text-center text-slate-500">
+                <td colSpan={6} className="py-6 text-center text-on-surface-variant">
                   Nenhum vendedor encontrado para o filtro selecionado
                 </td>
               </tr>
             ) : (
               filteredSellers.map((seller, idx) => (
-                <tr key={seller.id || seller.nomeCompleto} className="hover:bg-white/5 transition-colors">
-                  <td className="p-3 font-semibold text-white flex items-center gap-2">
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
+                <tr key={seller.id || seller.nomeCompleto} className="border-b border-grid-line hover:bg-primary-container/5 transition-colors group">
+                  <td className="py-2.5 px-4 font-semibold text-on-surface flex items-center gap-2">
+                    <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-data-mono font-bold ${
                       idx === 0 
-                        ? 'bg-amber-400 text-slate-950 shadow-sm' 
+                        ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' 
                         : idx === 1 
-                        ? 'bg-slate-300 text-slate-950' 
+                        ? 'bg-surface-container-highest text-on-surface border border-grid-line' 
                         : idx === 2 
-                        ? 'bg-amber-700 text-white' 
-                        : 'bg-white/10 text-slate-400'
+                        ? 'bg-secondary-container/20 text-secondary border border-secondary-container/30' 
+                        : 'bg-surface-container-high text-on-surface-variant'
                     }`}>
                       {idx + 1}
                     </span>
-                    <span className="font-bold">{seller.nome}</span>
+                    <span className="font-semibold text-on-surface">{seller.nome}</span>
                   </td>
 
-                  <td className="p-3 text-center">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                      seller.unidade === 'Matriz'
-                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                        : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
-                    }`}>
+                  <td className="py-2.5 px-4 text-center">
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-surface-container-highest border border-grid-line text-on-surface">
                       {seller.unidade}
                     </span>
                   </td>
 
-                  <td className="p-3 text-center font-mono font-bold text-slate-300">
+                  <td className="py-2.5 px-4 text-center font-data-mono text-on-surface">
                     {seller.totalVendas}
                   </td>
 
-                  <td className="p-3 text-center font-mono font-bold text-emerald-400">
+                  <td className="py-2.5 px-4 text-center font-data-mono font-semibold text-emerald-400">
                     {seller.concluidas}
                   </td>
 
-                  <td className="p-3 text-right font-mono font-bold text-cyan-300">
+                  <td className="py-2.5 px-4 text-right font-data-mono font-bold text-primary">
                     R$ {seller.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
 
-                  <td className="p-3 text-right font-mono text-slate-400 text-[11px]">
+                  <td className="py-2.5 px-4 text-right font-data-mono text-on-surface-variant text-[11px]">
                     R$ {seller.ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>

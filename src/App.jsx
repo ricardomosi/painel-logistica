@@ -96,69 +96,69 @@ export default function App() {
             <div className="flex-1 overflow-y-auto max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-6 animate-in fade-in duration-300 pb-28">
               
               {/* Admin Subtabs */}
-              <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl glass-panel border border-white/40">
+              <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-lg bg-surface-container border border-grid-line">
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('drivers')}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     adminActiveSubTab === 'drivers'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      ? 'bg-primary-container text-on-primary-container'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
                   }`}
                 >
-                  <UserCheck className="w-4 h-4" />
+                  <UserCheck className="w-3.5 h-3.5" />
                   <span>Motoristas</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('vehicles')}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     adminActiveSubTab === 'vehicles'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      ? 'bg-primary-container text-on-primary-container'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
                   }`}
                 >
-                  <Truck className="w-4 h-4" />
+                  <Truck className="w-3.5 h-3.5" />
                   <span>Veículos</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('materials')}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     adminActiveSubTab === 'materials'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      ? 'bg-primary-container text-on-primary-container'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
                   }`}
                 >
-                  <Layers className="w-4 h-4" />
+                  <Layers className="w-3.5 h-3.5" />
                   <span>Catálogo de Materiais</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('sellers')}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     adminActiveSubTab === 'sellers'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      ? 'bg-primary-container text-on-primary-container'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
                   }`}
                 >
-                  <UserCheck className="w-4 h-4 text-orange-400" />
+                  <UserCheck className="w-3.5 h-3.5 text-secondary" />
                   <span>Equipe Comercial (Vendedores)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('users')}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     adminActiveSubTab === 'users'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      ? 'bg-primary-container text-on-primary-container'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
                   }`}
                 >
-                  <ShieldCheck className="w-4 h-4" />
+                  <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Acessos & Usuários (RBAC)</span>
                 </button>
               </div>

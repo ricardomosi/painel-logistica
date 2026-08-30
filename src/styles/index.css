@@ -2,156 +2,157 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
 @layer base {
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-attachment: fixed;
-    transition: background 0.5s ease;
+    background-color: #020D1A;
+    color: #d3e3ff;
     user-select: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* TEMA 1: COLETAS */
+  /* Obsidian Manifest Blueprint Grid Pattern */
+  .bg-grid-pattern {
+    background-color: #020D1A;
+    background-size: 24px 24px;
+    background-image: 
+      linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+    background-attachment: fixed;
+  }
+
+  /* Themes */
   body.theme-coleta,
-  .theme-coleta {
-    background: radial-gradient(circle at 50% 20%, #e2e8f0 0%, #cbd5e1 50%, #94a3b8 100%);
-    background-attachment: fixed;
-  }
-
-  /* TEMA 2: ENTREGAS */
   body.theme-entrega,
-  .theme-entrega {
-    background: linear-gradient(175deg, #020024 0%, #091b3e 40%, #0f172a 100%);
-    background-attachment: fixed;
-  }
-
-  /* TEMA 3: RELATÓRIOS */
   body.theme-relatorio,
+  .theme-coleta,
+  .theme-entrega,
   .theme-relatorio {
-    background: linear-gradient(135deg, #03042C 0%, #0A1051 50%, #0f172a 100%);
+    background-color: #020D1A;
+    background-size: 24px 24px;
+    background-image: 
+      linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
     background-attachment: fixed;
-    position: relative;
-  }
-
-  body.theme-relatorio::before,
-  .theme-relatorio::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.04; 
-    pointer-events: none;
-    z-index: -1;
   }
 }
 
 .font-cunia { font-family: 'Cunia', 'Space Grotesk', sans-serif; }
 .font-space { font-family: 'Space Grotesk', sans-serif; }
 .font-inter { font-family: 'Inter', sans-serif; }
+.font-data-mono { font-family: 'IBM Plex Sans', monospace; }
+.font-label-caps { font-family: 'IBM Plex Sans', sans-serif; }
 
-/* --- Estilos Base & Glassmorphism --- */
+/* --- Obsidian Manifest Industrial Containers --- */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 0.5rem;
 }
 
 .glass-card {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.5rem;
 }
 
-/* --- Estilos Dashboards (Aba Relatórios) --- */
+/* --- Dashboards & Admin Cards --- */
 .dash-card {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  color: #ffffff;
+  background: #1E293B;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 0.5rem;
+  color: #d3e3ff;
 }
 
 .dash-input {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  font-weight: 600;
-  border-radius: 12px;
+  background: #031428;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: #d3e3ff;
+  font-weight: 500;
+  border-radius: 0.5rem;
   padding: 8px 12px;
   outline: none;
-  transition: all 0.3s;
+  transition: border-color 0.2s, background-color 0.2s;
 }
-.dash-input:focus { border-color: #00D4FF; background: rgba(255, 255, 255, 0.18); }
-.dash-input option { background: #0A1051; color: white; }
+.dash-input:focus { border-color: #1da4d0; background: #0b1c30; }
+.dash-input option { background: #031428; color: #d3e3ff; }
 
-/* --- OVERRIDES DO TEMA ENTREGAS E RELATÓRIOS --- */
-body.theme-entrega header, body.theme-relatorio header { 
-  background-color: rgba(10, 15, 30, 0.92) !important; 
-  border-color: rgba(255, 255, 255, 0.15) !important; 
+/* --- Overrides Header & Kanban Column --- */
+header {
+  background-color: rgba(3, 20, 40, 0.85) !important;
+  border-color: rgba(148, 163, 184, 0.12) !important;
+  backdrop-filter: blur(12px);
 }
-body.theme-entrega .dynamic-title, body.theme-relatorio .dynamic-title { color: #38bdf8 !important; }
-body.theme-entrega .dynamic-subtitle, body.theme-relatorio .dynamic-subtitle { color: #cbd5e1 !important; }
-body.theme-entrega #week-display, body.theme-entrega #mobile-week-display, body.theme-relatorio #week-display, body.theme-relatorio #mobile-week-display { 
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #f1f5f9 !important; 
-  border-color: rgba(255, 255, 255, 0.2) !important;
-}
-body.theme-entrega .border-dynamic, body.theme-relatorio .border-dynamic { border-color: rgba(255, 255, 255, 0.2) !important; }
 
-body.theme-entrega .kanban-column { 
-  background-color: rgba(15, 23, 42, 0.75) !important; 
-  border-color: rgba(255, 255, 255, 0.15) !important; 
-}
-body.theme-entrega .kanban-column > div:first-child { 
-  background-color: rgba(2, 6, 23, 0.9) !important; 
-  border-color: rgba(255, 255, 255, 0.1) !important; 
-}
-body.theme-entrega .kanban-column h2 { color: #f8fafc !important; }
-body.theme-entrega .kanban-column .date-label { color: #94a3b8 !important; }
-body.theme-entrega .count-badge { background-color: rgba(255, 255, 255, 0.2) !important; color: #ffffff !important; }
+.dynamic-title { color: #68d3ff !important; }
+.dynamic-subtitle { color: #94a3b8 !important; }
 
-body.theme-entrega .glass-panel { background: rgba(15, 23, 42, 0.8) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; }
-body.theme-entrega .mobile-date { color: #f8fafc !important; }
-body.theme-entrega .mobile-tab-btn > span:first-child { color: #94a3b8 !important; }
-body.theme-entrega #mobile-col-title { color: #f8fafc !important; }
-body.theme-entrega .mobile-tab-btn.bg-white { background: rgba(30, 41, 59, 0.95) !important; }
+#week-display, #mobile-week-display {
+  background: #1b2b3f !important;
+  color: #d3e3ff !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
+  border-radius: 0.5rem !important;
+}
+
+.border-dynamic { border-color: rgba(148, 163, 184, 0.15) !important; }
+
+.kanban-column {
+  background-color: rgba(11, 28, 48, 0.7) !important;
+  border: 1px solid rgba(148, 163, 184, 0.12) !important;
+  border-radius: 0.5rem !important;
+}
+
+.kanban-column > div:first-child {
+  background-color: rgba(3, 20, 40, 0.9) !important;
+  border-color: rgba(148, 163, 184, 0.12) !important;
+  border-top-left-radius: 0.5rem !important;
+  border-top-right-radius: 0.5rem !important;
+}
+
+.kanban-column h2 { color: #d3e3ff !important; }
+.kanban-column .date-label { color: #879299 !important; }
+.count-badge {
+  background-color: #26364b !important;
+  color: #d3e3ff !important;
+  border: 1px solid rgba(148, 163, 184, 0.12) !important;
+  border-radius: 0.25rem !important;
+}
+
+.mobile-date { color: #d3e3ff !important; }
+.mobile-tab-btn > span:first-child { color: #879299 !important; }
+#mobile-col-title { color: #d3e3ff !important; }
+.mobile-tab-btn.bg-white { background: #1E293B !important; }
 
 /* Estilização dos Botões de Toggle nas Abas */
-.theme-toggle-container { transition: background 0.3s; }
-body.theme-entrega .theme-toggle-container, body.theme-relatorio .theme-toggle-container { 
-  background: rgba(2, 6, 23, 0.7) !important; 
-  border-color: rgba(255, 255, 255, 0.15) !important; 
+.theme-toggle-container {
+  background: #031428 !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 0.5rem !important;
 }
 
-body.theme-coleta #btn-tab-coleta-mob, body.theme-coleta #btn-tab-coleta-desk { background: #2563eb; color: #ffffff; font-weight: 800; }
-body.theme-coleta #btn-tab-entrega-mob, body.theme-coleta #btn-tab-entrega-desk, body.theme-coleta #btn-tab-relatorio-mob, body.theme-coleta #btn-tab-relatorio-desk { background: transparent; color: #1e293b; font-weight: 700; }
-
-body.theme-entrega #btn-tab-entrega-mob, body.theme-entrega #btn-tab-entrega-desk { background: #0284c7; color: #ffffff; font-weight: 800; }
-body.theme-entrega #btn-tab-coleta-mob, body.theme-entrega #btn-tab-coleta-desk, body.theme-entrega #btn-tab-relatorio-mob, body.theme-entrega #btn-tab-relatorio-desk { background: transparent; color: #cbd5e1; font-weight: 700; }
-
-body.theme-relatorio #btn-tab-relatorio-mob, body.theme-relatorio #btn-tab-relatorio-desk { background: #38bdf8; color: #020617; font-weight: 800; }
-body.theme-relatorio #btn-tab-coleta-mob, body.theme-relatorio #btn-tab-coleta-desk, body.theme-relatorio #btn-tab-entrega-mob, body.theme-relatorio #btn-tab-entrega-desk { background: transparent; color: #cbd5e1; font-weight: 700; }
+#btn-tab-coleta-mob, #btn-tab-coleta-desk,
+#btn-tab-entrega-mob, #btn-tab-entrega-desk,
+#btn-tab-relatorio-mob, #btn-tab-relatorio-desk {
+  border-radius: 0.375rem !important;
+}
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 .kanban-cards::-webkit-scrollbar { width: 4px; }
 .kanban-cards::-webkit-scrollbar-track { background: transparent; }
-.kanban-cards::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+.kanban-cards::-webkit-scrollbar-thumb { background: #3e484e; border-radius: 4px; }
 
 /* Dashboard scrollbar */
 #dashboard-view::-webkit-scrollbar { width: 6px; }
 #dashboard-view::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
-#dashboard-view::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
-#dashboard-view::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+#dashboard-view::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 4px; }
+#dashboard-view::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); }
 
-.kanban-column.drag-over { background-color: rgba(241, 245, 249, 0.9); border-color: #2563eb; border-style: dashed; }
-.dragging { opacity: 0.5; transform: scale(0.98); }
+.kanban-column.drag-over { background-color: rgba(29, 164, 208, 0.15) !important; border-color: #1da4d0 !important; border-style: dashed; }
+.dragging { opacity: 0.5; transform: scale(0.99); }
 
-.animate-fade-slide { animation: fadeSlide 0.3s ease-out forwards; }
-@keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-slide { animation: fadeSlide 0.2s ease-out forwards; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

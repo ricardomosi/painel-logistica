@@ -25,62 +25,64 @@ export default function FleetTable() {
   });
 
   return (
-    <div className="p-6 rounded-3xl glass-panel border border-white/10 shadow-xl flex flex-col justify-between">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Truck className="w-5 h-5 text-cyan-400" />
-          <h3 className="font-bold text-white text-sm uppercase tracking-wider">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col">
+      <div className="p-4 border-b border-grid-line flex items-center justify-between bg-surface-container-low/50">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded bg-surface-container-high text-primary border border-grid-line shrink-0">
+            <Truck className="w-4 h-4" />
+          </div>
+          <h3 className="font-semibold text-on-surface text-xs uppercase tracking-wider font-label-caps">
             Utilização e Eficiência da Frota
           </h3>
         </div>
-        <span className="text-xs text-slate-400 font-mono">
-          {vehicles.length} Veículos Cadastrados
+        <span className="text-[11px] text-on-surface-variant font-data-mono">
+          {vehicles.length} Veículos
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-white/5 bg-slate-950/40">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider text-[10px] font-semibold border-b border-white/10">
-            <tr>
-              <th className="p-3">Veículo / Placa</th>
-              <th className="p-3">Motorista Padrão</th>
-              <th className="p-3 text-center">Entregas</th>
-              <th className="p-3 text-right">KM Total</th>
-              <th className="p-3 text-center">Status Frota</th>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+              <th className="py-2.5 px-4">VEÍCULO / PLACA</th>
+              <th className="py-2.5 px-4">MOTORISTA PADRÃO</th>
+              <th className="py-2.5 px-4 text-center">ENTREGAS</th>
+              <th className="py-2.5 px-4 text-right">KM TOTAL</th>
+              <th className="py-2.5 px-4 text-center">STATUS</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5 text-slate-200">
+          <tbody className="divide-y divide-grid-line text-on-surface">
             {fleetData.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-slate-500">
+                <td colSpan={5} className="py-6 text-center text-on-surface-variant">
                   Nenhum veículo cadastrado
                 </td>
               </tr>
             ) : (
               fleetData.map((item) => (
-                <tr key={item.id} className="hover:bg-white/5 transition-colors">
-                  <td className="p-3">
+                <tr key={item.id} className="border-b border-grid-line hover:bg-primary-container/5 transition-colors group">
+                  <td className="py-2.5 px-4">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 font-mono font-bold border border-cyan-500/30">
+                      <span className="px-2 py-0.5 rounded bg-surface-container-highest text-primary font-data-mono font-bold border border-grid-line text-[11px]">
                         {item.placa}
                       </span>
-                      <span className="text-slate-400 text-[11px]">{item.modelo}</span>
+                      <span className="text-on-surface-variant text-[11px]">{item.modelo}</span>
                     </div>
                   </td>
-                  <td className="p-3 text-slate-300 font-medium">
+                  <td className="py-2.5 px-4 text-on-surface font-medium">
                     {item.driverName}
                   </td>
-                  <td className="p-3 text-center font-mono font-bold text-slate-300">
-                    <span className="text-white">{item.completed}</span> / {item.deliveriesCount}
+                  <td className="py-2.5 px-4 text-center font-data-mono font-medium text-on-surface">
+                    <span className="text-primary font-bold">{item.completed}</span> / {item.deliveriesCount}
                   </td>
-                  <td className="p-3 text-right font-mono font-bold text-cyan-300">
+                  <td className="py-2.5 px-4 text-right font-data-mono font-bold text-on-surface">
                     {item.totalKm} km
                   </td>
-                  <td className="p-3 text-center">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  <td className="py-2.5 px-4 text-center">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
                       item.ativo 
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                        : 'bg-slate-700/50 text-slate-400'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                        : 'bg-surface-container-highest text-on-surface-variant border border-grid-line'
                     }`}>
                       {item.ativo ? 'Operando' : 'Inativo'}
                     </span>

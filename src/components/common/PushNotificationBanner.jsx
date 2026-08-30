@@ -34,57 +34,61 @@ export default function PushNotificationBanner() {
   const isColeta = type === 'collection';
   const isConcluded = type === 'concluded';
 
-  let bannerGradient = 'from-blue-600 to-indigo-700 text-white';
-  let badgeColor = 'bg-blue-500/30 text-white border-blue-400/40';
+  let bannerBg = 'bg-surface-container border-grid-line text-on-surface';
+  let badgeColor = 'bg-primary-container/20 text-primary border-primary/30';
   let IconComponent = Truck;
+  let iconColor = 'text-primary';
 
   if (isForMe) {
-    bannerGradient = 'from-amber-600 via-orange-600 to-red-600 text-white shadow-orange-500/30';
-    badgeColor = 'bg-white/20 text-white border-white/30 font-black';
+    bannerBg = 'bg-surface-container-high border-secondary-container/50 text-on-surface';
+    badgeColor = 'bg-secondary-container/20 text-secondary border-secondary-container/40 font-bold';
+    iconColor = 'text-secondary';
   } else if (isColeta) {
-    bannerGradient = 'from-emerald-600 to-teal-700 text-white';
-    badgeColor = 'bg-emerald-500/30 text-white border-emerald-400/40';
+    bannerBg = 'bg-surface-container border-grid-line text-on-surface';
+    badgeColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 font-bold';
     IconComponent = Package;
+    iconColor = 'text-emerald-400';
   } else if (isConcluded) {
-    bannerGradient = 'from-green-600 to-emerald-700 text-white';
-    badgeColor = 'bg-green-500/30 text-white border-green-400/40';
+    bannerBg = 'bg-surface-container border-grid-line text-on-surface';
+    badgeColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 font-bold';
     IconComponent = CheckCircle2;
+    iconColor = 'text-emerald-400';
   }
 
   return (
-    <div className="fixed top-3 inset-x-0 z-[100] flex justify-center px-3 sm:px-6 pointer-events-none animate-in slide-in-from-top-6 duration-300">
+    <div className="fixed top-3 inset-x-0 z-[100] flex justify-center px-3 sm:px-6 pointer-events-none animate-in slide-in-from-top-4 duration-200">
       <div 
         onClick={handleOpenItem}
-        className={`pointer-events-auto w-full max-w-lg rounded-2xl bg-gradient-to-r ${bannerGradient} shadow-2xl p-4 border border-white/20 backdrop-blur-xl flex items-start gap-3.5 cursor-pointer transform active:scale-[0.99] transition-all hover:shadow-cyan-500/20`}
+        className={`pointer-events-auto w-full max-w-lg rounded-lg ${bannerBg} shadow-xl p-3.5 border backdrop-blur-xl flex items-start gap-3 cursor-pointer transition-all hover:bg-surface-container-high`}
       >
         {/* Icon Avatar */}
-        <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-inner ring-1 ring-white/30">
-          <IconComponent className="w-5 h-5 text-white" />
+        <div className="w-9 h-9 rounded-md bg-surface-container-highest border border-grid-line flex items-center justify-center shrink-0">
+          <IconComponent className={`w-4 h-4 ${iconColor}`} />
         </div>
 
         {/* Notification Content */}
         <div className="flex-1 min-w-0 pr-1">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${badgeColor}`}>
+            <span className={`text-[10px] uppercase px-2 py-0.5 rounded border ${badgeColor}`}>
               {isForMe ? '🚨 ATRIBUÍDO A VOCÊ' : (isColeta ? 'NOVA COLETA' : (isConcluded ? 'CONCLUÍDO' : 'NOVA ENTREGA'))}
             </span>
-            <span className="text-[10px] text-white/80 font-medium">Agora</span>
+            <span className="text-[10px] text-on-surface-variant font-medium">Agora</span>
           </div>
 
-          <h4 className="text-sm font-bold text-white tracking-tight leading-snug truncate">
+          <h4 className="text-xs font-bold text-on-surface tracking-tight leading-snug truncate">
             {title}
           </h4>
 
           {message && (
-            <p className="text-xs text-white/90 font-medium line-clamp-2 mt-0.5 leading-relaxed">
+            <p className="text-[11px] text-on-surface-variant font-normal line-clamp-2 mt-0.5 leading-relaxed">
               {message}
             </p>
           )}
 
           {/* Quick Action Hint */}
-          <div className="flex items-center gap-3 mt-2 text-[11px] font-bold text-white/95">
-            <span className="flex items-center gap-1 underline underline-offset-2">
-              <span>Toque para ver detalhes</span>
+          <div className="flex items-center gap-3 mt-1.5 text-[11px] font-semibold text-primary">
+            <span className="flex items-center gap-1 hover:underline">
+              <span>Ver detalhes</span>
               <ArrowRight className="w-3 h-3" />
             </span>
             {item?.endereco && (
@@ -93,9 +97,9 @@ export default function PushNotificationBanner() {
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/20 hover:bg-white/30 text-white text-[10px] transition-colors"
+                className="flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-[10px] border border-grid-line transition-colors"
               >
-                <Navigation className="w-2.5 h-2.5" />
+                <Navigation className="w-2.5 h-2.5 text-primary" />
                 <span>Traçar Rota</span>
               </a>
             )}
@@ -109,10 +113,10 @@ export default function PushNotificationBanner() {
             e.stopPropagation();
             clearPushNotification();
           }}
-          className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/20 transition-colors shrink-0"
+          className="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-surface-container-high transition-colors shrink-0"
           title="Fechar notificação"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

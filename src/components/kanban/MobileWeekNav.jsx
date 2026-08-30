@@ -24,22 +24,24 @@ export default function MobileWeekNav({ columns, activeColumnKey, onSelectColumn
     <>
       {/* NAVEGAÇÃO ABAS DIAS DA SEMANA (Mobile) */}
       <div id="mobile-days-nav" className="w-full pb-2 px-1 sm:px-2 z-10 lg:hidden shrink-0 transition-opacity duration-300">
-        <div className="grid grid-cols-[1.2fr_repeat(6,1fr)] gap-1 w-full font-space pt-2">
+        <div className="grid grid-cols-[1.1fr_repeat(6,1fr)] gap-1 w-full font-inter pt-2">
           
           {/* Atualizações Tab Button */}
           <button 
             type="button"
             onClick={() => onSelectColumn('atualizacoes')} 
-            className={`mobile-tab-btn w-full h-[65px] rounded-[14px] flex flex-col items-center justify-center relative transition-all group ${
+            className={`w-full h-[54px] rounded-lg flex flex-col items-center justify-center relative transition-all ${
               activeColumnKey === 'atualizacoes'
-                ? 'bg-white shadow-md scale-105 border border-white text-slate-800'
-                : 'bg-white/80 backdrop-blur-md text-slate-800 border border-white/60 shadow-sm opacity-80'
+                ? 'bg-primary-container text-on-primary-container border border-primary font-bold shadow-xs'
+                : 'bg-surface-container border border-grid-line text-on-surface-variant'
             }`}
           >
-            <span className="material-symbols-outlined text-[22px] text-blue-600">inbox</span>
-            <div className="mobile-tab-badge absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-[10px] font-bold text-white border border-[#80DCFB] shadow-sm z-10">
-              {itemCounts['atualizacoes'] || 0}
-            </div>
+            <span className="material-symbols-outlined text-[20px]">inbox</span>
+            {itemCounts['atualizacoes'] > 0 && (
+              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 flex items-center justify-center text-[9px] font-bold text-white z-10">
+                {itemCounts['atualizacoes']}
+              </div>
+            )}
           </button>
 
           {/* Days Seg to Sab */}
@@ -54,30 +56,28 @@ export default function MobileWeekNav({ columns, activeColumnKey, onSelectColumn
                 key={d.key}
                 type="button"
                 onClick={() => onSelectColumn(d.key)} 
-                className={`mobile-tab-btn w-full h-[65px] rounded-[14px] flex flex-col items-center justify-center relative backdrop-blur-md transition-all group ${
+                className={`w-full h-[54px] rounded-lg flex flex-col items-center justify-center relative transition-all ${
                   isTarget
-                    ? 'bg-white shadow-md scale-105 border border-white'
-                    : 'bg-white/40 border border-white/50 opacity-90'
+                    ? 'bg-primary-container text-on-primary-container border border-primary font-bold shadow-xs'
+                    : 'bg-surface-container border border-grid-line text-on-surface-variant'
                 }`}
               >
-                <span className={`text-[9px] font-bold mb-0.5 uppercase tracking-tighter ${
-                  isTarget ? 'text-blue-600' : 'text-slate-700'
+                <span className={`text-[9px] uppercase tracking-wider font-label-caps ${
+                  isTarget ? 'text-on-primary-container font-bold' : 'text-on-surface-variant'
                 }`}>
                   {d.label}
                 </span>
 
-                <span className={`text-[18px] font-extrabold mobile-date ${
-                  isTarget ? 'text-[#0066FF]' : 'text-slate-800'
+                <span className={`text-[15px] font-data-mono font-bold leading-tight ${
+                  isTarget ? 'text-on-primary-container' : 'text-on-surface'
                 }`}>
                   {dayNum}
                 </span>
 
-                {isTarget && (
-                  <div className="indicator-dot absolute bottom-1 w-1 h-1 rounded-full bg-[#0066FF]" />
-                )}
-
                 {count > 0 && (
-                  <div className="mobile-tab-badge absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-[#334155] flex items-center justify-center text-[9px] font-bold text-white border border-[#88DEFB] z-10 shadow-sm">
+                  <div className={`absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center text-[9px] font-bold z-10 ${
+                    isTarget ? 'bg-primary text-on-primary' : 'bg-surface-container-highest text-on-surface border border-grid-line'
+                  }`}>
                     {count}
                   </div>
                 )}
@@ -89,8 +89,8 @@ export default function MobileWeekNav({ columns, activeColumnKey, onSelectColumn
       </div>
 
       {/* Título Dinâmico Mobile Acima dos Cards */}
-      <div id="mobile-col-title-container" className="lg:hidden flex items-center justify-between px-4 pt-2 pb-1 shrink-0 font-space transition-opacity duration-300">
-        <h2 className="text-lg font-bold text-slate-800 tracking-wide transition-colors duration-500" id="mobile-col-title">
+      <div id="mobile-col-title-container" className="lg:hidden flex items-center justify-between px-3 pt-2 pb-1 shrink-0 font-inter">
+        <h2 className="text-sm font-semibold text-on-surface tracking-wide" id="mobile-col-title">
           {TITULOS_MOBILE[activeColumnKey] || 'Atualizações'}
         </h2>
       </div>
