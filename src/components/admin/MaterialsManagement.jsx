@@ -19,6 +19,22 @@ import {
 import { materialsService } from '../../services/materialsService';
 import { useLogistics } from '../../contexts/LogisticsContext';
 
+const UNIDADES_OPTIONS = [
+  'UN',
+  'KG',
+  'MT',
+  'TN',
+  'LT',
+  'PR',
+  'M2',
+  'M3',
+  'PCT',
+  'CX',
+  'RL',
+  'BR',
+  'CJ'
+];
+
 export default function MaterialsManagement() {
   const { showConfirm, addToast } = useLogistics();
   const [materials, setMaterials] = useState([]);
