@@ -4,58 +4,58 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const COLUMN_THEMES = {
   atualizacoes: {
-    columnBg: 'lg:bg-surface-container/50 lg:border lg:border-grid-line',
-    headerBg: 'bg-surface-container-high/80 border-b border-grid-line',
-    titleColor: 'text-on-surface font-semibold',
-    badgeBg: 'bg-surface-container-highest text-on-surface border border-grid-line',
+    columnBg: 'lg:bg-white/40 lg:border lg:border-white/50 lg:backdrop-blur-xs',
+    headerBg: 'bg-[#029CC8]/85 border-b border-white/20 text-white',
+    titleColor: 'text-white font-bold',
+    badgeBg: 'bg-white/20 text-white border border-white/30',
     title: '📋 Atualizações',
   },
   segunda: {
-    columnBg: 'lg:bg-surface-container/50 lg:border lg:border-grid-line',
-    headerBg: 'bg-surface-container-high/80 border-b border-grid-line',
-    titleColor: 'text-on-surface font-semibold',
-    subColor: 'text-on-surface-variant',
-    badgeBg: 'bg-surface-container-highest text-on-surface border border-grid-line',
+    columnBg: 'lg:bg-white/40 lg:border lg:border-white/50 lg:backdrop-blur-xs',
+    headerBg: 'bg-[#029CC8]/85 border-b border-white/20 text-white',
+    titleColor: 'text-white font-bold',
+    subColor: 'text-white/80',
+    badgeBg: 'bg-white/20 text-white border border-white/30',
     title: 'Segunda',
   },
   terca: {
-    columnBg: 'lg:bg-surface-container/50 lg:border lg:border-grid-line',
-    headerBg: 'bg-surface-container-high/80 border-b border-grid-line',
-    titleColor: 'text-on-surface font-semibold',
-    subColor: 'text-on-surface-variant',
-    badgeBg: 'bg-surface-container-highest text-on-surface border border-grid-line',
+    columnBg: 'lg:bg-white/40 lg:border lg:border-white/50 lg:backdrop-blur-xs',
+    headerBg: 'bg-[#029CC8]/85 border-b border-white/20 text-white',
+    titleColor: 'text-white font-bold',
+    subColor: 'text-white/80',
+    badgeBg: 'bg-white/20 text-white border border-white/30',
     title: 'Terça',
   },
   quarta: {
-    columnBg: 'lg:bg-surface-container/50 lg:border lg:border-grid-line',
-    headerBg: 'bg-surface-container-high/80 border-b border-grid-line',
-    titleColor: 'text-on-surface font-semibold',
-    subColor: 'text-on-surface-variant',
-    badgeBg: 'bg-surface-container-highest text-on-surface border border-grid-line',
+    columnBg: 'lg:bg-white/40 lg:border lg:border-white/50 lg:backdrop-blur-xs',
+    headerBg: 'bg-[#029CC8]/85 border-b border-white/20 text-white',
+    titleColor: 'text-white font-bold',
+    subColor: 'text-white/80',
+    badgeBg: 'bg-white/20 text-white border border-white/30',
     title: 'Quarta',
   },
   quinta: {
-    columnBg: 'lg:bg-surface-container/50 lg:border lg:border-grid-line',
-    headerBg: 'bg-surface-container-high/80 border-b border-grid-line',
-    titleColor: 'text-on-surface font-semibold',
-    subColor: 'text-on-surface-variant',
-    badgeBg: 'bg-surface-container-highest text-on-surface border border-grid-line',
+    columnBg: 'lg:bg-white/40 lg:border lg:border-white/50 lg:backdrop-blur-xs',
+    headerBg: 'bg-[#029CC8]/85 border-b border-white/20 text-white',
+    titleColor: 'text-white font-bold',
+    subColor: 'text-white/80',
+    badgeBg: 'bg-white/20 text-white border border-white/30',
     title: 'Quinta',
   },
   sexta: {
-    columnBg: 'lg:bg-surface-container/50 lg:border lg:border-grid-line',
-    headerBg: 'bg-surface-container-high/80 border-b border-grid-line',
-    titleColor: 'text-on-surface font-semibold',
-    subColor: 'text-on-surface-variant',
-    badgeBg: 'bg-surface-container-highest text-on-surface border border-grid-line',
+    columnBg: 'lg:bg-white/40 lg:border lg:border-white/50 lg:backdrop-blur-xs',
+    headerBg: 'bg-[#029CC8]/85 border-b border-white/20 text-white',
+    titleColor: 'text-white font-bold',
+    subColor: 'text-white/80',
+    badgeBg: 'bg-white/20 text-white border border-white/30',
     title: 'Sexta',
   },
   sabado: {
-    columnBg: 'lg:bg-surface-container/50 lg:border lg:border-grid-line',
-    headerBg: 'bg-surface-container-high/80 border-b border-grid-line',
-    titleColor: 'text-on-surface font-semibold',
-    subColor: 'text-on-surface-variant',
-    badgeBg: 'bg-surface-container-highest text-on-surface border border-grid-line',
+    columnBg: 'lg:bg-white/40 lg:border lg:border-white/50 lg:backdrop-blur-xs',
+    headerBg: 'bg-[#029CC8]/85 border-b border-white/20 text-white',
+    titleColor: 'text-white font-bold',
+    subColor: 'text-white/80',
+    badgeBg: 'bg-white/20 text-white border border-white/30',
     title: 'Sábado',
   },
 };
@@ -96,12 +96,12 @@ export default function KanbanColumn({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`kanban-column flex flex-col flex-1 min-w-0 lg:rounded-lg max-h-full lg:overflow-hidden transition-colors ${theme.columnBg} ${
+      className={`kanban-column flex flex-col flex-1 min-w-0 lg:rounded-[4px] max-h-full lg:overflow-hidden transition-colors ${theme.columnBg} ${
         isDragOver ? 'drag-over' : ''
       }`}
     >
       {/* Desktop Column Header */}
-      <div className={`hidden lg:flex p-2.5 border-b rounded-t-lg justify-between items-center shrink-0 ${theme.headerBg}`}>
+      <div className={`hidden lg:flex p-2.5 border-b rounded-t-[3px] justify-between items-center shrink-0 ${theme.headerBg}`}>
         {column.isStatic ? (
           <h2 className={`text-xs xl:text-[13px] truncate ${theme.titleColor}`}>
             {theme.title}
@@ -111,19 +111,19 @@ export default function KanbanColumn({
             <h2 className={`text-xs xl:text-[13px] ${theme.titleColor}`}>
               {theme.title}
             </h2>
-            <span className={`text-[9px] date-label ${theme.subColor || 'text-on-surface-variant'}`}>
+            <span className={`text-[9px] date-label ${theme.subColor || 'text-white/80'}`}>
               {column.formattedDate || '--/--'}
             </span>
           </div>
         )}
 
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded count-badge ${theme.badgeBg}`}>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-[3px] count-badge ${theme.badgeBg}`}>
           {items.length}
         </span>
       </div>
 
       {/* Cards Scroll Container */}
-      <div className="px-0 lg:px-2 pt-1 pb-28 lg:pb-2 flex-1 overflow-visible lg:overflow-y-auto space-y-3 lg:space-y-1.5 kanban-cards font-inter">
+      <div className="px-0 lg:px-2 pt-1.5 pb-28 lg:pb-2 flex-1 overflow-visible lg:overflow-y-auto space-y-2.5 lg:space-y-1.5 kanban-cards font-inter">
         {items.map((item) => (
           <KanbanCard
             key={item.id}

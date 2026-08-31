@@ -102,22 +102,22 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
   }
 
   // Styles based on status (Stable colors, no color changes on mouse hover)
-  let baseBg = 'bg-white shadow-2xs';
-  let borderColor = 'border-slate-200';
+  let baseBg = 'bg-[#FFFFFF] shadow-2xs';
+  let borderColor = 'border-slate-200/90';
   let titleClass = 'text-slate-900 font-bold';
   let opacityClass = 'opacity-100';
 
   if (isCompleted) {
-    baseBg = 'bg-emerald-50/80 shadow-2xs';
-    borderColor = 'border-emerald-200';
-    titleClass = 'text-slate-900 font-bold';
-    opacityClass = 'opacity-100';
+    baseBg = 'bg-[#EEF9F3] shadow-2xs';
+    borderColor = 'border-emerald-200/80';
+    titleClass = 'text-[#14532d] font-bold line-through';
+    opacityClass = 'opacity-95';
   } else if (isUrgent) {
-    baseBg = 'bg-white shadow-2xs ring-1 ring-rose-200';
+    baseBg = 'bg-[#FFFFFF] shadow-2xs ring-1 ring-rose-200';
     borderColor = 'border-rose-300';
     titleClass = 'text-slate-900 font-bold';
   } else if (hasOccurrence) {
-    baseBg = 'bg-white shadow-2xs ring-1 ring-amber-200';
+    baseBg = 'bg-[#FFFFFF] shadow-2xs ring-1 ring-amber-200';
     borderColor = 'border-amber-300';
     titleClass = 'text-slate-900 font-bold';
   }
@@ -134,7 +134,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
       draggable={!isMotorista}
       onDragStart={(e) => onDragStart && onDragStart(e, item.id)}
       onClick={handleClick}
-      className={`w-full relative cursor-pointer rounded-xl p-2.5 lg:p-2 border ${borderColor} ${baseBg} active:scale-[0.99] ${opacityClass} font-inter`}
+      className={`w-full relative cursor-pointer rounded-[4px] p-2.5 lg:p-2 border ${borderColor} ${baseBg} active:scale-[0.99] ${opacityClass} font-inter`}
     >
       <div className="flex w-full h-full">
         <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full">
@@ -150,20 +150,20 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     <span className={`text-[11px] font-bold ${config.colorText} uppercase tracking-wider`}>{item.tipo}</span>
                   </div>
                   {/* Desktop Type */}
-                  <span className={`hidden lg:flex text-[9px] font-semibold px-1.5 py-0.5 rounded border items-center gap-1 shrink-0 ${config.colorBgDesktop}`}>
+                  <span className={`hidden lg:flex text-[9px] font-semibold px-1.5 py-0.5 rounded-[3px] border items-center gap-1 shrink-0 ${config.colorBgDesktop}`}>
                     <span className="material-symbols-outlined text-[12px]">{config.icon}</span> 
                     <span>{item.tipo}</span>
                   </span>
 
                   {isUrgent && !isCompleted && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 text-[9px] font-bold uppercase tracking-wider shrink-0">
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-rose-50 border border-rose-200 text-rose-700 text-[9px] font-bold uppercase tracking-wider shrink-0">
                       <span>URGENTE</span>
                     </span>
                   )}
 
                   {isCompleted && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[9px] font-bold shrink-0">
-                      <span className="material-symbols-outlined text-[11px] text-emerald-700 font-bold">check_circle</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-emerald-100/70 border border-emerald-300 text-emerald-900 text-[9px] font-bold shrink-0">
+                      <span className="material-symbols-outlined text-[11px] text-emerald-800 font-bold">check_circle</span>
                       <span>Concluído</span>
                     </span>
                   )}
@@ -175,7 +175,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                       type="button"
                       onClick={handleToggleUrgent}
                       title={isUrgent ? 'Remover urgência' : 'Marcar como Urgente'}
-                      className={`p-1 rounded transition-colors cursor-pointer ${
+                      className={`p-1 rounded-[3px] transition-colors cursor-pointer ${
                         isUrgent 
                           ? 'text-rose-600 hover:bg-rose-50' 
                           : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
@@ -196,7 +196,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
               </div>
 
               <h3 
-                className={`text-xs font-bold leading-tight break-words whitespace-normal w-full min-w-0 ${titleClass} mb-1`}
+                className={`text-xs leading-tight break-words whitespace-normal w-full min-w-0 ${titleClass} mb-1`}
                 style={{ wordBreak: 'break-word' }}
                 title={item.fornecedor}
               >
@@ -241,9 +241,9 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
 
               {/* Concluded Info */}
               {isCompleted && item.data_conclusao && (
-                <div className="mt-1.5 pt-1 border-t border-slate-100 flex items-center justify-between text-[9px] text-emerald-700 font-semibold">
+                <div className="mt-1.5 pt-1 border-t border-emerald-200/60 flex items-center justify-between text-[9px] text-emerald-800 font-semibold">
                   <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[11px] text-emerald-600">done_all</span>
+                    <span className="material-symbols-outlined text-[11px] text-emerald-700">done_all</span>
                     <span>Concluído: {dataConclusaoFmt} {horaConclusaoFmt && `às ${horaConclusaoFmt}`}</span>
                   </div>
                 </div>
@@ -251,7 +251,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
 
               {item.responsavel && (
                 <div className="mt-1.5 pt-1 border-t border-slate-100 flex justify-end w-full">
-                  <span className="text-[9px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded uppercase tracking-wide flex items-center gap-1">
+                  <span className="text-[9px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wide flex items-center gap-1">
                     <span className="material-symbols-outlined text-[11px] text-slate-400">person</span>
                     {item.responsavel}
                   </span>
@@ -263,7 +263,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
             <div className="w-full min-w-0">
               <div className="flex justify-between items-center mb-1.5 w-full gap-2">
                 <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                  <span className="hidden lg:flex text-[9px] font-semibold px-1.5 py-0.5 rounded border items-center gap-1 shrink-0 bg-blue-50 border-blue-200 text-blue-800">
+                  <span className="hidden lg:flex text-[9px] font-semibold px-1.5 py-0.5 rounded-[3px] border items-center gap-1 shrink-0 bg-blue-50 border-blue-200 text-blue-800">
                     <span className="material-symbols-outlined text-[12px]">local_shipping</span> 
                     <span>Entrega</span>
                   </span>
@@ -273,14 +273,14 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   </div>
 
                   {isUrgent && !isCompleted && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 text-[9px] font-bold uppercase tracking-wider shrink-0">
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-rose-50 border border-rose-200 text-rose-700 text-[9px] font-bold uppercase tracking-wider shrink-0">
                       <span>URGENTE</span>
                     </span>
                   )}
 
                   {isCompleted && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[9px] font-bold shrink-0">
-                      <span className="material-symbols-outlined text-[11px] text-emerald-700 font-bold">check_circle</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-emerald-100/70 border border-emerald-300 text-emerald-900 text-[9px] font-bold shrink-0">
+                      <span className="material-symbols-outlined text-[11px] text-emerald-800 font-bold">check_circle</span>
                       <span>Concluído</span>
                     </span>
                   )}
@@ -292,7 +292,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                       type="button"
                       onClick={handleToggleUrgent}
                       title={isUrgent ? 'Remover urgência' : 'Marcar como Urgente'}
-                      className={`p-1 rounded transition-colors cursor-pointer ${
+                      className={`p-1 rounded-[3px] transition-colors cursor-pointer ${
                         isUrgent 
                           ? 'text-rose-600 hover:bg-rose-50' 
                           : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
@@ -313,7 +313,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
               </div>
               
               <h3 
-                className={`text-xs font-bold leading-tight break-words whitespace-normal w-full min-w-0 ${titleClass} mb-1`}
+                className={`text-xs leading-tight break-words whitespace-normal w-full min-w-0 ${titleClass} mb-1`}
                 style={{ wordBreak: 'break-word' }}
                 title={item.cliente}
               >
@@ -352,7 +352,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     </span>
                   </div>
                   {item.frete && !isMotorista ? (
-                    <div className="font-bold text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded flex items-center gap-0.5">
+                    <div className="font-bold text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded-[3px] flex items-center gap-0.5">
                       <span className="material-symbols-outlined text-[10px] shrink-0">payments</span>
                       <span>Frete: R$ {item.frete}</span>
                     </div>
@@ -389,7 +389,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   <span className="font-semibold text-[10px] text-slate-700 break-words whitespace-normal min-w-0" style={{ wordBreak: 'break-word' }}>
                     {item.vendedor || 'Vendedor N/D'}
                   </span>
-                  <span className="font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[9px] shrink-0 whitespace-nowrap border border-slate-200">
+                  <span className="font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-[3px] text-[9px] shrink-0 whitespace-nowrap border border-slate-200">
                     {item.local_carregamento || 'MATRIZ'}
                   </span>
                 </div>
@@ -397,13 +397,13 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
 
               {/* Concluded Info */}
               {isCompleted && item.data_conclusao && (
-                <div className="mt-1.5 pt-1 border-t border-slate-100 flex items-center justify-between text-[9px] text-emerald-700 font-semibold">
+                <div className="mt-1.5 pt-1 border-t border-emerald-200/60 flex items-center justify-between text-[9px] text-emerald-800 font-semibold">
                   <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[11px] text-emerald-600">done_all</span>
+                    <span className="material-symbols-outlined text-[11px] text-emerald-700">done_all</span>
                     <span>Concluído: {dataConclusaoFmt} {horaConclusaoFmt && `às ${horaConclusaoFmt}`}</span>
                   </div>
                   {hasOccurrence && (
-                    <span className="text-amber-800 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded text-[8.5px] font-semibold">
+                    <span className="text-amber-800 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded-[2px] text-[8.5px] font-semibold">
                       {item.como_foi_entrega}
                     </span>
                   )}
@@ -412,7 +412,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
 
               {item.cadastrador_entrega && (
                 <div className="mt-1.5 pt-1 border-t border-slate-100 flex justify-end w-full">
-                  <span className="text-[9px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded uppercase tracking-wide flex items-center gap-1">
+                  <span className="text-[9px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wide flex items-center gap-1">
                     <span className="material-symbols-outlined text-[10px] text-slate-400">person</span>
                     {item.cadastrador_entrega}
                   </span>

@@ -42,7 +42,7 @@ export default function App() {
     document.body.classList.remove('theme-coleta', 'theme-entrega', 'theme-relatorio');
     if (activeTab === 'coletas') {
       document.body.classList.add('theme-coleta');
-    } else if (activeTab === 'dashboard') {
+    } else if (activeTab === 'dashboard' || activeTab === 'admin') {
       document.body.classList.add('theme-relatorio');
     } else {
       document.body.classList.add('theme-entrega');
