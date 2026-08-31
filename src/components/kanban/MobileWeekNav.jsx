@@ -32,8 +32,8 @@ export default function MobileWeekNav({ columns, activeColumnKey, onSelectColumn
             onClick={() => onSelectColumn('atualizacoes')} 
             className={`w-full h-[52px] rounded-[4px] flex flex-col items-center justify-center relative transition-all ${
               activeColumnKey === 'atualizacoes'
-                ? 'bg-[#029CC8] text-white border border-[#029CC8] font-bold shadow-xs'
-                : 'bg-white/80 border border-white/90 text-slate-800 backdrop-blur-xs'
+                ? 'bg-[#1E293B] text-white border border-[#334155] font-bold shadow-xs'
+                : 'bg-white/90 border border-slate-300/80 text-slate-800 shadow-2xs'
             }`}
           >
             <span className="material-symbols-outlined text-[20px]">inbox</span>
@@ -58,12 +58,12 @@ export default function MobileWeekNav({ columns, activeColumnKey, onSelectColumn
                 onClick={() => onSelectColumn(d.key)} 
                 className={`w-full h-[52px] rounded-[4px] flex flex-col items-center justify-center relative transition-all ${
                   isTarget
-                    ? 'bg-[#029CC8] text-white border border-[#029CC8] font-bold shadow-xs'
-                    : 'bg-white/80 border border-white/90 text-slate-800 backdrop-blur-xs'
+                    ? 'bg-[#0081A7] text-white border border-[#006c8c] font-bold shadow-xs'
+                    : 'bg-white/90 border border-slate-300/80 text-slate-800 shadow-2xs'
                 }`}
               >
                 <span className={`text-[9px] uppercase tracking-wider font-label-caps ${
-                  isTarget ? 'text-white font-bold' : 'text-slate-600'
+                  isTarget ? 'text-cyan-100 font-bold' : 'text-slate-600'
                 }`}>
                   {d.label}
                 </span>
@@ -76,7 +76,7 @@ export default function MobileWeekNav({ columns, activeColumnKey, onSelectColumn
 
                 {count > 0 && (
                   <div className={`absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center text-[9px] font-bold z-10 ${
-                    isTarget ? 'bg-white text-[#029CC8]' : 'bg-slate-700 text-white'
+                    isTarget ? 'bg-white text-[#0081A7]' : 'bg-[#1E293B] text-white'
                   }`}>
                     {count}
                   </div>

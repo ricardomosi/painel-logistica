@@ -55,7 +55,7 @@ export function KanbanHeader({ weekNav }) {
 
   const isLightTab = activeTab === 'entregas' || activeTab === 'coletas';
   const headerBgClass = isLightTab 
-    ? 'bg-[#029CC8] text-white border-b border-white/20' 
+    ? 'bg-[#0081A7] text-white border-b border-white/20 shadow-xs' 
     : 'bg-surface/90 text-on-surface backdrop-blur-md border-b border-grid-line';
 
   return (
@@ -117,7 +117,7 @@ export function KanbanHeader({ weekNav }) {
               <button 
                 id="btn-add-mob" 
                 onClick={handleOpenNewModal} 
-                className="h-8 w-8 rounded-[4px] bg-white hover:bg-white/90 text-[#029CC8] font-bold flex items-center justify-center transition-colors focus:outline-none shrink-0 shadow-xs cursor-pointer"
+                className="h-8 w-8 rounded-[4px] bg-white hover:bg-white/90 text-[#0081A7] font-bold flex items-center justify-center transition-colors focus:outline-none shrink-0 shadow-xs cursor-pointer"
                 title={activeTab === 'coletas' ? 'Nova Coleta' : 'Nova Entrega'}
               >
                 <span className="material-symbols-outlined text-base">add</span>
@@ -133,7 +133,7 @@ export function KanbanHeader({ weekNav }) {
             id="btn-tab-coleta-mob" 
             className={`flex-1 text-[11px] font-bold px-2 py-1.5 rounded-[3px] transition-colors relative ${
               activeTab === 'coletas' 
-                ? (isLightTab ? 'bg-white text-[#029CC8] shadow-xs' : 'bg-[#2563EB] text-white') 
+                ? (isLightTab ? 'bg-white text-[#0081A7] shadow-xs' : 'bg-[#2563EB] text-white') 
                 : (isLightTab ? 'text-white/80 hover:text-white' : 'text-on-surface-variant hover:text-on-surface')
             }`}
           >
@@ -145,7 +145,7 @@ export function KanbanHeader({ weekNav }) {
             id="btn-tab-entrega-mob" 
             className={`flex-1 text-[11px] font-bold px-2 py-1.5 rounded-[3px] transition-colors relative ${
               activeTab === 'entregas' 
-                ? (isLightTab ? 'bg-white text-[#029CC8] shadow-xs' : 'bg-primary-container text-on-primary-container') 
+                ? (isLightTab ? 'bg-white text-[#0081A7] shadow-xs' : 'bg-primary-container text-on-primary-container') 
                 : (isLightTab ? 'text-white/80 hover:text-white' : 'text-on-surface-variant hover:text-on-surface')
             }`}
           >
@@ -208,7 +208,7 @@ export function KanbanHeader({ weekNav }) {
                   id="btn-tab-coleta-desk" 
                   className={`text-xs font-bold px-3 py-1 rounded-[3px] transition-colors ${
                     activeTab === 'coletas' 
-                      ? (isLightTab ? 'bg-white text-[#029CC8] shadow-xs' : 'bg-[#2563EB] text-white') 
+                      ? (isLightTab ? 'bg-white text-[#0081A7] shadow-xs' : 'bg-[#2563EB] text-white') 
                       : (isLightTab ? 'text-white/80 hover:text-white' : 'text-on-surface-variant hover:text-on-surface')
                   }`}
                 >
@@ -220,7 +220,7 @@ export function KanbanHeader({ weekNav }) {
                   id="btn-tab-entrega-desk" 
                   className={`text-xs font-bold px-3 py-1 rounded-[3px] transition-colors ${
                     activeTab === 'entregas' 
-                      ? (isLightTab ? 'bg-white text-[#029CC8] shadow-xs' : 'bg-primary-container text-on-primary-container') 
+                      ? (isLightTab ? 'bg-white text-[#0081A7] shadow-xs' : 'bg-primary-container text-on-primary-container') 
                       : (isLightTab ? 'text-white/80 hover:text-white' : 'text-on-surface-variant hover:text-on-surface')
                   }`}
                 >
@@ -320,7 +320,7 @@ export function KanbanHeader({ weekNav }) {
               <button 
                 id="btn-add-desk" 
                 onClick={handleOpenNewModal} 
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] bg-white hover:bg-white/90 text-[#029CC8] text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] bg-white hover:bg-white/90 text-[#0081A7] text-xs font-bold transition-colors cursor-pointer shadow-xs"
               >
                 <span className="material-symbols-outlined text-base">add</span>
                 <span>{activeTab === 'coletas' ? 'Nova Coleta' : 'Nova Entrega'}</span>

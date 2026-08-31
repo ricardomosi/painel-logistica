@@ -4,34 +4,43 @@
 
 @layer base {
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: #1e293b;
     user-select: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Theme Coletas (Fundo claro multi-camada) */
+  /* Theme Coletas (Fundo com Gradiente Multi-Camada + Grade Blueprint) */
   body.theme-coleta,
   .theme-coleta {
-    background: 
+    background-color: #D5DEE7;
+    background-image: 
+      linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
       linear-gradient(to bottom, #D5DEE7 0%, #E8EBF2 50%, #E2E7ED 100%), 
       linear-gradient(to bottom, rgba(0,0,0,0.02) 50%, rgba(255,255,255,0.02) 61%, rgba(0,0,0,0.02) 73%), 
       linear-gradient(33deg, rgba(255,255,255,0.20) 0%, rgba(0,0,0,0.20) 100%) !important;
-    background-blend-mode: normal, color-burn !important;
+    background-size: 24px 24px, 24px 24px, auto, auto, auto !important;
+    background-blend-mode: normal, normal, normal, color-burn, normal !important;
     background-attachment: fixed !important;
     color: #1e293b;
   }
 
-  /* Theme Entregas (Gradiente Azul Suave) */
+  /* Theme Entregas (Fundo Gradiente + Grade Blueprint) */
   body.theme-entrega,
   .theme-entrega {
-    background-image: linear-gradient(to top, #a3bded 0%, #6991c7 100%) !important;
+    background-color: #6991c7;
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+      linear-gradient(to top, #a3bded 0%, #6991c7 100%) !important;
+    background-size: 24px 24px, 24px 24px, auto !important;
     background-attachment: fixed !important;
     color: #1e293b;
   }
 
-  /* Theme Relatórios e Admin (Dashboard Escuro) */
+  /* Theme Relatórios e Admin (Dashboard Escuro com Grade) */
   body.theme-relatorio,
   .theme-relatorio {
     background-color: #020D1A;
@@ -44,11 +53,12 @@
   }
 }
 
-.font-cunia { font-family: 'Cunia', 'Space Grotesk', sans-serif; }
-.font-space { font-family: 'Space Grotesk', sans-serif; }
-.font-inter { font-family: 'Inter', sans-serif; }
+.font-hanken { font-family: 'Hanken Grotesk', sans-serif; }
+.font-cunia { font-family: 'Cunia', 'Hanken Grotesk', sans-serif; }
+.font-space { font-family: 'Space Grotesk', 'Hanken Grotesk', sans-serif; }
+.font-inter { font-family: 'Hanken Grotesk', 'Inter', sans-serif; }
 .font-data-mono { font-family: 'IBM Plex Sans', monospace; }
-.font-label-caps { font-family: 'IBM Plex Sans', sans-serif; }
+.font-label-caps { font-family: 'Hanken Grotesk', 'IBM Plex Sans', sans-serif; }
 
 /* --- Impeccable Precision Panels & Cards --- */
 .glass-panel {
@@ -80,30 +90,30 @@
   outline: none;
   transition: border-color 0.2s, background-color 0.2s;
 }
-.dash-input:focus { border-color: #1da4d0; background: #0b1c30; }
+.dash-input:focus { border-color: #0081A7; background: #0b1c30; }
 .dash-input option { background: #031428; color: #d3e3ff; }
 
-/* --- Header Styling com cor #029CC8 para Entregas/Coletas --- */
+/* --- Header Styling com cor #0081A7 para Entregas/Coletas --- */
 .header-brand-blue {
-  background-color: #029CC8 !important;
+  background-color: #0081A7 !important;
   color: #ffffff !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
-/* --- Kanban Columns com cantos arquiteturais (4px) e cabeçalho translúcido #029CC8 --- */
+/* --- Kanban Columns com cantos arquiteturais (4px) e fundo de alto contraste --- */
 .kanban-column {
-  background-color: rgba(255, 255, 255, 0.45) !important;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  background-color: rgba(240, 242, 245, 0.82) !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
   border-radius: 4px !important;
   backdrop-filter: blur(8px);
 }
 
 .kanban-column-header {
-  background-color: rgba(2, 156, 200, 0.85) !important;
+  background-color: #0081A7 !important;
   color: #ffffff !important;
   border-top-left-radius: 3px !important;
   border-top-right-radius: 3px !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
 .kanban-column-header h2 {
@@ -113,6 +123,13 @@
 
 .kanban-column-header .date-label {
   color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.count-badge-light {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 3px !important;
 }
 
 .count-badge-light {
