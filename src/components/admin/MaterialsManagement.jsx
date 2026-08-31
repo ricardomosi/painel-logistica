@@ -142,10 +142,10 @@ export default function MaterialsManagement() {
   };
 
   return (
-    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex-1 flex flex-col font-inter">
       
       {/* Header Controls & Search */}
-      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low/50">
+      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low/50 shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded bg-surface-container-high text-primary border border-grid-line shrink-0">
             <Layers className="w-5 h-5" />
@@ -186,7 +186,7 @@ export default function MaterialsManagement() {
       </div>
 
       {/* Form / Edit Section */}
-      <form onSubmit={handleSave} className="m-4 p-4 rounded-lg bg-surface-container-low border border-grid-line flex flex-col gap-3.5">
+      <form onSubmit={handleSave} className="p-4 border-b border-grid-line bg-surface-container-lowest/30 flex flex-col gap-3.5 shrink-0">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-primary font-label-caps flex items-center gap-1.5">
             <Package className="w-3.5 h-3.5" />
@@ -198,123 +198,126 @@ export default function MaterialsManagement() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-          {/* Código */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Código SAGI</label>
-            <div className="relative">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/50" />
-              <input
-                type="text"
-                value={formData.codigo}
-                onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
-                placeholder="Ex: ABD13"
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-primary font-data-mono font-bold text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
-              />
-            </div>
+          {/* Código SAGI */}
+          <div className="lg:col-span-1 flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-on-surface-variant">Código (SAGI)</label>
+            <input
+              type="text"
+              value={formData.codigo}
+              onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
+              placeholder="Ex: TUB100"
+              className="bg-surface border border-grid-line text-primary font-data-mono font-bold text-xs rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+            />
           </div>
 
-          {/* Nome */}
-          <div className="sm:col-span-2 lg:col-span-3 flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Nome / Descrição do Material *</label>
+          {/* Nome do Material */}
+          <div className="lg:col-span-2 flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-on-surface-variant">Descrição / Nome do Material *</label>
             <input
               type="text"
               required
               value={formData.nome}
               onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              placeholder="Ex: ABRACADEIRA ACO INOX 6\"
-              className="px-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+              placeholder="Ex: Tubo Galvanizado 100mm"
+              className="bg-surface border border-grid-line text-on-surface text-xs rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
             />
           </div>
 
-          {/* Unidade */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Unidade</label>
-            <select
-              value={formData.unidade}
-              onChange={(e) => setFormData({ ...formData, unidade: e.target.value })}
-              className="px-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer"
-            >
-              <option value="UN" className="bg-surface">UN (Unidade)</option>
-              <option value="KG" className="bg-surface">KG (Quilograma)</option>
-              <option value="MT" className="bg-surface">MT (Metro)</option>
-              <option value="TN" className="bg-surface">TN (Tonelada)</option>
-              <option value="LT" className="bg-surface">LT (Litro)</option>
-              <option value="PR" className="bg-surface">PR (Par)</option>
-              <option value="M2" className="bg-surface">M² (Metro Quadrado)</option>
-              <option value="M3" className="bg-surface">M³ (Metro Cúbico)</option>
-              <option value="PCT" className="bg-surface">PCT (Pacote)</option>
-              <option value="CX" className="bg-surface">CX (Caixa)</option>
-            </select>
-          </div>
-
-          {/* Peso Padrão */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Peso Unit. (kg)</label>
-            <div className="relative">
-              <Scale className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/50" />
-              <input
-                type="number"
-                step="0.001"
-                min="0"
-                value={formData.peso_padrao_kg}
-                onChange={(e) => setFormData({ ...formData, peso_padrao_kg: e.target.value })}
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-on-surface font-data-mono text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Preços e Categoria */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-          {/* Preço Trazer / Entrega */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-primary">Preço Trazer / Entrega (R$)</label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary/70" />
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.preco_trazer}
-                onChange={(e) => setFormData({ ...formData, preco_trazer: e.target.value })}
-                placeholder="0,00"
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-primary font-data-mono font-bold text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
-              />
-            </div>
-          </div>
-
-          {/* Preço Buscar / Coleta */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-emerald-400">Preço Buscar / Coleta (R$)</label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400/70" />
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.preco_buscar}
-                onChange={(e) => setFormData({ ...formData, preco_buscar: e.target.value })}
-                placeholder="0,00"
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-emerald-400 font-data-mono font-bold text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
-              />
-            </div>
-          </div>
-
           {/* Categoria */}
-          <div className="flex flex-col gap-1">
+          <div className="lg:col-span-1 flex flex-col gap-1">
             <label className="text-[11px] font-medium text-on-surface-variant">Categoria</label>
             <input
               type="text"
               value={formData.categoria}
               onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-              placeholder="Ex: ABRACADEIRAS / METAL"
-              className="px-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+              placeholder="Ex: Tubos"
+              className="bg-surface border border-grid-line text-on-surface text-xs rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+            />
+          </div>
+
+          {/* Unidade */}
+          <div className="lg:col-span-1 flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-on-surface-variant">Unidade</label>
+            <select
+              value={formData.unidade}
+              onChange={(e) => setFormData({ ...formData, unidade: e.target.value })}
+              className="bg-surface border border-grid-line text-on-surface text-xs rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer font-data-mono"
+            >
+              {UNIDADES_OPTIONS.map((u) => (
+                <option key={u} value={u} className="bg-surface">{u}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Peso Padrão */}
+          <div className="lg:col-span-1 flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-on-surface-variant">Peso Padrão (kg)</label>
+            <div className="relative">
+              <Scale className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/50" />
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={formData.peso_padrao_kg}
+                onChange={(e) => setFormData({ ...formData, peso_padrao_kg: e.target.value })}
+                placeholder="0.00"
+                className="w-full pl-8 pr-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-data-mono"
+              />
+            </div>
+          </div>
+
+          {/* Preço de Entrega (Trazer) */}
+          <div className="lg:col-span-2 flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-primary flex items-center gap-1">
+              <span>Preço Padrão de Entrega (Trazer) R$</span>
+            </label>
+            <div className="relative">
+              <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary/70" />
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={formData.preco_trazer}
+                onChange={(e) => setFormData({ ...formData, preco_trazer: e.target.value })}
+                placeholder="0.00"
+                className="w-full pl-8 pr-3 py-2 bg-surface border border-primary/40 text-primary font-bold text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-data-mono"
+              />
+            </div>
+          </div>
+
+          {/* Preço de Coleta (Buscar) */}
+          <div className="lg:col-span-2 flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+              <span>Preço Padrão de Coleta (Buscar) R$</span>
+            </label>
+            <div className="relative">
+              <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400/70" />
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={formData.preco_buscar}
+                onChange={(e) => setFormData({ ...formData, preco_buscar: e.target.value })}
+                placeholder="0.00"
+                className="w-full pl-8 pr-3 py-2 bg-surface border border-emerald-500/40 text-emerald-400 font-bold text-xs rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all font-data-mono"
+              />
+            </div>
+          </div>
+
+          {/* Descrição Detalhada */}
+          <div className="lg:col-span-2 flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-on-surface-variant">Observações / Detalhes</label>
+            <input
+              type="text"
+              value={formData.descricao}
+              onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+              placeholder="Especificações adicionais..."
+              className="bg-surface border border-grid-line text-on-surface text-xs rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
             />
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="flex items-center justify-end gap-2 pt-1 border-t border-grid-line">
+        <div className="flex items-center justify-end gap-2 pt-1 border-t border-grid-line/50">
           {editingId && (
             <button
               type="button"
@@ -335,7 +338,7 @@ export default function MaterialsManagement() {
       </form>
 
       {/* Table Container */}
-      <div className="border-t border-grid-line overflow-x-auto">
+      <div className="border-t border-grid-line flex-1 overflow-auto">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">

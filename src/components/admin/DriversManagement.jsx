@@ -93,10 +93,10 @@ export default function DriversManagement() {
   const activeCount = drivers.filter(d => d.ativo !== false).length;
 
   return (
-    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex-1 flex flex-col font-inter">
       
       {/* Header Controls & Info */}
-      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-surface-container-low/50">
+      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-surface-container-low/50 shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded bg-surface-container-high text-primary border border-grid-line shrink-0">
             <UserCheck className="w-5 h-5" />
@@ -108,95 +108,96 @@ export default function DriversManagement() {
         </div>
 
         <div className="text-[11px] font-data-mono text-on-surface-variant px-2.5 py-1 rounded bg-surface-container-lowest border border-grid-line">
-          Total: <span className="text-primary font-bold">{drivers.length}</span>
+          Total: {drivers.length} registros
         </div>
       </div>
 
-      {/* Form Container */}
-      <form onSubmit={handleSave} className="m-4 p-4 rounded-lg bg-surface-container-low border border-grid-line flex flex-col gap-3.5">
-        <div className="text-xs font-bold uppercase tracking-wider text-primary font-label-caps">
-          {editingId ? 'Editar Condutor' : 'Cadastrar Novo Motorista'}
+      {/* Form Inline / Add-Edit */}
+      <form onSubmit={handleSave} className="p-4 border-b border-grid-line bg-surface-container-lowest/30 shrink-0">
+        <div className="text-xs font-semibold text-on-surface mb-3 flex items-center gap-1.5">
+          <Plus className="w-3.5 h-3.5 text-primary" />
+          <span>{editingId ? 'Editar Dados do Motorista' : 'Cadastrar Novo Motorista'}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Nome Completo *</label>
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+          <div className="sm:col-span-4">
+            <label className="block text-[11px] text-on-surface-variant mb-1 font-label-caps uppercase">
+              Nome Completo *
+            </label>
             <input
               type="text"
               required
               value={formData.nome}
               onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              placeholder="Ex: Carlos Eduardo da Silva"
-              className="bg-surface border border-grid-line text-on-surface text-xs rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+              placeholder="Ex: Carlos Eduardo Silva"
+              className="w-full px-3 py-1.5 rounded bg-surface-container-lowest border border-grid-line text-on-surface text-xs focus:border-primary outline-none"
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Telefone / WhatsApp</label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/50" />
-              <input
-                type="text"
-                value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                placeholder="(84) 99999-9999"
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40 font-data-mono"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Número da CNH / Categoria</label>
-            <div className="relative">
-              <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/50" />
-              <input
-                type="text"
-                value={formData.cnh}
-                onChange={(e) => setFormData({ ...formData, cnh: e.target.value })}
-                placeholder="Ex: 01234567890 - Cat D"
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40 font-data-mono"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <label className="flex items-center gap-2 cursor-pointer text-xs text-on-surface-variant hover:text-on-surface transition-colors">
+          <div className="sm:col-span-3">
+            <label className="block text-[11px] text-on-surface-variant mb-1 font-label-caps uppercase">
+              Telefone / WhatsApp
+            </label>
             <input
-              type="checkbox"
-              checked={formData.ativo}
-              onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-              className="rounded bg-surface border-grid-line text-primary focus:ring-0"
+              type="text"
+              value={formData.telefone}
+              onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+              placeholder="(84) 99999-9999"
+              className="w-full px-3 py-1.5 rounded bg-surface-container-lowest border border-grid-line text-on-surface text-xs focus:border-primary outline-none font-data-mono"
             />
-            <span>Motorista Ativo na Escala</span>
-          </label>
+          </div>
 
-          <div className="flex items-center gap-2">
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] text-on-surface-variant mb-1 font-label-caps uppercase">
+              Número CNH
+            </label>
+            <input
+              type="text"
+              value={formData.cnh}
+              onChange={(e) => setFormData({ ...formData, cnh: e.target.value })}
+              placeholder="00000000000"
+              className="w-full px-3 py-1.5 rounded bg-surface-container-lowest border border-grid-line text-on-surface text-xs focus:border-primary outline-none font-data-mono"
+            />
+          </div>
+
+          <div className="sm:col-span-1 flex items-center h-[32px]">
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-on-surface">
+              <input
+                type="checkbox"
+                checked={formData.ativo}
+                onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+                className="rounded bg-surface-container-lowest border-grid-line text-primary focus:ring-0"
+              />
+              <span>Ativo</span>
+            </label>
+          </div>
+
+          <div className="sm:col-span-2 flex items-center gap-2 justify-end">
             {editingId && (
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:text-on-surface bg-surface-container-high border border-grid-line transition-colors"
+                className="px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-xs font-semibold transition-colors"
               >
                 Cancelar
               </button>
             )}
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary-container text-xs font-bold transition-colors"
+              className="w-full sm:w-auto px-4 py-1.5 rounded bg-primary text-on-primary hover:bg-primary/90 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
-              {editingId ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-              <span>{editingId ? 'Salvar Edição' : 'Cadastrar Motorista'}</span>
+              <Check className="w-3.5 h-3.5" />
+              <span>{editingId ? 'Salvar' : 'Adicionar'}</span>
             </button>
           </div>
         </div>
       </form>
 
       {/* Drivers Table */}
-      <div className="border-t border-grid-line overflow-x-auto">
+      <div className="border-t border-grid-line flex-1 overflow-auto">
         <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-grid-line bg-surface-container-lowest/90 backdrop-blur-xs text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
               <th className="py-2.5 px-4">NOME DO CONDUTOR</th>
               <th className="py-2.5 px-4">TELEFONE / CONTATO</th>
               <th className="py-2.5 px-4">DOCUMENTO (CNH)</th>

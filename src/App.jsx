@@ -35,7 +35,9 @@ export default function App() {
   const { activeTab, confirmDialog, closeConfirm, alertDialog, closeAlert } = useLogistics();
   const { user, loading: authLoading, isAdmin, isGestor } = useAuth();
   const weekNav = useWeekNavigation();
-  const [adminActiveSubTab, setAdminActiveSubTab] = useState('drivers'); // 'drivers' | 'vehicles' | 'materials' | 'users'
+  const [adminActiveSubTab, setAdminActiveSubTab] = useState('drivers'); // 'drivers' | 'vehicles' | 'materials' | 'sellers' | 'users'
+  const [tabTransitioning, setTabTransitioning] = useState(false);
+  const [displayedTab, setDisplayedTab] = useState(activeTab);
 
   // Dynamic Theme Class attached to body
   useEffect(() => {
@@ -48,6 +50,18 @@ export default function App() {
       document.body.classList.add('theme-entrega');
     }
   }, [activeTab]);
+
+  // Smooth Tab Transition Effect
+  useEffect(() => {
+    if (activeTab !== displayedTab) {
+      setTabTransitioning(true);
+      const timer = setTimeout(() => {
+        setDisplayedTab(activeTab);
+        setTabTransitioning(false);
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, displayedTab]);
 
   // If verifying auth session
   if (authLoading) {
@@ -75,28 +89,41 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 overflow-hidden w-full h-full relative z-0 flex flex-col">
         
+        {/* Shimmer / Progress indicator during tab change */}
+        {tabTransitioning && (
+          <div className="absolute top-0 left-0 right-0 h-1 bg-[#0081A7]/30 z-50 overflow-hidden">
+            <div className="h-full bg-[#0081A7] animate-pulse w-full" />
+          </div>
+        )}
+
         {/* 1. COLETAS BOARD */}
-        {activeTab === 'coletas' && (
-          <KanbanBoard weekNav={weekNav} type="coleta" />
+        {displayedTab === 'coletas' && (
+          <div className="flex-1 flex flex-col min-h-0 h-full animate-in fade-in duration-200">
+            <KanbanBoard weekNav={weekNav} type="coleta" />
+          </div>
         )}
 
         {/* 2. ENTREGAS BOARD */}
-        {activeTab === 'entregas' && (
-          <KanbanBoard weekNav={weekNav} type="entrega" />
+        {displayedTab === 'entregas' && (
+          <div className="flex-1 flex flex-col min-h-0 h-full animate-in fade-in duration-200">
+            <KanbanBoard weekNav={weekNav} type="entrega" />
+          </div>
         )}
 
         {/* 3. RELATÓRIOS & ANALYTICS DASHBOARD */}
-        {activeTab === 'dashboard' && (isAdmin || isGestor) && (
-          <DashboardView />
+        {displayedTab === 'dashboard' && (isAdmin || isGestor) && (
+          <div className="flex-1 flex flex-col min-h-0 h-full animate-in fade-in duration-200">
+            <DashboardView />
+          </div>
         )}
 
         {/* 4. ADMIN MANAGEMENT PANEL */}
-        {activeTab === 'admin' && (
+        {displayedTab === 'admin' && (
           <ProtectedRoute allowedRoles={['admin']}>
-            <div className="flex-1 overflow-y-auto max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-6 animate-in fade-in duration-300 pb-28">
+            <div className="flex-1 overflow-y-auto max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-6 animate-in fade-in duration-200 pb-20">
               
               {/* Admin Subtabs */}
-              <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-lg bg-surface-container border border-grid-line">
+              <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-lg bg-surface-container border border-grid-line shrink-0">
                 <button
                   type="button"
                   onClick={() => setAdminActiveSubTab('drivers')}
@@ -164,11 +191,13 @@ export default function App() {
               </div>
 
               {/* Subtab Contents */}
-              {adminActiveSubTab === 'drivers' && <DriversManagement />}
-              {adminActiveSubTab === 'vehicles' && <VehiclesManagement />}
-              {adminActiveSubTab === 'materials' && <MaterialsManagement />}
-              {adminActiveSubTab === 'sellers' && <SellersManagement />}
-              {adminActiveSubTab === 'users' && <UsersManagement />}
+              <div className="flex-1 flex flex-col min-h-[480px]">
+                {adminActiveSubTab === 'drivers' && <DriversManagement />}
+                {adminActiveSubTab === 'vehicles' && <VehiclesManagement />}
+                {adminActiveSubTab === 'materials' && <MaterialsManagement />}
+                {adminActiveSubTab === 'sellers' && <SellersManagement />}
+                {adminActiveSubTab === 'users' && <UsersManagement />}
+              </div>
 
             </div>
           </ProtectedRoute>

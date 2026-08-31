@@ -96,10 +96,10 @@ export default function UsersManagement() {
   };
 
   return (
-    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex-1 flex flex-col font-inter">
       
       {/* Header Controls & Info */}
-      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-surface-container-low/50">
+      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-surface-container-low/50 shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded bg-surface-container-high text-primary border border-grid-line shrink-0">
             <ShieldCheck className="w-5 h-5" />
@@ -116,14 +116,15 @@ export default function UsersManagement() {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSave} className="m-4 p-4 rounded-lg bg-surface-container-low border border-grid-line flex flex-col gap-3.5">
-        <div className="text-xs font-bold uppercase tracking-wider text-primary font-label-caps">
-          {editingId ? 'Editar Permissões do Usuário' : 'Cadastrar Novo Usuário'}
+      <form onSubmit={handleSave} className="p-4 border-b border-grid-line bg-surface-container-lowest/30 shrink-0">
+        <div className="text-xs font-bold uppercase tracking-wider text-primary font-label-caps mb-3 flex items-center gap-1.5">
+          <UserPlus className="w-3.5 h-3.5 text-primary" />
+          <span>{editingId ? 'Editar Permissões do Usuário' : 'Cadastrar Novo Usuário'}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Nome do Usuário *</label>
+            <label className="text-[11px] font-medium text-on-surface-variant font-label-caps uppercase">Nome do Usuário *</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/50" />
               <input
@@ -132,13 +133,13 @@ export default function UsersManagement() {
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 placeholder="Ex: Ana Lima"
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+                className="w-full pl-9 pr-3 py-1.5 bg-surface-container-lowest border border-grid-line text-on-surface text-xs rounded focus:border-primary outline-none"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">E-mail de Acesso *</label>
+            <label className="text-[11px] font-medium text-on-surface-variant font-label-caps uppercase">E-mail de Acesso *</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/50" />
               <input
@@ -147,17 +148,17 @@ export default function UsersManagement() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="usuario@jpatricio.com.br"
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40 font-data-mono"
+                className="w-full pl-9 pr-3 py-1.5 bg-surface-container-lowest border border-grid-line text-on-surface text-xs rounded focus:border-primary outline-none font-data-mono"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Nível de Acesso (Role) *</label>
+            <label className="text-[11px] font-medium text-on-surface-variant font-label-caps uppercase">Nível de Acesso (Role) *</label>
             <select
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="px-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-medium cursor-pointer"
+              className="px-3 py-1.5 bg-surface-container-lowest border border-grid-line text-on-surface text-xs rounded focus:border-primary outline-none font-medium cursor-pointer"
             >
               <option value="admin" className="bg-surface">👑 Administrador Geral</option>
               <option value="gestor" className="bg-surface">📋 Gestor de Logística</option>
@@ -166,14 +167,16 @@ export default function UsersManagement() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-on-surface-variant">Vincular a Motorista</label>
+            <label className="text-[11px] font-medium text-on-surface-variant font-label-caps uppercase">Vincular a Motorista</label>
             <select
-              disabled={formData.role !== 'motorista'}
               value={formData.motorista_id}
               onChange={(e) => setFormData({ ...formData, motorista_id: e.target.value })}
-              className="px-3 py-2 bg-surface border border-grid-line text-on-surface text-xs rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer disabled:opacity-30"
+              disabled={formData.role !== 'motorista'}
+              className={`px-3 py-1.5 bg-surface-container-lowest border border-grid-line text-on-surface text-xs rounded focus:border-primary outline-none cursor-pointer ${
+                formData.role !== 'motorista' ? 'opacity-40 cursor-not-allowed' : ''
+              }`}
             >
-              <option value="" className="bg-surface">Nenhum / Não aplicável</option>
+              <option value="" className="bg-surface">Nenhum vínculo</option>
               {drivers.map((d) => (
                 <option key={d.id} value={d.id} className="bg-surface">
                   {d.nome}
@@ -183,19 +186,19 @@ export default function UsersManagement() {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-1">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-grid-line/50 mt-3">
           {editingId && (
             <button
               type="button"
               onClick={handleCancel}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:text-on-surface bg-surface-container-high border border-grid-line transition-colors"
+              className="px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-xs font-semibold transition-colors"
             >
               Cancelar
             </button>
           )}
           <button
             type="submit"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary-container text-xs font-bold transition-colors"
+            className="px-4 py-1.5 rounded bg-primary text-on-primary hover:bg-primary/90 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
           >
             {editingId ? <Check className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
             <span>{editingId ? 'Salvar Permissões' : 'Cadastrar Usuário'}</span>
@@ -204,10 +207,10 @@ export default function UsersManagement() {
       </form>
 
       {/* Users Table */}
-      <div className="border-t border-grid-line overflow-x-auto">
+      <div className="border-t border-grid-line flex-1 overflow-auto">
         <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-grid-line bg-surface-container-lowest/90 backdrop-blur-xs text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
               <th className="py-2.5 px-4">NOME</th>
               <th className="py-2.5 px-4">E-MAIL</th>
               <th className="py-2.5 px-4 text-center">NÍVEL (ROLE)</th>

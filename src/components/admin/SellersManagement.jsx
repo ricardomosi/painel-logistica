@@ -97,9 +97,9 @@ export default function SellersManagement() {
   );
 
   return (
-    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex-1 flex flex-col font-inter">
       {/* Header Bar */}
-      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low/50">
+      <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low/50 shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded bg-surface-container-high text-secondary border border-grid-line shrink-0">
             <Users className="w-5 h-5" />
@@ -138,10 +138,10 @@ export default function SellersManagement() {
       </div>
 
       {/* Sellers List Table */}
-      <div className="overflow-x-auto">
+      <div className="border-t border-grid-line flex-1 overflow-auto">
         <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-grid-line bg-surface-container-lowest/90 backdrop-blur-xs text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
               <th className="py-2.5 px-4">NOME DO VENDEDOR</th>
               <th className="py-2.5 px-4">UNIDADE</th>
               <th className="py-2.5 px-4 text-center">STATUS</th>

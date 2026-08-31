@@ -573,7 +573,18 @@ export default function DeliveryModal() {
         km_total: 0,
       }));
     } else {
+      const kmI = parseFloat(formData.km_inicial) || 0;
+      if (kmI <= 0) {
+        setActiveSubTab('rota');
+        showAlert({
+          title: 'KM Inicial Necessário',
+          message: 'Informe o KM Inicial e o KM Final na aba "Rota & Execução" para registrar a conclusão da entrega.'
+        });
+        return;
+      }
       marcarConclusaoAgora();
+      setActiveSubTab('rota');
+      addToast('Horário de conclusão marcado. Preencha o KM Final e a ocorrência para salvar.', 'info');
     }
   };
 
@@ -623,9 +634,62 @@ export default function DeliveryModal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 1. Validação de Cliente
     if (!formData.cliente || !formData.cliente.trim()) {
+      setActiveSubTab('geral');
       showAlert({ title: 'Campo obrigatório', message: 'O nome do cliente é obrigatório.' });
       return;
+    }
+
+    // 2. Trava de KM Inicial (obrigatório se houver início de deslocamento)
+    const kmInicialNum = parseFloat(formData.km_inicial) || 0;
+    const hasInicio = (formData.data_inicio && formData.data_inicio.trim()) || (formData.hora_inicio && formData.hora_inicio.trim());
+    if (hasInicio && kmInicialNum <= 0) {
+      setActiveSubTab('rota');
+      showAlert({ 
+        title: 'KM Inicial Obrigatório', 
+        message: 'Para registrar o início do deslocamento/entrega, é obrigatório preencher o KM Inicial (maior que zero).' 
+      });
+      return;
+    }
+
+    // 3. Trava de KM Final e Relatório de Ocorrência (obrigatório se concluído)
+    const isCompleted = formData.status === 'concluido' || (formData.data_conclusao && formData.data_conclusao.trim());
+    const kmFinalNum = parseFloat(formData.km_final) || 0;
+    if (isCompleted) {
+      if (kmInicialNum <= 0) {
+        setActiveSubTab('rota');
+        showAlert({ 
+          title: 'KM Inicial Obrigatório', 
+          message: 'Para concluir a entrega, o KM Inicial deve estar informado.' 
+        });
+        return;
+      }
+      if (kmFinalNum <= 0) {
+        setActiveSubTab('rota');
+        showAlert({ 
+          title: 'KM Final Obrigatório', 
+          message: 'Para concluir a entrega, é obrigatório preencher o KM Final (maior que zero).' 
+        });
+        return;
+      }
+      if (kmFinalNum < kmInicialNum) {
+        setActiveSubTab('rota');
+        showAlert({ 
+          title: 'KM Final Inválido', 
+          message: `O KM Final (${kmFinalNum}) não pode ser menor que o KM Inicial (${kmInicialNum}).` 
+        });
+        return;
+      }
+      if (!formData.como_foi_entrega || !formData.como_foi_entrega.trim()) {
+        setActiveSubTab('rota');
+        showAlert({ 
+          title: 'Relatório de Ocorrência Obrigatório', 
+          message: 'Para concluir a entrega, selecione uma opção no campo "Como foi a Entrega / Relatório de Ocorrência".' 
+        });
+        return;
+      }
     }
 
     try {
@@ -651,8 +715,8 @@ export default function DeliveryModal() {
         veiculo_id: formData.veiculo_id || null,
         valor_entrega: finalValorEntrega,
         frete: parseFloat(formData.frete) || 0,
-        km_inicial: parseFloat(formData.km_inicial) || 0,
-        km_final: parseFloat(formData.km_final) || 0,
+        km_inicial: kmInicialNum,
+        km_final: kmFinalNum,
         data_inicio: formData.data_inicio?.trim() || null,
         hora_inicio: formData.hora_inicio?.trim() || null,
         data_conclusao: formData.data_conclusao?.trim() || null,
@@ -697,11 +761,11 @@ export default function DeliveryModal() {
 
   return (
     <>
-      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-50 transition-opacity p-2 sm:p-4 md:p-6 font-inter animate-in fade-in duration-200">
+      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-50 transition-opacity p-2 sm:p-4 font-inter animate-in fade-in duration-200">
         
-        {/* Modal Container: Expanded width to fully leverage wide screens */}
+        {/* Modal Container: Tamanho estruturado sem folga inferior */}
         <div 
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-[96vw] xl:max-w-[1400px] 2xl:max-w-[1550px] max-h-[94vh] flex flex-col overflow-hidden border border-slate-200"
+          className="bg-white rounded-lg shadow-2xl w-full max-w-5xl xl:max-w-6xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200"
           onClick={(e) => e.stopPropagation()}
         >
           
@@ -713,7 +777,7 @@ export default function DeliveryModal() {
                   {isEditing ? `Entrega #${String(selectedDelivery.id).padStart(4, '0')} - ${formData.cliente}` : 'Nova Entrega com Romaneio'}
                 </h3>
                 {isConcluido && (
-                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-green-100 text-green-800 border border-green-200 flex items-center gap-1 shrink-0">
+                  <span className="px-2 py-0.5 rounded-[3px] text-[11px] font-bold bg-green-100 text-green-800 border border-green-200 flex items-center gap-1 shrink-0">
                     <Check className="w-3 h-3" /> Concluída
                   </span>
                 )}
@@ -730,7 +794,7 @@ export default function DeliveryModal() {
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, urgente: !prev.urgente }))}
-                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-[4px] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
                     formData.urgente 
                       ? 'bg-red-600 text-white border-red-600 shadow-2xs' 
                       : 'bg-white text-slate-600 border-slate-300 hover:border-red-300 hover:text-red-600'
@@ -745,7 +809,7 @@ export default function DeliveryModal() {
               <button 
                 type="button" 
                 onClick={() => setDeliveryModalOpen(false)} 
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+                className="p-1.5 rounded-[4px] text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
                 title="Fechar janela"
               >
                 <X className="w-5 h-5" />
@@ -759,9 +823,9 @@ export default function DeliveryModal() {
               <button
                 type="button"
                 onClick={() => setActiveSubTab('geral')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] text-xs font-semibold transition-all cursor-pointer ${
                   activeSubTab === 'geral'
-                    ? 'bg-blue-600 text-white shadow-xs'
+                    ? 'bg-[#0081A7] text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
@@ -773,17 +837,17 @@ export default function DeliveryModal() {
                 <button
                   type="button"
                   onClick={() => setActiveSubTab('romaneio')}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all relative cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] text-xs font-semibold transition-all relative cursor-pointer ${
                     activeSubTab === 'romaneio'
-                      ? 'bg-blue-600 text-white shadow-xs'
+                      ? 'bg-[#0081A7] text-white shadow-xs'
                       : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
                   <span>2. Romaneio & Carga</span>
                   {romaneioItens.length > 0 && (
-                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      activeSubTab === 'romaneio' ? 'bg-white text-blue-700' : 'bg-blue-600 text-white'
+                    <span className={`px-1.5 py-0.2 rounded-[2px] text-[10px] font-bold ${
+                      activeSubTab === 'romaneio' ? 'bg-white text-[#0081A7]' : 'bg-[#0081A7] text-white'
                     }`}>
                       {romaneioItens.length}
                     </span>
@@ -794,9 +858,9 @@ export default function DeliveryModal() {
               <button
                 type="button"
                 onClick={() => setActiveSubTab('rota')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] text-xs font-semibold transition-all cursor-pointer ${
                   activeSubTab === 'rota'
-                    ? 'bg-blue-600 text-white shadow-xs'
+                    ? 'bg-[#0081A7] text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
@@ -810,7 +874,7 @@ export default function DeliveryModal() {
               <button
                 type="button"
                 onClick={handleDownloadRomaneio}
-                className={`flex items-center justify-center rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer ${
+                className={`flex items-center justify-center rounded-[4px] bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer ${
                   isMotorista ? 'p-1.5 sm:p-2' : 'gap-1 px-3 py-1.5 text-xs'
                 }`}
                 title="Baixar Romaneio de Carga em PDF"
@@ -822,7 +886,7 @@ export default function DeliveryModal() {
               <button
                 type="button"
                 onClick={handlePrintRomaneio}
-                className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
+                className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-[4px] bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
                 title="Imprimir Romaneio de Carga"
               >
                 <Printer className="w-3.5 h-3.5 text-slate-600" />
@@ -832,7 +896,7 @@ export default function DeliveryModal() {
           </div>
 
           {/* Main Form Content Area */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 space-y-4 custom-scrollbar">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-scrollbar">
             
             {/* ======================================================== */}
             {/* TAB 1: DADOS GERAIS DA ENTREGA (3 Organized Cards)       */}
@@ -842,7 +906,7 @@ export default function DeliveryModal() {
                 <div className={`grid grid-cols-1 ${isMotorista ? 'md:grid-cols-2' : 'lg:grid-cols-3'} gap-4`}>
                   
                   {/* Card 1: Destinatário & Localização */}
-                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                  <div className="p-4 rounded-[4px] bg-slate-50/80 border border-slate-200 space-y-3">
                     <div className="flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2.5">
                       <MapPin className="w-4 h-4 text-blue-600" />
                       <h4 className="text-xs font-bold uppercase tracking-wider">Destinatário & Localização</h4>
@@ -860,7 +924,7 @@ export default function DeliveryModal() {
                         value={formData.cliente}
                         onChange={(e) => setFormData(prev => ({ ...prev, cliente: e.target.value }))}
                         placeholder="Nome do cliente ou empresa destinatária" 
-                        className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
+                        className={`w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
                       />
                     </div>
 
@@ -885,7 +949,7 @@ export default function DeliveryModal() {
                         value={formData.telefone}
                         onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
                         placeholder="Ex: (84) 99999-9999" 
-                        className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
+                        className={`w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
                       />
                     </div>
 
@@ -923,13 +987,13 @@ export default function DeliveryModal() {
                         value={formData.endereco}
                         onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
                         placeholder="Rua, Número, Bairro, Cidade - UF" 
-                        className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs resize-none ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
+                        className={`w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs resize-none ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
                       />
                     </div>
                   </div>
 
                   {/* Card 2: Logística & Transporte */}
-                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                  <div className="p-4 rounded-[4px] bg-slate-50/80 border border-slate-200 space-y-3">
                     <div className="flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2.5">
                       <Truck className="w-4 h-4 text-blue-600" />
                       <h4 className="text-xs font-bold uppercase tracking-wider">Logística & Transporte</h4>
@@ -942,16 +1006,16 @@ export default function DeliveryModal() {
                       </label>
                       {isMotorista ? (
                         <input 
-                          type="text"
+                          type="text" 
                           disabled
                           value={formData.placa || 'Sem veículo definido'}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-800 text-xs font-semibold"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-[4px] bg-slate-100 text-slate-800 text-xs font-semibold"
                         />
                       ) : (
                         <select 
                           value={formData.placa}
                           onChange={(e) => handlePlacaChange(e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o veículo...</option>
                           {PLACAS_OPTIONS.map(p => (
@@ -968,16 +1032,16 @@ export default function DeliveryModal() {
                       </label>
                       {isMotorista ? (
                         <input 
-                          type="text"
+                          type="text" 
                           disabled
                           value={formData.local_carregamento || 'MATRIZ'}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-800 text-xs font-bold"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-[4px] bg-slate-100 text-slate-800 text-xs font-bold"
                         />
                       ) : (
                         <select 
                           value={formData.local_carregamento}
                           onChange={(e) => setFormData(prev => ({ ...prev, local_carregamento: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-bold bg-white cursor-pointer"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-bold bg-white cursor-pointer"
                         >
                           <option value="MATRIZ">MATRIZ (Mossoró/RN)</option>
                           <option value="FILIAL">FILIAL (Mossoró/RN)</option>
@@ -994,7 +1058,7 @@ export default function DeliveryModal() {
                         <select 
                           value={formData.cadastrador_entrega}
                           onChange={(e) => setFormData(prev => ({ ...prev, cadastrador_entrega: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o responsável...</option>
                           {CADASTRADORES_ENTREGA.map(c => (
@@ -1005,29 +1069,15 @@ export default function DeliveryModal() {
                     )}
                   </div>
 
-                  {/* Card 3: Faturamento & Frete (Apenas para Gestão / Não exibido para Motoristas) */}
+                  {/* Card 3: Comercial & Faturamento */}
                   {!isMotorista && (
-                    <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <div className="p-4 rounded-[4px] bg-slate-50/80 border border-slate-200 space-y-3">
                       <div className="flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2.5">
                         <Receipt className="w-4 h-4 text-blue-600" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider">Faturamento & Vendas</h4>
+                        <h4 className="text-xs font-bold uppercase tracking-wider">Comercial & Faturamento</h4>
                       </div>
 
-                      {/* Boleto / NF */}
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Número do Boleto / NF / Pedido
-                        </label>
-                        <input 
-                          type="text" 
-                          value={formData.boleto}
-                          onChange={(e) => setFormData(prev => ({ ...prev, boleto: e.target.value }))}
-                          placeholder="Ex: BOL-12345 / NF-890" 
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-mono bg-white"
-                        />
-                      </div>
-
-                      {/* Vendedor */}
+                      {/* Vendedor Responsável */}
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">
                           Vendedor Responsável
@@ -1035,7 +1085,7 @@ export default function DeliveryModal() {
                         <select 
                           value={formData.vendedor}
                           onChange={(e) => setFormData(prev => ({ ...prev, vendedor: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-bold bg-white cursor-pointer"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o vendedor...</option>
                           {VENDEDORES_OPTIONS.map(v => (
@@ -1046,19 +1096,48 @@ export default function DeliveryModal() {
                         </select>
                       </div>
 
-                      {/* Valor do Frete */}
+                      {/* Boleto / NF */}
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Valor do Frete Cobrado (R$)
+                          Boleto / Nota Fiscal
                         </label>
                         <input 
-                          type="number" 
-                          step="0.01"
-                          value={formData.frete}
-                          onChange={(e) => setFormData(prev => ({ ...prev, frete: e.target.value }))}
-                          placeholder="0,00" 
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-mono font-bold bg-white" 
+                          type="text" 
+                          value={formData.boleto}
+                          onChange={(e) => setFormData(prev => ({ ...prev, boleto: e.target.value }))}
+                          placeholder="Número do boleto ou NF-e" 
+                          className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs bg-white"
                         />
+                      </div>
+
+                      {/* Frete & Valor da Carga */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Valor Frete (R$)
+                          </label>
+                          <input 
+                            type="number" 
+                            step="0.01"
+                            value={formData.frete}
+                            onChange={(e) => setFormData(prev => ({ ...prev, frete: e.target.value }))}
+                            placeholder="0,00" 
+                            className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Valor Carga (R$)
+                          </label>
+                          <input 
+                            type="number" 
+                            step="0.01"
+                            value={romaneioTotalValor > 0 ? romaneioTotalValor.toFixed(2) : formData.valor_entrega}
+                            onChange={(e) => setFormData(prev => ({ ...prev, valor_entrega: e.target.value }))}
+                            placeholder="0,00" 
+                            className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1068,23 +1147,25 @@ export default function DeliveryModal() {
             )}
 
             {/* ======================================================== */}
-            {/* TAB 2: ROMANEIO DE CARGA EMBEDDED (HIGH-DENSITY & CLEAN) */}
+            {/* TAB 2: ROMANEIO DE CARGA & LISTA DE MATERIAIS            */}
             {/* ======================================================== */}
-            {activeSubTab === 'romaneio' && (
-              <div className="space-y-3.5 animate-in fade-in duration-200">
+            {activeSubTab === 'romaneio' && !isMotorista && (
+              <div className="space-y-4 animate-in fade-in duration-200">
                 
-                {/* 1. Header Toolbar */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-1">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                      <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                      <span>{isMotorista ? 'Conferência de Carga do Romaneio' : 'Romaneio de Carga & Materiais'}</span>
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      {isMotorista 
-                        ? 'Confira os materiais físicos e quantidades desta entrega' 
-                        : 'Adicione ou edite os materiais, pesos e valores que compõem esta carga'}
-                    </p>
+                {/* 1. TOP STATS BAR */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-[4px] bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 rounded-[4px] bg-blue-100/80 text-blue-800 shrink-0">
+                      <FileSpreadsheet className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 leading-tight">
+                        Romaneio de Carga & Materiais
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Adicione ou edite os materiais, pesos e valores que compõem esta carga
+                      </p>
+                    </div>
                   </div>
 
                   {!isMotorista && (
@@ -1092,10 +1173,9 @@ export default function DeliveryModal() {
                       type="button"
                       onClick={() => {
                         setQuickMaterialInitialName('');
-                        setTargetItemIndexForNewMaterial(null);
                         setQuickMaterialModalOpen(true);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold shadow-2xs active:scale-95 transition-all self-start sm:self-auto cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5 text-blue-600" />
                       <span>Cadastrar Material no Catálogo</span>
@@ -1105,14 +1185,11 @@ export default function DeliveryModal() {
 
                 {/* 2. DEDICATED QUICK-ADD MATERIAL INLINE BAR */}
                 {!isMotorista && (
-                  <div className="p-3 sm:p-3.5 rounded-xl bg-slate-50/90 border border-slate-200 shadow-2xs space-y-2.5">
+                  <div className="p-3 sm:p-3.5 rounded-[4px] bg-slate-50/90 border border-slate-200 shadow-2xs space-y-2.5">
                     <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
                       <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                         <Package className="w-3.5 h-3.5 text-blue-600" />
                         Adicionar Item ao Romaneio
-                      </span>
-                      <span className="text-[11px] text-slate-400">
-                        Busque pelo código SAGI ou nome do material
                       </span>
                     </div>
 
@@ -1157,7 +1234,7 @@ export default function DeliveryModal() {
                           value={quickItem.quantidade}
                           onChange={(e) => handleQuickItemFieldChange('quantidade', e.target.value)}
                           placeholder="1"
-                          className="w-full px-2 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-bold text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-center"
+                          className="w-full px-2 py-1.5 rounded-[4px] bg-white border border-slate-300 text-slate-900 font-bold text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-center"
                         />
                       </div>
 
@@ -1169,7 +1246,7 @@ export default function DeliveryModal() {
                         <select
                           value={quickItem.unidade}
                           onChange={(e) => handleQuickItemFieldChange('unidade', e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-semibold text-xs focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-center"
+                          className="w-full px-2 py-1.5 rounded-[4px] bg-white border border-slate-300 text-slate-900 font-semibold text-xs focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-center"
                         >
                           {UNIDADES_MEDIDA.map(u => (
                             <option key={u.value} value={u.value}>{u.value}</option>
@@ -1189,7 +1266,7 @@ export default function DeliveryModal() {
                             value={quickItem.peso_unitario_kg}
                             onChange={(e) => handleQuickItemFieldChange('peso_unitario_kg', e.target.value)}
                             placeholder="0,00"
-                            className="w-full px-2 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none text-right"
+                            className="w-full px-2 py-1.5 rounded-[4px] bg-white border border-slate-300 text-slate-900 font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none text-right"
                           />
                         </div>
 
@@ -1203,7 +1280,7 @@ export default function DeliveryModal() {
                             value={quickItem.peso_total_kg}
                             onChange={(e) => handleQuickItemFieldChange('peso_total_kg', e.target.value)}
                             placeholder="0,00"
-                            className="w-full px-2 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono font-semibold text-xs focus:ring-2 focus:ring-blue-500 outline-none text-right"
+                            className="w-full px-2 py-1.5 rounded-[4px] bg-white border border-slate-300 text-slate-900 font-mono font-semibold text-xs focus:ring-2 focus:ring-blue-500 outline-none text-right"
                           />
                         </div>
                       </div>
@@ -1213,7 +1290,7 @@ export default function DeliveryModal() {
                         <button
                           type="button"
                           onClick={handleInsertQuickItem}
-                          className="w-full py-1.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-2xs active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer h-[34px]"
+                          className="w-full py-1.5 px-3 rounded-[4px] bg-[#0081A7] hover:bg-[#006c8c] text-white font-semibold text-xs shadow-2xs active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer h-[34px]"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Inserir Item</span>
@@ -1224,13 +1301,13 @@ export default function DeliveryModal() {
                   </div>
                 )}
 
-                {/* 3. TABELA DE ITENS DO ROMANEIO (Clean, High Density, Aligned) */}
-                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
+                {/* 3. TABELA DE ITENS DO ROMANEIO (Texto Read-only com edição de qtd/peso/valor e exclusão) */}
+                <div className="overflow-x-auto rounded-[4px] border border-slate-200 bg-white shadow-2xs">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 text-slate-700 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-200">
                       <tr>
                         <th className="py-2.5 px-3 w-10 text-center text-slate-400 font-mono">#</th>
-                        <th className="py-2.5 px-3 min-w-[280px]">Material / Descrição</th>
+                        <th className="py-2.5 px-3 min-w-[260px]">Material / Descrição</th>
                         <th className="py-2.5 px-3 w-24 text-center">Quantidade</th>
                         <th className="py-2.5 px-3 w-20 text-center">Unidade</th>
                         <th className="py-2.5 px-3 w-28 text-right">Peso Unitário</th>
@@ -1249,7 +1326,7 @@ export default function DeliveryModal() {
                               <p className="font-semibold text-slate-600 text-xs">Nenhum material adicionado a esta carga ainda.</p>
                               {!isMotorista && (
                                 <p className="text-[11px] text-slate-400 max-w-md">
-                                  Utilize o campo de busca acima para pesquisar no catálogo SAGI e adicionar itens ao Romaneio.
+                                  Utilize a barra de busca acima para pesquisar no catálogo SAGI e adicionar itens ao Romaneio.
                                 </p>
                               )}
                             </div>
@@ -1262,51 +1339,28 @@ export default function DeliveryModal() {
                           return (
                             <tr key={item.id || idx} className="hover:bg-slate-50/70 transition-colors">
                               {/* # Row Number */}
-                              <td className="py-2 px-3 text-center text-slate-400 font-mono font-semibold text-xs">
+                              <td className="py-2.5 px-3 text-center text-slate-400 font-mono font-semibold text-xs">
                                 {idx + 1}
                               </td>
 
-                              {/* Material Description & Code */}
-                              <td className="py-2 px-3">
-                                {isMotorista ? (
-                                  <div className="flex flex-col">
-                                    <span className="font-semibold text-slate-800 text-xs">
-                                      {item.nome_material || item.codigo_material || 'Material sem descrição'}
+                              {/* Material Description & Code (Texto Read-only limpo e ajustado) */}
+                              <td className="py-2.5 px-3">
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-semibold text-slate-800 text-xs break-words">
+                                    {item.nome_material || item.codigo_material || 'Material sem descrição'}
+                                  </span>
+                                  {item.codigo_material && (
+                                    <span className="text-[10px] font-mono text-slate-500 font-bold">
+                                      Cód: {item.codigo_material}
                                     </span>
-                                    {item.codigo_material && (
-                                      <span className="text-[10px] font-mono text-slate-400">
-                                        Cód: {item.codigo_material}
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex-1">
-                                      <MaterialSearchInput
-                                        size="sm"
-                                        value={item.nome_material || ''}
-                                        selectedMaterialId={item.material_id}
-                                        codigoMaterial={item.codigo_material}
-                                        unidade={item.unidade}
-                                        type="trazer"
-                                        onSelect={(mat) => handleSelectMaterialRow(idx, mat)}
-                                        onChangeText={(text) => handleItemChange(idx, 'nome_material', text)}
-                                        onAddNewMaterial={(initialText) => {
-                                          setTargetItemIndexForNewMaterial(idx);
-                                          setQuickMaterialInitialName(initialText);
-                                          setQuickMaterialModalOpen(true);
-                                        }}
-                                        placeholder="Digite o código ou nome..."
-                                      />
-                                    </div>
-                                  </div>
-                                )}
+                                  )}
+                                </div>
                               </td>
 
                               {/* Quantidade */}
-                              <td className="py-2 px-3 text-center">
+                              <td className="py-2.5 px-3 text-center">
                                 {isMotorista ? (
-                                  <span className="inline-block px-2.5 py-0.5 rounded bg-blue-50 text-blue-800 font-bold text-xs border border-blue-200">
+                                  <span className="inline-block px-2.5 py-0.5 rounded-[3px] bg-blue-50 text-blue-800 font-bold text-xs border border-blue-200">
                                     {item.quantidade}
                                   </span>
                                 ) : (
@@ -1316,22 +1370,22 @@ export default function DeliveryModal() {
                                     step="any"
                                     value={item.quantidade}
                                     onChange={(e) => handleItemChange(idx, 'quantidade', e.target.value)}
-                                    className="w-16 px-1.5 py-1 rounded border border-slate-300 text-xs text-center font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
+                                    className="w-16 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-center font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
                                   />
                                 )}
                               </td>
 
                               {/* Unidade */}
-                              <td className="py-2 px-3 text-center">
+                              <td className="py-2.5 px-3 text-center">
                                 {isMotorista ? (
-                                  <span className="font-semibold text-[11px] text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                                  <span className="font-semibold text-[11px] text-slate-700 bg-slate-100 px-2 py-0.5 rounded-[3px]">
                                     {unit}
                                   </span>
                                 ) : (
                                   <select
                                     value={unit}
                                     onChange={(e) => handleItemChange(idx, 'unidade', e.target.value)}
-                                    className="w-16 px-1.5 py-1 rounded border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer text-center"
+                                    className="w-16 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs font-semibold bg-white focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer text-center"
                                   >
                                     {UNIDADES_MEDIDA.map(u => (
                                       <option key={u.value} value={u.value}>{u.value}</option>
@@ -1341,7 +1395,7 @@ export default function DeliveryModal() {
                               </td>
 
                               {/* Peso Unitário */}
-                              <td className="py-2 px-3 text-right">
+                              <td className="py-2.5 px-3 text-right">
                                 {isMotorista ? (
                                   <span className="text-slate-600 font-mono text-xs">
                                     {(Number(item.peso_unitario_kg) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg/{unit}
@@ -1353,7 +1407,7 @@ export default function DeliveryModal() {
                                       step="any"
                                       value={item.peso_unitario_kg}
                                       onChange={(e) => handleItemChange(idx, 'peso_unitario_kg', e.target.value)}
-                                      className="w-20 px-1.5 py-1 rounded border border-slate-300 text-xs text-right font-mono focus:ring-1 focus:ring-blue-500 outline-none"
+                                      className="w-20 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-right font-mono focus:ring-1 focus:ring-blue-500 outline-none"
                                     />
                                     <span className="text-[10px] text-slate-400 font-medium">/{unit}</span>
                                   </div>
@@ -1361,7 +1415,7 @@ export default function DeliveryModal() {
                               </td>
 
                               {/* Peso Total (kg) */}
-                              <td className="py-2 px-3 text-right">
+                              <td className="py-2.5 px-3 text-right">
                                 {isMotorista ? (
                                   <span className="font-mono font-semibold text-slate-800 text-xs">
                                     {(Number(item.peso_total_kg) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg
@@ -1373,46 +1427,47 @@ export default function DeliveryModal() {
                                       step="any"
                                       value={item.peso_total_kg}
                                       onChange={(e) => handleItemChange(idx, 'peso_total_kg', e.target.value)}
-                                      className="w-20 px-1.5 py-1 rounded border border-slate-300 text-xs text-right font-mono font-semibold text-slate-900 focus:ring-1 focus:ring-blue-500 outline-none"
+                                      className="w-20 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-right font-mono font-semibold text-slate-900 focus:ring-1 focus:ring-blue-500 outline-none"
                                     />
                                     <span className="text-[10px] text-slate-400 font-medium">kg</span>
                                   </div>
                                 )}
                               </td>
 
-                              {/* Valor Unitário (R$) */}
+                              {/* Valor Unitário */}
                               {!isMotorista && (
-                                <td className="py-2 px-3 text-right">
-                                  <div className="flex items-center justify-end gap-1">
-                                    <span className="text-[10px] text-slate-400 font-medium">R$</span>
-                                    <input
-                                      type="number"
-                                      step="any"
-                                      value={item.valor_unitario}
-                                      onChange={(e) => handleItemChange(idx, 'valor_unitario', e.target.value)}
-                                      className="w-20 px-1.5 py-1 rounded border border-slate-300 text-xs text-right font-mono focus:ring-1 focus:ring-blue-500 outline-none"
-                                    />
-                                  </div>
+                                <td className="py-2.5 px-3 text-right">
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={item.valor_unitario}
+                                    onChange={(e) => handleItemChange(idx, 'valor_unitario', e.target.value)}
+                                    className="w-20 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-right font-mono focus:ring-1 focus:ring-blue-500 outline-none"
+                                  />
                                 </td>
                               )}
 
-                              {/* Valor Total (R$) */}
+                              {/* Valor Total */}
                               {!isMotorista && (
-                                <td className="py-2 px-3 text-right">
-                                  <span className="font-mono font-semibold text-slate-900 text-xs">
-                                    R$ {(Number(item.valor_total) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                  </span>
+                                <td className="py-2.5 px-3 text-right">
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={item.valor_total}
+                                    onChange={(e) => handleItemChange(idx, 'valor_total', e.target.value)}
+                                    className="w-20 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-right font-mono font-semibold text-slate-900 focus:ring-1 focus:ring-blue-500 outline-none"
+                                  />
                                 </td>
                               )}
 
-                              {/* Action: Delete */}
+                              {/* Ações: Excluir */}
                               {!isMotorista && (
-                                <td className="py-2 px-3 text-center">
+                                <td className="py-2.5 px-2 text-center">
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveItem(idx)}
-                                    className="p-1 text-slate-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors cursor-pointer"
-                                    title="Remover item"
+                                    className="p-1 rounded-[3px] text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                    title="Remover material deste romaneio"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -1426,64 +1481,51 @@ export default function DeliveryModal() {
                   </table>
                 </div>
 
-                {/* 4. TOTALS RESUMO BAR (Clean, Legible, Cohesive) */}
-                <div className={`grid grid-cols-1 ${isMotorista ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200`}>
-                  <div className="flex items-center gap-2.5 p-2 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                      <Package className="w-4 h-4" />
+                {/* 4. TOTAL CARDS (Grand Totals) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-[4px] bg-slate-50 border border-slate-200 flex items-center gap-3">
+                    <div className="p-2 rounded-[3px] bg-blue-100 text-blue-700">
+                      <Layers className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
-                        Volume Total
-                      </span>
-                      <span className="text-xs sm:text-sm font-bold font-mono text-slate-900">
-                        {romaneioTotalQtd.toLocaleString('pt-BR')} {romaneioTotalQtd === 1 ? 'item' : 'itens'}
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Volume Total</span>
+                      <span className="text-sm font-bold text-slate-800 font-mono">
+                        {romaneioTotalQtd.toLocaleString('pt-BR')} itens
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2.5 p-2 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
-                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                  <div className="p-3 rounded-[4px] bg-slate-50 border border-slate-200 flex items-center gap-3">
+                    <div className="p-2 rounded-[3px] bg-amber-100 text-amber-700">
                       <Scale className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
-                        Peso Bruto Total
-                      </span>
-                      <span className="text-xs sm:text-sm font-bold font-mono text-slate-900">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Peso Bruto Total</span>
+                      <span className="text-sm font-bold text-slate-800 font-mono">
                         {romaneioTotalPeso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg
                       </span>
                     </div>
                   </div>
 
-                  {!isMotorista && (
-                    <div className="flex items-center gap-2.5 p-2 rounded-lg bg-white border border-slate-200/80 shadow-2xs">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                        <DollarSign className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
-                          Valor Total da Carga
-                        </span>
-                        <span className="text-xs sm:text-sm font-bold font-mono text-emerald-700">
-                          R$ {romaneioTotalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
+                  <div className="p-3 rounded-[4px] bg-slate-50 border border-slate-200 flex items-center gap-3">
+                    <div className="p-2 rounded-[3px] bg-emerald-100 text-emerald-700">
+                      <DollarSign className="w-4 h-4" />
                     </div>
-                  )}
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Valor Total da Carga</span>
+                      <span className="text-sm font-bold text-emerald-700 font-mono">
+                        R$ {romaneioTotalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* 5. Observações do Romaneio */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                {/* 5. OBSERVAÇÕES DO ROMANEIO */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
                     <Info className="w-3.5 h-3.5 text-slate-400" />
                     <span>Observações do Romaneio (Impressas no Documento PDF)</span>
                   </label>
-                  {isMotorista ? (
-                    <div className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 min-h-[40px]">
-                      {romaneioObs || 'Nenhuma observação informada.'}
-                    </div>
-                  ) : (
                     <textarea
                       rows={2}
                       value={romaneioObs}
@@ -1491,7 +1533,6 @@ export default function DeliveryModal() {
                       placeholder="Ex: Entregar com nota fiscal anexa; conferir peso antes do descarregamento..."
                       className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
-                  )}
                 </div>
 
               </div>

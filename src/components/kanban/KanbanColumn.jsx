@@ -4,14 +4,14 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const COLUMN_THEMES = {
   atualizacoes: {
-    columnBg: 'lg:bg-[#F0F2F5]/92 lg:border lg:border-slate-300/85 lg:backdrop-blur-xs',
+    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
     headerBg: 'bg-[#1E293B] border-b border-[#334155] text-white',
     titleColor: 'text-white font-bold',
     badgeBg: 'bg-[#334155] text-white border border-slate-600',
     title: '📋 Atualizações',
   },
   segunda: {
-    columnBg: 'lg:bg-[#F0F2F5]/92 lg:border lg:border-slate-300/85 lg:backdrop-blur-xs',
+    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
     headerBg: 'bg-[#0081A7] border-b border-[#006c8c] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-cyan-100',
@@ -19,7 +19,7 @@ const COLUMN_THEMES = {
     title: 'Segunda',
   },
   terca: {
-    columnBg: 'lg:bg-[#F0F2F5]/92 lg:border lg:border-slate-300/85 lg:backdrop-blur-xs',
+    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
     headerBg: 'bg-[#0081A7] border-b border-[#006c8c] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-cyan-100',
@@ -27,7 +27,7 @@ const COLUMN_THEMES = {
     title: 'Terça',
   },
   quarta: {
-    columnBg: 'lg:bg-[#F0F2F5]/92 lg:border lg:border-slate-300/85 lg:backdrop-blur-xs',
+    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
     headerBg: 'bg-[#2E97C2] border-b border-[#2580a5] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-cyan-100',
@@ -35,7 +35,7 @@ const COLUMN_THEMES = {
     title: 'Quarta',
   },
   quinta: {
-    columnBg: 'lg:bg-[#F0F2F5]/92 lg:border lg:border-slate-300/85 lg:backdrop-blur-xs',
+    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
     headerBg: 'bg-[#2E97C2] border-b border-[#2580a5] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-cyan-100',
@@ -43,7 +43,7 @@ const COLUMN_THEMES = {
     title: 'Quinta',
   },
   sexta: {
-    columnBg: 'lg:bg-[#F0F2F5]/92 lg:border lg:border-slate-300/85 lg:backdrop-blur-xs',
+    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
     headerBg: 'bg-[#F07127] border-b border-[#d85e19] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-amber-100',
@@ -51,7 +51,7 @@ const COLUMN_THEMES = {
     title: 'Sexta',
   },
   sabado: {
-    columnBg: 'lg:bg-[#F0F2F5]/92 lg:border lg:border-slate-300/85 lg:backdrop-blur-xs',
+    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
     headerBg: 'bg-[#F07127] border-b border-[#d85e19] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-amber-100',
@@ -96,7 +96,7 @@ export default function KanbanColumn({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`kanban-column flex flex-col flex-1 min-w-0 lg:rounded-[4px] max-h-full lg:overflow-hidden transition-colors ${theme.columnBg} ${
+      className={`kanban-column flex flex-col flex-1 min-w-0 min-h-full rounded-[4px] max-h-full transition-colors ${theme.columnBg} ${
         isDragOver ? 'drag-over' : ''
       }`}
     >
@@ -123,7 +123,7 @@ export default function KanbanColumn({
       </div>
 
       {/* Cards Scroll Container */}
-      <div className="px-0 lg:px-2 pt-1.5 pb-28 lg:pb-2 flex-1 overflow-visible lg:overflow-y-auto space-y-2.5 lg:space-y-1.5 kanban-cards font-inter">
+      <div className="p-2 flex-1 overflow-y-auto space-y-1.5 kanban-cards font-inter">
         {items.map((item) => (
           <KanbanCard
             key={item.id}

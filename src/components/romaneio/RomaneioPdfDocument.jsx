@@ -1,6 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+const COMPANY_LOGO_URL = 'https://res.cloudinary.com/dyw2bm0p4/image/upload/v1772193535/Gemini_Generated_Image_b4mrdzb4mrdzb4mr_1_izinkt.png';
+
 export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -24,7 +26,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   let currentY = 12;
 
   // ==========================================
-  // 1. TOP HEADER (Monocromático, Fundo Branco)
+  // 1. TOP HEADER (Com Logo da Empresa)
   // ==========================================
   
   // Left: Empresa & Contato
@@ -44,11 +46,12 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   // Right: Título, Número e Data de Geração
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(0, 129, 167); // #0081A7
   doc.text('Romaneio de carga', startX + contentWidth, currentY + 5, { align: 'right' });
 
   doc.setFontSize(15);
   doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
   doc.text(numFormatado, startX + contentWidth, currentY + 13, { align: 'right' });
 
   doc.setFont('helvetica', 'normal');
@@ -66,7 +69,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   currentY += 4;
 
   // ==========================================
-  // 2. BLOCCO TRANSPORTADORA (Quadro Arredondado)
+  // 2. BLOCO TRANSPORTADORA (Quadro Arredondado)
   // ==========================================
   const transpBoxY = currentY;
   const transpBoxHeight = 24;
@@ -78,7 +81,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
 
   // Título da seção
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(0, 0, 0);
   doc.text('Transportadora', startX + 4, transpBoxY + 5.5);
 
@@ -150,7 +153,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   const clienteNome = delivery?.cliente || 'Não informado';
   const enderecoDest = delivery?.endereco || 'Não informado';
 
-  // Format table data
+  // Format table data: Coluna 'Quant.'
   const tableData = items.map((item, idx) => {
     const qtd = Number(item.quantidade) || 0;
     const pesoUnit = Number(item.peso_unitario_kg) || 0;
@@ -174,11 +177,11 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   const totalPeso = items.reduce((sum, it) => sum + (Number(it.peso_total_kg) || ((Number(it.quantidade) || 0) * (Number(it.peso_unitario_kg) || 0)) || 0), 0);
   const totalValor = items.reduce((sum, it) => sum + (Number(it.valor_total) || ((Number(it.quantidade) || 0) * (Number(it.valor_unitario) || 0)) || 0), 0);
 
-  // Render Table with autoTable
+  // Render Table with autoTable: Altura ajustada para caber Linha 1 e Linha 2 de Destinatário
   autoTable(doc, {
-    startY: currentY + 12,
+    startY: currentY + 16,
     margin: { left: startX, right: startX },
-    head: [['Código', 'Descrição do Material', 'Unid', 'Peso Unit.', 'Quantidade', 'Valor Unit. (R$)', 'Valor Total (R$)']],
+    head: [['Código', 'Descrição do Material', 'Unid', 'Peso Unit.', 'Quant.', 'Valor Unit. (R$)', 'Valor Total (R$)']],
     body: tableData.length > 0 ? tableData : [['-', 'Nenhum material adicionado', '-', '-', '0', '-', 'R$ 0,00']],
     theme: 'plain',
     headStyles: {
@@ -219,31 +222,33 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   doc.setLineWidth(0.4);
   doc.roundedRect(startX, destBoxY, contentWidth, boxHeight, 2, 2, 'S');
 
-  // Cabeçalho interno do Destinatário
+  // Cabeçalho interno do Destinatário (Linha 1: Nota fiscal / Boleto e Destinatário)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(0, 0, 0);
-  doc.text('Nota fiscal / Boleto:', startX + 4, destBoxY + 6);
+  doc.text('Nota fiscal / Boleto:', startX + 4, destBoxY + 5.5);
   doc.setFont('helvetica', 'normal');
-  doc.text(boletoNf, startX + 32, destBoxY + 6);
+  doc.text(boletoNf, startX + 32, destBoxY + 5.5);
 
   doc.setFont('helvetica', 'bold');
-  doc.text('Destinatário:', startX + 60, destBoxY + 6);
+  doc.text('Destinatário:', startX + 75, destBoxY + 5.5);
   doc.setFont('helvetica', 'normal');
-  doc.text(clienteNome.length > 25 ? clienteNome.substring(0, 25) + '...' : clienteNome, startX + 78, destBoxY + 6);
+  const clienteAbrev = clienteNome.length > 45 ? clienteNome.substring(0, 45) + '...' : clienteNome;
+  doc.text(clienteAbrev, startX + 94, destBoxY + 5.5);
 
+  // Linha 2 (Abaixo da Nota Fiscal): Endereço Destinatário completo com proteção contra overflow
   doc.setFont('helvetica', 'bold');
-  doc.text('Endereço destinatário:', startX + 115, destBoxY + 6);
+  doc.text('Endereço destinatário:', startX + 4, destBoxY + 11.5);
   doc.setFont('helvetica', 'normal');
-  const endAbrev = enderecoDest.length > 35 ? enderecoDest.substring(0, 35) + '...' : enderecoDest;
-  doc.text(endAbrev, startX + 146, destBoxY + 6);
+  const endAbrev = enderecoDest.length > 85 ? enderecoDest.substring(0, 85) + '...' : enderecoDest;
+  doc.text(endAbrev, startX + 37, destBoxY + 11.5);
 
   // Subtotais no rodapé do quadro de carga
   const subtotalY = tableFinalY + 5;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(0, 0, 0);
-  doc.text(`Quantidade total: ${totalQtd.toLocaleString('pt-BR')}`, startX + contentWidth - 95, subtotalY, { align: 'right' });
+  doc.text(`Quant. total: ${totalQtd.toLocaleString('pt-BR')}`, startX + contentWidth - 95, subtotalY, { align: 'right' });
   doc.text(`Peso total: ${totalPeso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg`, startX + contentWidth - 45, subtotalY, { align: 'right' });
   doc.text(`Preço total: R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, startX + contentWidth - 4, subtotalY, { align: 'right' });
 
@@ -301,7 +306,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   doc.text('Assinatura / Carimbo / Data', startX + 142.5, signY + 18, { align: 'center' });
 
   // ==========================================
-  // 6. RODAPÉ DO RELATÓRIO
+  // 6. RODAPÉ DO ROMANEIO
   // ==========================================
   doc.setDrawColor(220, 220, 220);
   doc.setLineWidth(0.2);
@@ -309,7 +314,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
 
   doc.setFontSize(7);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Relatório gerado ${issueDate} às ${issueTime}`, startX, 287);
+  doc.text(`Romaneio gerado ${issueDate} às ${issueTime}`, startX, 287);
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
@@ -325,9 +330,40 @@ export function downloadRomaneioPdf(params) {
 }
 
 export function printRomaneioPdf(params) {
-  const doc = generateRomaneioPdf(params);
-  doc.autoPrint();
-  window.open(doc.output('bloburl'), '_blank');
+  try {
+    const doc = generateRomaneioPdf(params);
+    const blob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Create a hidden iframe for seamless direct browser printing
+    let printIframe = document.getElementById('romaneio-print-iframe');
+    if (!printIframe) {
+      printIframe = document.createElement('iframe');
+      printIframe.id = 'romaneio-print-iframe';
+      printIframe.style.position = 'fixed';
+      printIframe.style.right = '0';
+      printIframe.style.bottom = '0';
+      printIframe.style.width = '0';
+      printIframe.style.height = '0';
+      printIframe.style.border = '0';
+      document.body.appendChild(printIframe);
+    }
+
+    printIframe.src = blobUrl;
+    printIframe.onload = () => {
+      setTimeout(() => {
+        try {
+          printIframe.contentWindow?.focus();
+          printIframe.contentWindow?.print();
+        } catch (e) {
+          window.open(blobUrl, '_blank');
+        }
+      }, 250);
+    };
+  } catch (err) {
+    console.error('Erro ao acionar impressão:', err);
+    window.print();
+  }
 }
 
 export default {
