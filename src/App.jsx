@@ -191,7 +191,7 @@ export default function App() {
               </div>
 
               {/* Subtab Contents */}
-              <div className="flex-1 flex flex-col min-h-[480px]">
+              <div className="w-full flex flex-col">
                 {adminActiveSubTab === 'drivers' && <DriversManagement />}
                 {adminActiveSubTab === 'vehicles' && <VehiclesManagement />}
                 {adminActiveSubTab === 'materials' && <MaterialsManagement />}

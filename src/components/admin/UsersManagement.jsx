@@ -96,7 +96,7 @@ export default function UsersManagement() {
   };
 
   return (
-    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex-1 flex flex-col font-inter">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter shadow-xs">
       
       {/* Header Controls & Info */}
       <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-surface-container-low/50 shrink-0">
@@ -207,10 +207,10 @@ export default function UsersManagement() {
       </form>
 
       {/* Users Table */}
-      <div className="border-t border-grid-line flex-1 overflow-auto">
+      <div className="border-t border-grid-line overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs">
-          <thead className="sticky top-0 z-10">
-            <tr className="border-b border-grid-line bg-surface-container-lowest/90 backdrop-blur-xs text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+          <thead>
+            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
               <th className="py-2.5 px-4">NOME</th>
               <th className="py-2.5 px-4">E-MAIL</th>
               <th className="py-2.5 px-4 text-center">NÍVEL (ROLE)</th>

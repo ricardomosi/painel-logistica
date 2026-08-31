@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Plus, Edit2, Trash2, Phone, CreditCard, Check, X, BadgePercent } from 'lucide-react';
+import { UserCheck, Plus, Edit2, Trash2, Phone, CreditCard, Check, X } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import { useLogistics } from '../../contexts/LogisticsContext';
 
@@ -93,7 +93,7 @@ export default function DriversManagement() {
   const activeCount = drivers.filter(d => d.ativo !== false).length;
 
   return (
-    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex-1 flex flex-col font-inter">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter shadow-xs">
       
       {/* Header Controls & Info */}
       <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-surface-container-low/50 shrink-0">
@@ -194,10 +194,10 @@ export default function DriversManagement() {
       </form>
 
       {/* Drivers Table */}
-      <div className="border-t border-grid-line flex-1 overflow-auto">
+      <div className="border-t border-grid-line overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs">
-          <thead className="sticky top-0 z-10">
-            <tr className="border-b border-grid-line bg-surface-container-lowest/90 backdrop-blur-xs text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
+          <thead>
+            <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
               <th className="py-2.5 px-4">NOME DO CONDUTOR</th>
               <th className="py-2.5 px-4">TELEFONE / CONTATO</th>
               <th className="py-2.5 px-4">DOCUMENTO (CNH)</th>

@@ -158,7 +158,7 @@ export default function MaterialsManagement() {
   };
 
   return (
-    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex-1 flex flex-col font-inter">
+    <div className="bg-surface-container border border-grid-line rounded-lg overflow-hidden flex flex-col font-inter shadow-xs">
       
       {/* Header Controls & Search */}
       <div className="p-4 border-b border-grid-line flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low/50 shrink-0">
@@ -354,7 +354,7 @@ export default function MaterialsManagement() {
       </form>
 
       {/* Table Container */}
-      <div className="border-t border-grid-line flex-1 overflow-auto">
+      <div className="border-t border-grid-line overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-grid-line bg-surface-container-lowest/70 text-on-surface-variant font-label-caps uppercase text-[10px] tracking-wider">
