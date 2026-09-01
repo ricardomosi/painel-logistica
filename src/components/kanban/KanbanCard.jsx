@@ -3,26 +3,79 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLogistics } from '../../contexts/LogisticsContext';
 
 const TIPO_CONFIG = {
-  'Envio': { 
+  'envio': { 
+    label: 'Envio',
     colorText: 'text-emerald-700 font-bold', 
     colorBgDesktop: 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold', 
     icon: 'send' 
   },
-  'Coleta': { 
+  'troca': { 
+    label: 'Troca',
+    colorText: 'text-amber-700 font-bold', 
+    colorBgDesktop: 'bg-amber-50 border-amber-200 text-amber-800 font-semibold', 
+    icon: 'swap_horiz' 
+  },
+  'retirada': { 
+    label: 'Retirada',
+    colorText: 'text-indigo-700 font-bold', 
+    colorBgDesktop: 'bg-indigo-50 border-indigo-200 text-indigo-800 font-semibold', 
+    icon: 'storefront' 
+  },
+  'busca': { 
+    label: 'Busca',
+    colorText: 'text-cyan-700 font-bold', 
+    colorBgDesktop: 'bg-cyan-50 border-cyan-200 text-cyan-800 font-semibold', 
+    icon: 'download' 
+  },
+  'coleta': { 
+    label: 'Coleta',
     colorText: 'text-blue-700 font-bold', 
     colorBgDesktop: 'bg-blue-50 border-blue-200 text-blue-800 font-semibold', 
     icon: 'call_received' 
   },
-  'Visita': { 
+  'visita': { 
+    label: 'Visita',
     colorText: 'text-purple-700 font-bold', 
     colorBgDesktop: 'bg-purple-50 border-purple-200 text-purple-800 font-semibold', 
     icon: 'group' 
   },
-  'Cotação': { 
+  'cotação': { 
+    label: 'Cotação',
     colorText: 'text-amber-700 font-bold', 
     colorBgDesktop: 'bg-amber-50 border-amber-200 text-amber-900 font-semibold', 
     icon: 'paid' 
   },
+  'cotacao': { 
+    label: 'Cotação',
+    colorText: 'text-amber-700 font-bold', 
+    colorBgDesktop: 'bg-amber-50 border-amber-200 text-amber-900 font-semibold', 
+    icon: 'paid' 
+  },
+  'devolução': { 
+    label: 'Devolução',
+    colorText: 'text-rose-700 font-bold', 
+    colorBgDesktop: 'bg-rose-50 border-rose-200 text-rose-800 font-semibold', 
+    icon: 'assignment_return' 
+  },
+  'devolucao': { 
+    label: 'Devolução',
+    colorText: 'text-rose-700 font-bold', 
+    colorBgDesktop: 'bg-rose-50 border-rose-200 text-rose-800 font-semibold', 
+    icon: 'assignment_return' 
+  },
+};
+
+const getTipoConfig = (tipo) => {
+  const key = (tipo || '').toLowerCase().trim();
+  if (TIPO_CONFIG[key]) {
+    return TIPO_CONFIG[key];
+  }
+  return { 
+    label: tipo || 'Coleta',
+    colorText: 'text-slate-800 font-semibold', 
+    colorBgDesktop: 'bg-slate-50 border-slate-200 text-slate-800 font-semibold', 
+    icon: 'inventory_2' 
+  };
 };
 
 export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
@@ -128,11 +181,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
   }
 
   // Config for Coleta
-  const config = TIPO_CONFIG[item.tipo] || { 
-    colorText: 'text-slate-800 font-semibold', 
-    colorBgDesktop: 'bg-slate-50 border-slate-200 text-slate-800 font-semibold', 
-    icon: 'check_box_outline_blank' 
-  };
+  const config = getTipoConfig(item.tipo);
 
   return (
     <div
@@ -152,12 +201,12 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   {/* Mobile Type */}
                   <div className="flex lg:hidden items-center gap-1 shrink-0">
                     <span className={`material-symbols-outlined text-[13px] ${config.colorText}`}>{config.icon}</span>
-                    <span className={`text-[10px] font-bold ${config.colorText} uppercase tracking-wider`}>{item.tipo}</span>
+                    <span className={`text-[10px] font-bold ${config.colorText} uppercase tracking-wider`}>{item.tipo || config.label}</span>
                   </div>
                   {/* Desktop Type */}
                   <span className={`hidden lg:flex text-[8.5px] font-semibold px-1.5 py-0.2 rounded-[3px] border items-center gap-1 shrink-0 ${config.colorBgDesktop}`}>
                     <span className="material-symbols-outlined text-[11px]">{config.icon}</span> 
-                    <span>{item.tipo}</span>
+                    <span>{item.tipo || config.label}</span>
                   </span>
 
                   {isUrgent && !isCompleted && (

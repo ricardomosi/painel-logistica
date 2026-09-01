@@ -1659,10 +1659,13 @@ export default function DeliveryModal() {
                       Relato de Ocorrência / Como foi a Entrega
                     </label>
                     <select
-                      value={formData.como_foi_entrega || 'Sem ocorrências'}
+                      value={formData.como_foi_entrega || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, como_foi_entrega: e.target.value }))}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                     >
+                      <option value="" className="text-slate-500 font-normal">
+                        Selecione o status da entrega...
+                      </option>
                       {OCORRENCIAS_OPTIONS.map(oc => (
                         <option key={oc.value} value={oc.value} className={oc.color}>
                           {oc.label}
