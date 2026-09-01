@@ -110,6 +110,8 @@ export default function DeliveryModal() {
     materials,
     drivers,
     vehicles,
+    sellers,
+    profiles,
     showConfirm,
     showAlert,
     addToast
@@ -123,6 +125,51 @@ export default function DeliveryModal() {
   // Quick Create Modal state
   const [quickMaterialModalOpen, setQuickMaterialModalOpen] = useState(false);
   const [quickMaterialInitialName, setQuickMaterialInitialName] = useState('');
+
+  // Dynamic Sellers from Database (Admin -> Vendedores)
+  const availableSellers = React.useMemo(() => {
+    if (Array.isArray(sellers) && sellers.length > 0) {
+      const active = sellers
+        .filter(s => s.ativo !== false)
+        .map(s => ({
+          name: `${s.nome}${s.unidade ? ` (${s.unidade})` : ''}`,
+          colorClass: (s.unidade || '').toLowerCase().includes('filial') ? 'text-orange-600 font-bold' : 'text-blue-600 font-bold'
+        }));
+      if (selectedDelivery?.vendedor && !active.some(a => a.name === selectedDelivery.vendedor)) {
+        active.unshift({ name: selectedDelivery.vendedor, colorClass: 'text-slate-800 font-bold' });
+      }
+      return active;
+    }
+    return VENDEDORES_OPTIONS;
+  }, [sellers, selectedDelivery?.vendedor]);
+
+  // Dynamic Vehicles from Database (Admin -> Veículos & Motoristas)
+  const availablePlacas = React.useMemo(() => {
+    if (Array.isArray(vehicles) && vehicles.length > 0) {
+      const active = vehicles
+        .filter(v => v.ativo !== false)
+        .map(v => `${v.placa}${v.motorista_padrao?.nome ? ` (${v.motorista_padrao.nome})` : ''}`);
+      if (selectedDelivery?.placa && !active.includes(selectedDelivery.placa)) {
+        active.unshift(selectedDelivery.placa);
+      }
+      return active;
+    }
+    return PLACAS_OPTIONS;
+  }, [vehicles, selectedDelivery?.placa]);
+
+  // Dynamic Cadastradores/Gestores from Database (Admin -> Usuários/Perfis)
+  const availableCadastradores = React.useMemo(() => {
+    if (Array.isArray(profiles) && profiles.length > 0) {
+      const active = profiles
+        .filter(p => p.role === 'admin' || p.role === 'gestor')
+        .map(p => p.nome.toUpperCase());
+      if (selectedDelivery?.cadastrador_entrega && !active.includes(selectedDelivery.cadastrador_entrega.toUpperCase())) {
+        active.unshift(selectedDelivery.cadastrador_entrega);
+      }
+      return active;
+    }
+    return CADASTRADORES_ENTREGA;
+  }, [profiles, selectedDelivery?.cadastrador_entrega]);
   const [targetItemIndexForNewMaterial, setTargetItemIndexForNewMaterial] = useState(null);
   
   const isEditing = !!selectedDelivery?.id;
@@ -1018,7 +1065,7 @@ export default function DeliveryModal() {
                           className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o veículo...</option>
-                          {PLACAS_OPTIONS.map(p => (
+                          {availablePlacas.map(p => (
                             <option key={p} value={p}>{p}</option>
                           ))}
                         </select>
@@ -1061,7 +1108,7 @@ export default function DeliveryModal() {
                           className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o responsável...</option>
-                          {CADASTRADORES_ENTREGA.map(c => (
+                          {availableCadastradores.map(c => (
                             <option key={c} value={c}>{c}</option>
                           ))}
                         </select>
@@ -1088,7 +1135,7 @@ export default function DeliveryModal() {
                           className="w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer"
                         >
                           <option value="">Selecione o vendedor...</option>
-                          {VENDEDORES_OPTIONS.map(v => (
+                          {availableSellers.map(v => (
                             <option key={v.name} value={v.name} className={v.colorClass}>
                               {v.name}
                             </option>

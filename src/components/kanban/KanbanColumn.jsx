@@ -4,14 +4,14 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const COLUMN_THEMES = {
   atualizacoes: {
-    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
+    columnBg: 'bg-[#ECEFF3]/95 border border-slate-300/85 backdrop-blur-xs',
     headerBg: 'bg-[#1E293B] border-b border-[#334155] text-white',
     titleColor: 'text-white font-bold',
     badgeBg: 'bg-[#334155] text-white border border-slate-600',
     title: '📋 Atualizações',
   },
   segunda: {
-    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
+    columnBg: 'bg-[#E4F2F7]/95 border border-[#A2D3E3]/80 backdrop-blur-xs',
     headerBg: 'bg-[#0081A7] border-b border-[#006c8c] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-cyan-100',
@@ -19,7 +19,7 @@ const COLUMN_THEMES = {
     title: 'Segunda',
   },
   terca: {
-    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
+    columnBg: 'bg-[#E4F2F7]/95 border border-[#A2D3E3]/80 backdrop-blur-xs',
     headerBg: 'bg-[#0081A7] border-b border-[#006c8c] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-cyan-100',
@@ -27,7 +27,7 @@ const COLUMN_THEMES = {
     title: 'Terça',
   },
   quarta: {
-    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
+    columnBg: 'bg-[#EAF5FA]/95 border border-[#B1DCF0]/80 backdrop-blur-xs',
     headerBg: 'bg-[#2E97C2] border-b border-[#2580a5] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-cyan-100',
@@ -35,7 +35,7 @@ const COLUMN_THEMES = {
     title: 'Quarta',
   },
   quinta: {
-    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
+    columnBg: 'bg-[#EAF5FA]/95 border border-[#B1DCF0]/80 backdrop-blur-xs',
     headerBg: 'bg-[#2E97C2] border-b border-[#2580a5] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-cyan-100',
@@ -43,7 +43,7 @@ const COLUMN_THEMES = {
     title: 'Quinta',
   },
   sexta: {
-    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
+    columnBg: 'bg-[#FDF2EC]/95 border border-[#F9C7AD]/80 backdrop-blur-xs',
     headerBg: 'bg-[#F07127] border-b border-[#d85e19] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-amber-100',
@@ -51,7 +51,7 @@ const COLUMN_THEMES = {
     title: 'Sexta',
   },
   sabado: {
-    columnBg: 'bg-[#F0F2F5]/92 border border-slate-300/85 backdrop-blur-xs',
+    columnBg: 'bg-[#FDF2EC]/95 border border-[#F9C7AD]/80 backdrop-blur-xs',
     headerBg: 'bg-[#F07127] border-b border-[#d85e19] text-white',
     titleColor: 'text-white font-bold',
     subColor: 'text-amber-100',

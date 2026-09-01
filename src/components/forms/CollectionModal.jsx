@@ -41,12 +41,41 @@ export default function CollectionModal() {
     showAlert,
     addToast,
     drivers,
-    vehicles
+    vehicles,
+    profiles
   } = useLogistics();
 
   const isEditing = !!selectedCollection?.id;
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Dynamic Vehicles from Database (Admin -> Veículos & Motoristas)
+  const availablePlacas = React.useMemo(() => {
+    if (Array.isArray(vehicles) && vehicles.length > 0) {
+      const active = vehicles
+        .filter(v => v.ativo !== false)
+        .map(v => `${v.placa}${v.motorista_padrao?.nome ? ` (${v.motorista_padrao.nome})` : ''}`);
+      if (selectedCollection?.placa && !active.includes(selectedCollection.placa)) {
+        active.unshift(selectedCollection.placa);
+      }
+      return active;
+    }
+    return PLACAS_COLETA;
+  }, [vehicles, selectedCollection?.placa]);
+
+  // Dynamic Responsáveis from Database (Admin -> Usuários/Perfis)
+  const availableResponsaveis = React.useMemo(() => {
+    if (Array.isArray(profiles) && profiles.length > 0) {
+      const active = profiles
+        .filter(p => p.role === 'admin' || p.role === 'gestor')
+        .map(p => p.nome.toUpperCase());
+      if (selectedCollection?.responsavel && !active.includes(selectedCollection.responsavel.toUpperCase())) {
+        active.unshift(selectedCollection.responsavel);
+      }
+      return active;
+    }
+    return RESPONSAVEIS_COLETA;
+  }, [profiles, selectedCollection?.responsavel]);
 
   const [formData, setFormData] = useState({
     fornecedor: '',
@@ -317,7 +346,7 @@ export default function CollectionModal() {
                 className={`w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-xs font-semibold text-slate-700 cursor-pointer ${isMotorista ? 'bg-slate-50' : ''}`}
               >
                 <option value="" disabled>Selecione o responsável...</option>
-                {RESPONSAVEIS_COLETA.map((r) => (
+                {availableResponsaveis.map((r) => (
                   <option key={r} value={r}>{r}</option>
                 ))}
               </select>
@@ -335,7 +364,7 @@ export default function CollectionModal() {
                 className={`w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-xs font-semibold text-slate-700 cursor-pointer ${isMotorista ? 'bg-slate-50' : ''}`}
               >
                 <option value="">Selecione o veículo...</option>
-                {PLACAS_COLETA.map((p) => (
+                {availablePlacas.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>

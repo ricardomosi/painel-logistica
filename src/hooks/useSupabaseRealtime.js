@@ -108,6 +108,20 @@ export function useSupabaseRealtime({
         }
       )
       .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'vendedores' },
+        (payload) => {
+          if (generalCbRef.current) generalCbRef.current('vendedores', payload);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        (payload) => {
+          if (generalCbRef.current) generalCbRef.current('profiles', payload);
+        }
+      )
+      .on(
         'broadcast',
         { event: 'logistics_broadcast' },
         (payload) => {

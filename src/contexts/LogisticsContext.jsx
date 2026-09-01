@@ -74,6 +74,7 @@ export function LogisticsProvider({ children }) {
   const [vehicles, setVehicles] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [sellers, setSellers] = useState([]);
+  const [profiles, setProfiles] = useState([]);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -326,13 +327,14 @@ export function LogisticsProvider({ children }) {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [dels, cols, drvs, vehs, mats, sels] = await Promise.all([
+      const [dels, cols, drvs, vehs, mats, sels, profs] = await Promise.all([
         deliveriesService.getAll().catch(() => []),
         collectionsService.getAll().catch(() => []),
         adminService.getDrivers().catch(() => []),
         adminService.getVehicles().catch(() => []),
         adminService.getMaterials().catch(() => []),
         adminService.getSellers().catch(() => []),
+        adminService.getProfiles().catch(() => []),
       ]);
 
       const delMap = new Map();
@@ -351,6 +353,7 @@ export function LogisticsProvider({ children }) {
       setVehicles(vehs);
       setMaterials(mats);
       setSellers(sels);
+      setProfiles(profs);
     } catch (err) {
       console.error('Error loading logistics data:', err);
       addToast('Erro ao carregar dados do servidor', 'error');
@@ -399,6 +402,12 @@ export function LogisticsProvider({ children }) {
       } else if (table === 'materiais') {
         const m = await adminService.getMaterials().catch(() => []);
         setMaterials(m);
+      } else if (table === 'vendedores') {
+        const s = await adminService.getSellers().catch(() => []);
+        setSellers(s);
+      } else if (table === 'profiles') {
+        const p = await adminService.getProfiles().catch(() => []);
+        setProfiles(p);
       } else {
         performRealtimeSync();
       }
@@ -709,6 +718,8 @@ export function LogisticsProvider({ children }) {
         drivers,
         vehicles,
         materials,
+        sellers,
+        profiles,
         loading,
         activeTab,
         setActiveTab,

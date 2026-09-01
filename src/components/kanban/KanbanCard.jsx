@@ -180,6 +180,11 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
     titleClass = 'text-slate-900 font-bold';
   }
 
+  // Dynamic Plate/Driver resolution
+  const displayPlaca = item.veiculo?.placa 
+    ? `${item.veiculo.placa}${item.motorista?.nome ? ` (${item.motorista.nome})` : (item.veiculo.motorista_padrao?.nome ? ` (${item.veiculo.motorista_padrao.nome})` : '')}`
+    : (item.placa || '');
+
   // Config for Coleta
   const config = getTipoConfig(item.tipo);
 
@@ -285,10 +290,10 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     <span className="font-medium truncate text-slate-700">{item.telefone}</span>
                   </div>
                 )}
-                {item.placa && (
+                {(displayPlaca || item.placa) && (
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="material-symbols-outlined text-[12px] text-slate-400 shrink-0">directions_car</span>
-                    <span className="font-semibold truncate text-slate-800">{item.placa}</span>
+                    <span className="font-semibold truncate text-slate-800">{displayPlaca || item.placa}</span>
                   </div>
                 )}
               </div>
@@ -410,7 +415,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="material-symbols-outlined text-[12px] text-slate-400 shrink-0">directions_car</span>
                     <span className="font-semibold break-words whitespace-normal min-w-0 text-slate-800" style={{ wordBreak: 'break-word' }}>
-                      {item.placa || 'Sem placa'}
+                      {displayPlaca || 'Sem placa'}
                     </span>
                   </div>
                   {item.frete && !isMotorista ? (
