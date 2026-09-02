@@ -12,13 +12,28 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
     loading 
   } = useLogistics();
 
-  const { columns } = weekNav;
+  const { columns, weekStart, weekEnd } = weekNav;
   const [mobileActiveColumnKey, setMobileActiveColumnKey] = useState('atualizacoes');
 
   const rawItems = type === 'entrega' ? filteredDeliveries : filteredCollections;
   const items = Array.isArray(rawItems) ? rawItems.filter(Boolean) : [];
 
-  // Compute items per column and counts
+  // Start & End of active week
+  const startOfActiveWeek = useMemo(() => {
+    if (!weekStart) return null;
+    const d = new Date(weekStart);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, [weekStart]);
+
+  const endOfActiveWeek = useMemo(() => {
+    if (!weekEnd) return null;
+    const d = new Date(weekEnd);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }, [weekEnd]);
+
+  // Compute items per column with rollover logic
   const itemsByColumn = useMemo(() => {
     const map = {
       atualizacoes: [],
@@ -30,13 +45,71 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
       sabado: []
     };
 
+    const parseDateSafe = (val) => {
+      if (!val) return null;
+      if (val instanceof Date) return val;
+      if (typeof val === 'string') {
+        const clean = val.includes('T') ? val.split('T')[0] : val.split(' ')[0];
+        const parts = clean.split('-');
+        if (parts.length === 3) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m, d, 12, 0, 0);
+          }
+        }
+        const dObj = new Date(val);
+        if (!isNaN(dObj.getTime())) return dObj;
+      }
+      return null;
+    };
+
     items.forEach(item => {
       if (!item) return;
-      let colVal = (type === 'entrega' ? item.coluna : item.coluna_kanban) || 'atualizacoes';
-      if (typeof colVal === 'string' && colVal.includes('|')) {
-        colVal = colVal.split('|')[0];
+
+      const isConcluido = item.status === 'concluido';
+      let rawCol = (type === 'entrega' ? item.coluna : item.coluna_kanban) || 'atualizacoes';
+      let colVal = rawCol;
+      let colEmbeddedDate = null;
+
+      if (typeof rawCol === 'string' && rawCol.includes('|')) {
+        const parts = rawCol.split('|');
+        colVal = parts[0];
+        colEmbeddedDate = parts[1] || null;
       }
 
+      // Determine item reference date
+      let itemDate = null;
+      if (isConcluido) {
+        itemDate = parseDateSafe(item.data_conclusao) || parseDateSafe(item.data_registro) || parseDateSafe(item.created_at);
+      } else {
+        itemDate = parseDateSafe(colEmbeddedDate) || parseDateSafe(item.data_registro) || parseDateSafe(item.created_at);
+      }
+
+      let isFromPastWeek = false;
+      let isFromFutureWeek = false;
+
+      if (itemDate && startOfActiveWeek && endOfActiveWeek) {
+        if (itemDate.getTime() < startOfActiveWeek.getTime()) {
+          isFromPastWeek = true;
+        } else if (itemDate.getTime() > endOfActiveWeek.getTime()) {
+          isFromFutureWeek = true;
+        }
+      }
+
+      // 1. Concluídos de semanas anteriores NÃO aparecem na semana atual
+      if (isConcluido && (isFromPastWeek || isFromFutureWeek)) {
+        return;
+      }
+
+      // 2. Não concluídos (pendentes) de semanas anteriores vão automaticamente para "Atualizações"
+      if (!isConcluido && isFromPastWeek) {
+        map.atualizacoes.push(item);
+        return;
+      }
+
+      // 3. Itens da semana ativa (ou sem data específica) vão para a coluna correspondente
       if (map[colVal]) {
         map[colVal].push(item);
       } else {
@@ -67,7 +140,7 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
     });
 
     return map;
-  }, [items, type]);
+  }, [items, type, startOfActiveWeek, endOfActiveWeek]);
 
   const itemCounts = useMemo(() => {
     const counts = {};
@@ -79,10 +152,13 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
 
   const handleDropItem = (itemId, targetColumnKey) => {
     const id = Number(itemId);
+    const targetCol = columns.find(c => c.key === targetColumnKey);
+    const targetDateStr = targetCol?.fullDateStr || null;
+
     if (type === 'entrega') {
-      moveDeliveryColumn(id, targetColumnKey);
+      moveDeliveryColumn(id, targetColumnKey, targetDateStr);
     } else {
-      moveCollectionColumn(id, targetColumnKey);
+      moveCollectionColumn(id, targetColumnKey, targetDateStr);
     }
   };
 

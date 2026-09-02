@@ -155,13 +155,17 @@ export const collectionsService = {
     return data;
   },
 
-  async updateColumn(id, newColumn) {
+  async updateColumn(id, newColumn, optionalDate = null) {
+    const payload = {
+      coluna_kanban: cleanStringOrNull(newColumn) || 'atualizacoes',
+      updated_at: new Date().toISOString(),
+    };
+    if (optionalDate) {
+      payload.data_registro = cleanDateOrNull(optionalDate);
+    }
     const { data, error } = await supabase
       .from('coletas')
-      .update({
-        coluna_kanban: cleanStringOrNull(newColumn) || 'atualizacoes',
-        updated_at: new Date().toISOString(),
-      })
+      .update(payload)
       .eq('id', id)
       .select()
       .single();

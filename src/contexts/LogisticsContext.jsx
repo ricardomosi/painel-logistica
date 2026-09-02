@@ -468,12 +468,16 @@ export function LogisticsProvider({ children }) {
     }
   };
 
-  const moveDeliveryColumn = async (id, newColumn) => {
+  const moveDeliveryColumn = async (id, newColumn, optionalDate = null) => {
     // Optimistic UI update
-    setDeliveries(prev => prev.map(d => d.id === id ? { ...d, coluna: newColumn } : d));
+    setDeliveries(prev => prev.map(d => d.id === id ? { 
+      ...d, 
+      coluna: newColumn, 
+      data_registro: optionalDate || d.data_registro 
+    } : d));
 
     try {
-      const updated = await deliveriesService.updateColumn(id, newColumn);
+      const updated = await deliveriesService.updateColumn(id, newColumn, optionalDate);
       broadcastLogisticsEvent('delivery_updated', updated);
     } catch (err) {
       console.error('Error moving delivery column:', err);
@@ -562,11 +566,15 @@ export function LogisticsProvider({ children }) {
     }
   };
 
-  const moveCollectionColumn = async (id, newColumn) => {
-    setCollections(prev => prev.map(c => c.id === id ? { ...c, coluna_kanban: newColumn } : c));
+  const moveCollectionColumn = async (id, newColumn, optionalDate = null) => {
+    setCollections(prev => prev.map(c => c.id === id ? { 
+      ...c, 
+      coluna_kanban: newColumn, 
+      data_registro: optionalDate || c.data_registro 
+    } : c));
 
     try {
-      const updated = await collectionsService.updateColumn(id, newColumn);
+      const updated = await collectionsService.updateColumn(id, newColumn, optionalDate);
       broadcastLogisticsEvent('collection_updated', updated);
     } catch (err) {
       console.error('Error moving collection column:', err);

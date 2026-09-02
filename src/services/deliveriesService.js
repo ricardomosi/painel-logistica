@@ -208,13 +208,17 @@ export const deliveriesService = {
     return data;
   },
 
-  async updateColumn(id, newColumn) {
+  async updateColumn(id, newColumn, optionalDate = null) {
+    const payload = {
+      coluna: cleanStringOrNull(newColumn) || 'atualizacoes',
+      updated_at: new Date().toISOString(),
+    };
+    if (optionalDate) {
+      payload.data_registro = cleanDateOrNull(optionalDate);
+    }
     const { data, error } = await supabase
       .from('entregas')
-      .update({
-        coluna: cleanStringOrNull(newColumn) || 'atualizacoes',
-        updated_at: new Date().toISOString(),
-      })
+      .update(payload)
       .eq('id', id)
       .select()
       .single();
