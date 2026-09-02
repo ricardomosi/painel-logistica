@@ -17,27 +17,27 @@ export default function ToastContainer() {
         return (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-center justify-between gap-3 p-3 rounded-lg border backdrop-blur-md transition-all transform animate-in slide-in-from-bottom-3 duration-200 bg-surface-container shadow-lg ${
+            className={`pointer-events-auto flex items-center justify-between gap-3 p-3 rounded-[6px] border transition-all transform animate-in slide-in-from-bottom-3 duration-200 bg-white shadow-lg ${
               isSuccess
-                ? 'border-emerald-500/30 text-emerald-100'
+                ? 'border-emerald-300 bg-emerald-50/90 text-emerald-950'
                 : isError
-                ? 'border-rose-500/30 text-rose-100'
+                ? 'border-rose-300 bg-rose-50/90 text-rose-950'
                 : isWarning
-                ? 'border-amber-500/30 text-amber-100'
-                : 'border-grid-line text-on-surface'
+                ? 'border-amber-300 bg-amber-50/90 text-amber-950'
+                : 'border-slate-200 bg-white text-slate-800'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              {isSuccess && <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />}
-              {isError && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
-              {isWarning && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
-              {!isSuccess && !isError && !isWarning && <Info className="w-4 h-4 text-primary shrink-0" />}
-              <span className="text-xs font-medium leading-snug">{toast.message}</span>
+              {isSuccess && <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />}
+              {isError && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
+              {isWarning && <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />}
+              {!isSuccess && !isError && !isWarning && <Info className="w-4 h-4 text-[#0081A7] shrink-0" />}
+              <span className="text-xs font-semibold leading-snug">{toast.message}</span>
             </div>
 
             <button
               onClick={() => removeToast(toast.id)}
-              className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors shrink-0"
+              className="p-1 rounded-[4px] text-slate-400 hover:text-slate-700 hover:bg-black/5 transition-colors shrink-0 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>

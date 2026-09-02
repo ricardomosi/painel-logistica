@@ -1,9 +1,24 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const COMPANY_LOGO_URL = 'https://res.cloudinary.com/dyw2bm0p4/image/upload/v1772193535/Gemini_Generated_Image_b4mrdzb4mrdzb4mr_1_izinkt.png';
+const COMPANY_LOGO_URL = 'https://res.cloudinary.com/dyw2bm0p4/image/upload/v1766755027/Gemini_Generated_Image_b4mrdzb4mrdzb4mr_b5qgcn.png';
 
-export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
+let cachedLogoImage = null;
+const loadLogoImage = (url) => {
+  if (cachedLogoImage) return Promise.resolve(cachedLogoImage);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      cachedLogoImage = img;
+      resolve(img);
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+};
+
+export async function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -11,7 +26,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   });
 
   const isMatriz = (delivery?.local_carregamento || 'MATRIZ') === 'MATRIZ';
-  const cnpj = isMatriz ? '09.528.239/0001-08' : '09.528.239/0002-80';
+  const cnpj = '10.725.679/0001-30';
   const unidadeTexto = isMatriz ? 'Matriz - Mossoró/RN' : 'Filial - Mossoró/RN';
   const romaneioNum = romaneio?.numero_romaneio || delivery?.id || 1;
   const numFormatado = String(romaneioNum).padStart(7, '0');
@@ -29,24 +44,38 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   // 1. TOP HEADER (Com Logo da Empresa)
   // ==========================================
   
+  // Render Logo if loaded
+  let logoOffset = 0;
+  try {
+    const img = await loadLogoImage(COMPANY_LOGO_URL);
+    if (img) {
+      doc.addImage(img, 'PNG', startX, currentY, 18, 18);
+      logoOffset = 22; // Offset text to the right of logo
+    }
+  } catch (e) {
+    console.warn('Could not load logo image:', e);
+  }
+
+  const textStartX = startX + logoOffset;
+
   // Left: Empresa & Contato
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.text('J PATRICIO METAIS COMERCIO LTDA', startX, currentY + 4);
+  doc.setFontSize(10.5);
+  doc.text('J PATRICIO METAIS COMERCIO LTDA', textStartX, currentY + 3.5);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(60, 60, 60);
-  doc.text('logistica@jpatricio.com.br', startX, currentY + 9);
-  doc.text(`CNPJ: ${cnpj} (${unidadeTexto})`, startX, currentY + 13);
-  doc.text('Mossoró / RN', startX, currentY + 17);
-  doc.text('Fone: (84) 3205-0000', startX, currentY + 21);
+  doc.text('E-mail: sac@jpatriciometais.com.br', textStartX, currentY + 7.5);
+  doc.text(`CNPJ: 10.725.679/0001-30 (${unidadeTexto})`, textStartX, currentY + 11.5);
+  doc.text('Mossoró / RN', textStartX, currentY + 15.5);
+  doc.text('Telefone: (84) 3316-3652', textStartX, currentY + 19.5);
 
   // Right: Título, Número e Data de Geração
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.setTextColor(0, 129, 167); // #0081A7
+  doc.setTextColor(0, 0, 0); // Preto sólido sem cor azul
   doc.text('Romaneio de carga', startX + contentWidth, currentY + 5, { align: 'right' });
 
   doc.setFontSize(15);
@@ -59,7 +88,7 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   doc.setTextColor(70, 70, 70);
   doc.text(`Data de geração: ${issueDate}`, startX + contentWidth, currentY + 19, { align: 'right' });
 
-  currentY += 26;
+  currentY += 24;
 
   // Linha divisória superior
   doc.setDrawColor(200, 200, 200);
@@ -92,14 +121,14 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   doc.text('Razão Social:', startX + 4, transpBoxY + 11.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(50, 50, 50);
-  doc.text('J PATRICIO METAIS', startX + 24, transpBoxY + 11.5);
+  doc.text('J PATRICIO METAIS COMERCIO LTDA', startX + 24, transpBoxY + 11.5);
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text('Fantasia:', startX + 68, transpBoxY + 11.5);
+  doc.text('Fantasia:', startX + 80, transpBoxY + 11.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(50, 50, 50);
-  doc.text('J PATRICIO METAIS', startX + 82, transpBoxY + 11.5);
+  doc.text('J PATRICIO METAIS', startX + 94, transpBoxY + 11.5);
 
   // Motorista & Placa
   const motNome = delivery?.motorista?.nome || (delivery?.placa && delivery.placa.includes('(') ? delivery.placa.split('(')[1]?.replace(')', '') : 'Frota Própria');
@@ -107,10 +136,10 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text('Motorista:', startX + 120, transpBoxY + 11.5);
+  doc.text('Motorista:', startX + 124, transpBoxY + 11.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(50, 50, 50);
-  doc.text(motNome || 'N/D', startX + 135, transpBoxY + 11.5);
+  doc.text(motNome || 'N/D', startX + 138, transpBoxY + 11.5);
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
@@ -125,21 +154,21 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   doc.text('CNPJ/CPF:', startX + 4, transpBoxY + 18.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(50, 50, 50);
-  doc.text(cnpj, startX + 20, transpBoxY + 18.5);
+  doc.text('10.725.679/0001-30', startX + 20, transpBoxY + 18.5);
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text('Fone:', startX + 68, transpBoxY + 18.5);
+  doc.text('Fone:', startX + 80, transpBoxY + 18.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(50, 50, 50);
-  doc.text('(84) 3205-0000', startX + 78, transpBoxY + 18.5);
+  doc.text('(84) 3316-3652', startX + 90, transpBoxY + 18.5);
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text('Saída:', startX + 120, transpBoxY + 18.5);
+  doc.text('Saída:', startX + 124, transpBoxY + 18.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(50, 50, 50);
-  doc.text(delivery?.local_carregamento || 'MATRIZ', startX + 130, transpBoxY + 18.5);
+  doc.text(delivery?.local_carregamento || 'MATRIZ', startX + 134, transpBoxY + 18.5);
 
   currentY += transpBoxHeight + 4;
 
@@ -323,15 +352,15 @@ export function generateRomaneioPdf({ delivery, romaneio, items = [] }) {
   return doc;
 }
 
-export function downloadRomaneioPdf(params) {
-  const doc = generateRomaneioPdf(params);
+export async function downloadRomaneioPdf(params) {
+  const doc = await generateRomaneioPdf(params);
   const romaneioNum = params.romaneio?.numero_romaneio || params.delivery?.id || 1;
   doc.save(`Romaneio_${String(romaneioNum).padStart(7, '0')}_JPatricio.pdf`);
 }
 
-export function printRomaneioPdf(params) {
+export async function printRomaneioPdf(params) {
   try {
-    const doc = generateRomaneioPdf(params);
+    const doc = await generateRomaneioPdf(params);
     const blob = doc.output('blob');
     const blobUrl = URL.createObjectURL(blob);
 

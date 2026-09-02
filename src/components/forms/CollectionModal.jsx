@@ -388,9 +388,6 @@ export default function CollectionModal() {
                   <option value="Retirada">Retirada</option>
                   <option value="Busca">Busca</option>
                   <option value="Coleta">Coleta</option>
-                  <option value="Visita">Visita</option>
-                  <option value="Cotação">Cotação</option>
-                  <option value="Devolução">Devolução</option>
                 </select>
               </div>
 

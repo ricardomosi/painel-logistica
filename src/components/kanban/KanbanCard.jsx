@@ -276,10 +276,10 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()} 
-                        className="text-blue-600 font-semibold hover:underline inline-flex items-center gap-0.5 mt-0.5 w-fit text-[9px]"
+                        className="mt-1 w-full py-1 px-2 rounded-[4px] bg-[#0081A7]/10 hover:bg-[#0081A7]/20 text-[#0081A7] border border-[#0081A7]/30 flex items-center justify-center gap-1.5 text-[10px] font-bold shadow-2xs transition-colors cursor-pointer"
                       >
-                        <span>Traçar rota</span>
-                        <span className="material-symbols-outlined text-[10px]">directions</span>
+                        <span className="material-symbols-outlined text-[13px]">near_me</span>
+                        <span>Traçar Rota no Mapa</span>
                       </a>
                     </div>
                   </div>
@@ -401,10 +401,10 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()} 
-                        className="text-blue-600 font-semibold hover:underline inline-flex items-center gap-0.5 mt-0.5 w-fit text-[9px]"
+                        className="mt-1 w-full py-1 px-2 rounded-[4px] bg-[#0081A7]/10 hover:bg-[#0081A7]/20 text-[#0081A7] border border-[#0081A7]/30 flex items-center justify-center gap-1.5 text-[10px] font-bold shadow-2xs transition-colors cursor-pointer"
                       >
-                        <span>Traçar rota</span>
-                        <span className="material-symbols-outlined text-[10px]">directions</span>
+                        <span className="material-symbols-outlined text-[13px]">near_me</span>
+                        <span>Traçar Rota no Mapa</span>
                       </a>
                     </div>
                   </div>
