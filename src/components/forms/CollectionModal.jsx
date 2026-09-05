@@ -28,6 +28,32 @@ const PLACAS_COLETA = [
   'TSW-7G98',
 ];
 
+const DAY_OFFSETS = {
+  segunda: 0,
+  terca: 1,
+  quarta: 2,
+  quinta: 3,
+  sexta: 4,
+  sabado: 5,
+};
+
+const getWeekDayDateStr = (colKey) => {
+  if (!colKey || DAY_OFFSETS[colKey] === undefined) return null;
+  const now = new Date();
+  const currentDay = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+
+  const targetDate = new Date(monday);
+  targetDate.setDate(monday.getDate() + DAY_OFFSETS[colKey]);
+
+  const y = targetDate.getFullYear();
+  const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const d = String(targetDate.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 export default function CollectionModal() {
   const { isMotorista } = useAuth();
   const { 
@@ -198,6 +224,8 @@ export default function CollectionModal() {
 
     try {
       setSaving(true);
+      const targetDayDate = getWeekDayDateStr(formData.coluna_kanban);
+
       const cleanPayload = {
         ...formData,
         fornecedor: formData.fornecedor?.trim() || '',
@@ -205,6 +233,8 @@ export default function CollectionModal() {
         responsavel: formData.responsavel?.trim() || null,
         placa: formData.placa?.trim() || null,
         telefone: formData.telefone?.trim() || null,
+        coluna_kanban: formData.coluna_kanban || 'atualizacoes',
+        data_registro: targetDayDate || formData.data_registro || null,
         motorista_id: formData.motorista_id || null,
         veiculo_id: formData.veiculo_id || null,
         data_conclusao: formData.data_conclusao?.trim() || null,

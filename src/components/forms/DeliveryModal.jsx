@@ -75,6 +75,32 @@ const CADASTRADORES_ENTREGA = [
   'RODOLFO',
 ];
 
+const DAY_OFFSETS = {
+  segunda: 0,
+  terca: 1,
+  quarta: 2,
+  quinta: 3,
+  sexta: 4,
+  sabado: 5,
+};
+
+const getWeekDayDateStr = (colKey) => {
+  if (!colKey || DAY_OFFSETS[colKey] === undefined) return null;
+  const now = new Date();
+  const currentDay = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+
+  const targetDate = new Date(monday);
+  targetDate.setDate(monday.getDate() + DAY_OFFSETS[colKey]);
+
+  const y = targetDate.getFullYear();
+  const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const d = String(targetDate.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 const OCORRENCIAS_OPTIONS = [
   { value: 'Sem ocorrências', label: 'Sem ocorrências', color: 'text-green-600 font-bold' },
   { value: 'Produto Divergente do Pedido', label: 'Produto Divergente do Pedido', color: 'text-red-600 font-bold' },
@@ -747,6 +773,9 @@ export default function DeliveryModal() {
         ? romaneioTotalValor 
         : (parseFloat(formData.valor_entrega) || 0);
 
+      // Calcula a data correspondente ao dia da semana se selecionado
+      const targetDayDate = getWeekDayDateStr(formData.coluna);
+
       const payload = {
         ...formData,
         cliente: formData.cliente?.trim() || '',
@@ -757,6 +786,8 @@ export default function DeliveryModal() {
         local_carregamento: formData.local_carregamento || 'MATRIZ',
         cadastrador_entrega: formData.cadastrador_entrega?.trim() || null,
         telefone: formData.telefone?.trim() || null,
+        coluna: formData.coluna || 'atualizacoes',
+        data_registro: targetDayDate || formData.data_registro || null,
         como_foi_entrega: formData.como_foi_entrega?.trim() || null,
         motorista_id: formData.motorista_id || null,
         veiculo_id: formData.veiculo_id || null,
@@ -1114,6 +1145,27 @@ export default function DeliveryModal() {
                         </select>
                       </div>
                     )}
+
+                    {/* Dia da Semana (Coluna do Quadro) */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Dia da Semana (Coluna do Quadro)
+                      </label>
+                      <select 
+                        value={formData.coluna}
+                        disabled={isMotorista}
+                        onChange={(e) => setFormData(prev => ({ ...prev, coluna: e.target.value }))}
+                        className={`w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer ${isMotorista ? 'bg-slate-100 text-slate-800' : ''}`}
+                      >
+                        <option value="atualizacoes">Inbox (Pendente / Atualizações)</option>
+                        <option value="segunda">Segunda-feira</option>
+                        <option value="terca">Terça-feira</option>
+                        <option value="quarta">Quarta-feira</option>
+                        <option value="quinta">Quinta-feira</option>
+                        <option value="sexta">Sexta-feira</option>
+                        <option value="sabado">Sábado</option>
+                      </select>
+                    </div>
                   </div>
 
                   {/* Card 3: Comercial & Faturamento */}
