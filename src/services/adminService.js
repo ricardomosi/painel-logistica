@@ -152,9 +152,30 @@ export const adminService = {
   },
 
   async updateProfile(id, updates) {
+    const payload = { ...updates };
+    delete payload.motorista;
+    delete payload.id;
+    delete payload.created_at;
+
+    if (payload.nome !== undefined) payload.nome = payload.nome?.trim() || '';
+    if (payload.email !== undefined) payload.email = payload.email?.toLowerCase().trim() || '';
+    if (payload.role !== undefined) payload.role = payload.role?.toLowerCase().trim() || 'motorista';
+
+    // Sanitize motorista_id: must be valid UUID or null (never empty string)
+    if (payload.role !== 'motorista') {
+      payload.motorista_id = null;
+    } else if (payload.motorista_id !== undefined) {
+      const cleanId = payload.motorista_id ? String(payload.motorista_id).trim() : null;
+      payload.motorista_id = cleanId || null;
+    }
+
+    if (payload.senha !== undefined) {
+      payload.senha = payload.senha ? String(payload.senha).trim() : null;
+    }
+
     const { data, error } = await supabase
       .from('profiles')
-      .update(updates)
+      .update(payload)
       .eq('id', id)
       .select(`
         *,
@@ -166,15 +187,21 @@ export const adminService = {
   },
 
   async createProfile(profile) {
+    const cleanMotoristaId = (profile.role === 'motorista' && profile.motorista_id) 
+      ? String(profile.motorista_id).trim() 
+      : null;
+
+    const payload = {
+      nome: profile.nome?.trim(),
+      email: profile.email?.toLowerCase().trim(),
+      role: (profile.role || 'motorista').toLowerCase().trim(),
+      motorista_id: cleanMotoristaId || null,
+      senha: profile.senha?.trim() || '123456',
+    };
+
     const { data, error } = await supabase
       .from('profiles')
-      .insert([{
-        id: profile.id || undefined,
-        nome: profile.nome,
-        email: profile.email,
-        role: profile.role || 'motorista',
-        motorista_id: profile.motorista_id || null,
-      }])
+      .insert([payload])
       .select(`
         *,
         motorista:motorista_id(id, nome)

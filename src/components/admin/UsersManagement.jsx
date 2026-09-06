@@ -4,7 +4,7 @@ import { adminService } from '../../services/adminService';
 import { useLogistics } from '../../contexts/LogisticsContext';
 
 export default function UsersManagement() {
-  const { showConfirm, addToast } = useLogistics();
+  const { showConfirm, addToast, loadData: reloadGlobalData } = useLogistics();
   const [profiles, setProfiles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,6 +15,7 @@ export default function UsersManagement() {
     email: '',
     role: 'motorista',
     motorista_id: '',
+    senha: '',
   });
 
   const loadData = async () => {
@@ -41,16 +42,25 @@ export default function UsersManagement() {
   const handleEdit = (profile) => {
     setEditingId(profile.id);
     setFormData({
-      nome: profile.nome,
-      email: profile.email,
+      nome: profile.nome || '',
+      email: profile.email || '',
       role: profile.role || 'motorista',
       motorista_id: profile.motorista_id || '',
+      senha: profile.senha || '',
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setFormData({ nome: '', email: '', role: 'motorista', motorista_id: '' });
+    setFormData({ nome: '', email: '', role: 'motorista', motorista_id: '', senha: '' });
+  };
+
+  const handleRoleChange = (newRole) => {
+    setFormData(prev => ({
+      ...prev,
+      role: newRole,
+      motorista_id: newRole === 'motorista' ? prev.motorista_id : '',
+    }));
   };
 
   const handleSave = async (e) => {
@@ -61,18 +71,27 @@ export default function UsersManagement() {
     }
 
     try {
+      setLoading(true);
       if (editingId) {
         await adminService.updateProfile(editingId, formData);
         addToast('Perfil de usuário atualizado com sucesso!');
       } else {
         await adminService.createProfile(formData);
-        addToast('Usuário cadastrado com sucesso!');
+        addToast('Novo usuário cadastrado com sucesso!');
       }
       handleCancel();
-      loadData();
+      await loadData();
+      if (reloadGlobalData) reloadGlobalData();
     } catch (err) {
-      console.error(err);
-      addToast('Erro ao salvar usuário', 'error');
+      console.error('Erro ao salvar perfil:', err);
+      const msg = err?.message || '';
+      if (msg.includes('profiles_email_key') || msg.includes('unique constraint') || msg.includes('duplicate')) {
+        addToast('Este e-mail já está cadastrado para outro usuário.', 'warning');
+      } else {
+        addToast(`Erro ao salvar usuário: ${msg || 'Verifique os dados informados'}`, 'error');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,11 +104,12 @@ export default function UsersManagement() {
       onConfirm: async () => {
         try {
           await adminService.deleteProfile(profile.id);
-          addToast('Usuário excluído.');
-          loadData();
+          addToast('Usuário excluído com sucesso.');
+          await loadData();
+          if (reloadGlobalData) reloadGlobalData();
         } catch (err) {
           console.error(err);
-          addToast('Erro ao excluir usuário.', 'error');
+          addToast(`Erro ao excluir usuário: ${err?.message || ''}`, 'error');
         }
       },
     });
@@ -122,7 +142,7 @@ export default function UsersManagement() {
           <span>{editingId ? 'Editar Permissões do Usuário' : 'Cadastrar Novo Usuário'}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-medium text-on-surface-variant font-label-caps uppercase">Nome do Usuário *</label>
             <div className="relative">
@@ -157,7 +177,7 @@ export default function UsersManagement() {
             <label className="text-[11px] font-medium text-on-surface-variant font-label-caps uppercase">Nível de Acesso (Role) *</label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onChange={(e) => handleRoleChange(e.target.value)}
               className="px-3 py-1.5 bg-surface-container-lowest border border-grid-line text-on-surface text-xs rounded focus:border-primary outline-none font-medium cursor-pointer"
             >
               <option value="admin" className="bg-surface">👑 Administrador Geral</option>
@@ -184,6 +204,20 @@ export default function UsersManagement() {
               ))}
             </select>
           </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-on-surface-variant font-label-caps uppercase">Senha de Acesso</label>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant/50">key</span>
+              <input
+                type="text"
+                value={formData.senha}
+                onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                placeholder="Padrão: 123456"
+                className="w-full pl-8 pr-3 py-1.5 bg-surface-container-lowest border border-grid-line text-on-surface text-xs rounded focus:border-primary outline-none font-data-mono"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-3 border-t border-grid-line/50 mt-3">
@@ -198,10 +232,11 @@ export default function UsersManagement() {
           )}
           <button
             type="submit"
-            className="px-4 py-1.5 rounded bg-primary text-on-primary hover:bg-primary/90 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
+            disabled={loading}
+            className="px-4 py-1.5 rounded bg-primary text-on-primary hover:bg-primary/90 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {editingId ? <Check className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
-            <span>{editingId ? 'Salvar Permissões' : 'Cadastrar Usuário'}</span>
+            <span>{editingId ? 'Salvar Alterações' : 'Cadastrar Usuário'}</span>
           </button>
         </div>
       </form>
@@ -215,13 +250,14 @@ export default function UsersManagement() {
               <th className="py-2.5 px-4">E-MAIL</th>
               <th className="py-2.5 px-4 text-center">NÍVEL (ROLE)</th>
               <th className="py-2.5 px-4">MOTORISTA VINCULADO</th>
+              <th className="py-2.5 px-4">SENHA</th>
               <th className="py-2.5 px-4 text-right w-24">AÇÕES</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-grid-line text-on-surface">
             {profiles.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-6 text-center text-on-surface-variant">
+                <td colSpan={6} className="py-6 text-center text-on-surface-variant">
                   {loading ? 'Carregando...' : 'Nenhum usuário cadastrado'}
                 </td>
               </tr>
@@ -248,18 +284,21 @@ export default function UsersManagement() {
                   <td className="py-2.5 px-4 text-on-surface-variant">
                     {prof.motorista?.nome || '-'}
                   </td>
+                  <td className="py-2.5 px-4 text-on-surface-variant font-data-mono text-[11px]">
+                    {prof.senha || '123456'}
+                  </td>
                   <td className="py-2.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => handleEdit(prof)}
-                        className="p-1 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                        className="p-1 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer"
                         title="Editar"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(prof)}
-                        className="p-1 rounded text-on-surface-variant hover:text-rose-400 hover:bg-surface-container-high transition-colors"
+                        className="p-1 rounded text-on-surface-variant hover:text-rose-400 hover:bg-surface-container-high transition-colors cursor-pointer"
                         title="Excluir"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

@@ -170,6 +170,9 @@ export function AuthProvider({ children }) {
           .maybeSingle();
 
         if (prof) {
+          if (prof.senha && password && prof.senha !== password) {
+            throw new Error('Senha incorreta para este usuário.');
+          }
           authUser = { id: prof.id, email: prof.email };
           authProfile = prof;
         } else if (KNOWN_PROFILES_FALLBACK[cleanEmail]) {
