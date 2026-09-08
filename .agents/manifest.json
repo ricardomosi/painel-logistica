@@ -811,6 +811,21 @@
       "scripts": [],
       "version": "1.0.0"
     },
+    "mcp-shield": {
+      "allowedTools": [
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Bash"
+      ],
+      "path": "skills/mcp-shield/SKILL.md",
+      "scripts": [
+        "skills/mcp-shield/scripts/guard-mcp.mjs"
+      ],
+      "version": "1.0.0"
+    },
     "memory-system": {
       "allowedTools": [
         "Read",

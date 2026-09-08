@@ -1,19 +1,9 @@
 {
   "mcpServers": {
     "supabase": {
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@supabase/mcp-server-supabase@latest",
-        "--access-token",
-        "YOUR_SUPABASE_ACCESS_TOKEN",
-        "--project-ref",
-        "vljftyhuzylljrgppmve"
-      ],
-      "env": {
-        "SUPABASE_ACCESS_TOKEN": "YOUR_SUPABASE_ACCESS_TOKEN"
+      "serverUrl": "https://mcp.supabase.com/mcp?project_ref=vljftyhuzylljrgppmve",
+      "headers": {
+        "Authorization": "Bearer YOUR_SUPABASE_ACCESS_TOKEN"
       }
     },
     "playwright": {

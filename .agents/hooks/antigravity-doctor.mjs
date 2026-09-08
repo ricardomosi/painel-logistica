@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -113,14 +114,45 @@ function checkMcp(root, report) {
   report.counts.mcpServers = Object.keys(config.mcpServers).length;
   for (const [name, server] of Object.entries(config.mcpServers)) {
     const valid = server && typeof server === 'object' && (
-      typeof server.command === 'string' || typeof server.serverURL === 'string' || typeof server.url === 'string'
+      typeof server.command === 'string' || typeof server.serverURL === 'string' || typeof server.serverUrl === 'string' || typeof server.url === 'string'
     );
-    if (!valid) add(report, 'error', 'mcp', 'mcp.server_shape', `.agents/mcp_config.json#${name}`, 'Server needs command, serverURL, or url.');
+    if (!valid) add(report, 'error', 'mcp', 'mcp.server_shape', `.agents/mcp_config.json#${name}`, 'Server needs command, serverURL, serverUrl, or url.');
+
+    const remoteUrl = server.serverUrl || server.serverURL || server.url || '';
+    if (typeof remoteUrl === 'string' && remoteUrl.includes('mcp.supabase.com')) {
+      const authHeader = server.headers?.Authorization || server.headers?.authorization;
+      if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+        add(report, 'error', 'mcp', 'mcp.unauthorized_remote', `.agents/mcp_config.json#${name}`, 'Supabase MCP server requires Authorization header with Bearer token to avoid initialize failure.');
+      }
+      if (!remoteUrl.includes('project_ref=')) {
+        add(report, 'warning', 'mcp', 'mcp.missing_project_ref', `.agents/mcp_config.json#${name}`, 'Supabase MCP serverUrl should include project_ref parameter.');
+      }
+    }
+
     walkStrings(server, value => {
       if (/YOUR_[A-Z0-9_]+|CHANGE_ME|<[^>]+>/.test(value)) {
         add(report, 'warning', 'mcp', 'mcp.placeholder', `.agents/mcp_config.json#${name}`, 'Server contains an unresolved placeholder; configure it before enabling the server.');
       }
     });
+  }
+
+  const globalMcpPath = path.join(os.homedir(), '.gemini', 'config', 'mcp_config.json');
+  if (fs.existsSync(globalMcpPath)) {
+    try {
+      const globalCfg = readJson(globalMcpPath);
+      const globalSupabase = globalCfg?.mcpServers?.supabase;
+      if (globalSupabase) {
+        const gUrl = globalSupabase.serverUrl || globalSupabase.serverURL || globalSupabase.url || '';
+        if (typeof gUrl === 'string' && gUrl.includes('mcp.supabase.com')) {
+          const gAuth = globalSupabase.headers?.Authorization || globalSupabase.headers?.authorization;
+          if (!gAuth || !gAuth.toLowerCase().startsWith('bearer ')) {
+            add(report, 'error', 'mcp', 'mcp.global_unauthorized_remote', '~/.gemini/config/mcp_config.json#supabase', 'Global Supabase MCP lacks Authorization Bearer header. Will trigger "Unauthorized on initialize".');
+          }
+        }
+      }
+    } catch {
+      // Ignore global inspection errors
+    }
   }
 }
 
@@ -262,7 +294,9 @@ function printHuman(report) {
   console.log(report.passed ? '[PASS] Antigravity contract is ready.' : '[FAIL] Antigravity contract has blocking findings.');
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+import url from 'node:url';
+
+if (process.argv[1] && url.pathToFileURL(path.resolve(process.argv[1])).href.toLowerCase() === import.meta.url.toLowerCase()) {
   try {
     const options = parseArgs(process.argv.slice(2));
     if (options.help) {

@@ -65,10 +65,62 @@ function backup(file) {
   return backupFile;
 }
 
+function resolveEnvPlaceholders(workspace, root) {
+  const envFile = path.join(root, '.env');
+  const envMap = {};
+  if (fs.existsSync(envFile)) {
+    const lines = fs.readFileSync(envFile, 'utf8').split('\n');
+    for (const l of lines) {
+      const parts = l.trim().split('=');
+      if (parts.length >= 2) {
+        envMap[parts[0].trim()] = parts.slice(1).join('=').trim();
+      }
+    }
+  }
+
+  const token = envMap.SUPABASE_ACCESS_TOKEN || process.env.SUPABASE_ACCESS_TOKEN;
+  const projectRef = envMap.SUPABASE_PROJECT_REF || process.env.SUPABASE_PROJECT_REF || 'vljftyhuzylljrgppmve';
+
+  const walkAndReplace = item => {
+    if (typeof item === 'string') {
+      if (token && (item === 'YOUR_SUPABASE_ACCESS_TOKEN' || item === 'YOUR_API_KEY')) return token;
+      return item;
+    }
+    if (Array.isArray(item)) return item.map(walkAndReplace);
+    if (item && typeof item === 'object') {
+      const copy = {};
+      for (const [k, v] of Object.entries(item)) {
+        copy[k] = walkAndReplace(v);
+      }
+      return copy;
+    }
+    return item;
+  };
+
+  const resolved = walkAndReplace(workspace);
+
+  // Shield: If supabase server is present, ensure it has project_ref and Authorization header
+  if (resolved?.mcpServers?.supabase && token) {
+    const sb = resolved.mcpServers.supabase;
+    if (sb.serverUrl && sb.serverUrl.includes('mcp.supabase.com')) {
+      if (!sb.serverUrl.includes('project_ref=')) {
+        sb.serverUrl = `https://mcp.supabase.com/mcp?project_ref=${projectRef}`;
+      }
+      if (!sb.headers) sb.headers = {};
+      if (!sb.headers.Authorization) {
+        sb.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+  }
+
+  return resolved;
+}
+
 export function planSync({root, target = 'suite', force = false}) {
   const source = path.join(root, '.agents', 'mcp_config.json');
-  const workspace = readJson(source);
-  if (!workspace || typeof workspace.mcpServers !== 'object') throw new Error('Invalid workspace .agents/mcp_config.json');
+  const rawWorkspace = readJson(source);
+  if (!rawWorkspace || typeof rawWorkspace.mcpServers !== 'object') throw new Error('Invalid workspace .agents/mcp_config.json');
+  const workspace = resolveEnvPlaceholders(rawWorkspace, root);
   const destination = targetPath(target);
   const existing = readJson(destination, {mcpServers: {}});
   const {result, conflicts} = mergeServers(existing, workspace, force);
