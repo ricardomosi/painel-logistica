@@ -161,6 +161,12 @@ export const deliveriesService = {
       }
     }
 
+    // CRITICAL: data_registro in Postgres is NOT NULL (default CURRENT_DATE).
+    // Never overwrite an existing valid date with null on update!
+    if (!payload.data_registro) {
+      delete payload.data_registro;
+    }
+
     // Sanitize times (convert empty string or invalid to null)
     const timeFields = ['hora_inicio', 'hora_conclusao', 'hora_registro', 'hora'];
     for (const field of timeFields) {

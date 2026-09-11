@@ -76,6 +76,11 @@ export default function MaterialSearchInput({
   };
 
   const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (!isOpen) {
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
         setIsOpen(true);

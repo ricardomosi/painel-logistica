@@ -212,6 +212,7 @@ export default function DeliveryModal() {
     cadastrador_entrega: '',
     telefone: '',
     coluna: 'atualizacoes',
+    data_registro: '',
     status: 'pendente',
     urgente: false,
     // Início
@@ -261,6 +262,7 @@ export default function DeliveryModal() {
         cadastrador_entrega: selectedDelivery.cadastrador_entrega || '',
         telefone: selectedDelivery.telefone || '',
         coluna: selectedDelivery.coluna?.split('|')[0] || 'atualizacoes',
+        data_registro: selectedDelivery.data_registro || '',
         status: selectedDelivery.status || 'pendente',
         urgente: !!selectedDelivery.urgente,
         data_inicio: selectedDelivery.data_inicio || '',
@@ -310,6 +312,7 @@ export default function DeliveryModal() {
         cadastrador_entrega: '',
         telefone: '',
         coluna: 'atualizacoes',
+        data_registro: '',
         status: 'pendente',
         urgente: false,
         data_inicio: '',
@@ -775,6 +778,7 @@ export default function DeliveryModal() {
 
       // Calcula a data correspondente ao dia da semana se selecionado
       const targetDayDate = getWeekDayDateStr(formData.coluna);
+      const finalDataRegistro = targetDayDate || formData.data_registro || selectedDelivery?.data_registro || new Date().toISOString().split('T')[0];
 
       const payload = {
         ...formData,
@@ -787,7 +791,7 @@ export default function DeliveryModal() {
         cadastrador_entrega: formData.cadastrador_entrega?.trim() || null,
         telefone: formData.telefone?.trim() || null,
         coluna: formData.coluna || 'atualizacoes',
-        data_registro: targetDayDate || formData.data_registro || null,
+        data_registro: finalDataRegistro,
         como_foi_entrega: formData.como_foi_entrega?.trim() || null,
         motorista_id: formData.motorista_id || null,
         veiculo_id: formData.veiculo_id || null,
@@ -809,12 +813,12 @@ export default function DeliveryModal() {
         savedDelivery = await createDelivery(payload);
       }
 
-      // Salva itens do Romaneio vinculado apenas se não for motorista e houver romaneio definido
-      if (!isMotorista && savedDelivery?.id && (romaneioItens?.length > 0 || romaneioObs)) {
+      // Salva itens do Romaneio vinculado apenas se não for motorista
+      if (!isMotorista && savedDelivery?.id) {
         try {
           await romaneioService.saveRomaneio(savedDelivery.id, {
-            observacoes: romaneioObs,
-            itens: romaneioItens,
+            observacoes: romaneioObs || '',
+            itens: romaneioItens || [],
           });
         } catch (romErr) {
           console.warn('Aviso: romaneio não pôde ser salvo sincronizado:', romErr);
@@ -974,7 +978,19 @@ export default function DeliveryModal() {
           </div>
 
           {/* Main Form Content Area */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-scrollbar">
+          <form 
+            onSubmit={handleSubmit} 
+            onKeyDown={(e) => {
+              // Previne envio acidental e fechamento do modal ao teclar Enter em inputs
+              if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                if (typeof e.target.blur === 'function') {
+                  e.target.blur();
+                }
+              }
+            }}
+            className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-scrollbar"
+          >
             
             {/* ======================================================== */}
             {/* TAB 1: DADOS GERAIS DA ENTREGA (3 Organized Cards)       */}
@@ -1469,6 +1485,7 @@ export default function DeliveryModal() {
                                     step="any"
                                     value={item.quantidade}
                                     onChange={(e) => handleItemChange(idx, 'quantidade', e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
                                     className="w-16 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-center font-semibold focus:ring-1 focus:ring-blue-500 outline-none"
                                   />
                                 )}
@@ -1506,6 +1523,7 @@ export default function DeliveryModal() {
                                       step="any"
                                       value={item.peso_unitario_kg}
                                       onChange={(e) => handleItemChange(idx, 'peso_unitario_kg', e.target.value)}
+                                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
                                       className="w-20 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-right font-mono focus:ring-1 focus:ring-blue-500 outline-none"
                                     />
                                     <span className="text-[10px] text-slate-400 font-medium">/{unit}</span>
@@ -1526,6 +1544,7 @@ export default function DeliveryModal() {
                                       step="any"
                                       value={item.peso_total_kg}
                                       onChange={(e) => handleItemChange(idx, 'peso_total_kg', e.target.value)}
+                                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
                                       className="w-20 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-right font-mono font-semibold text-slate-900 focus:ring-1 focus:ring-blue-500 outline-none"
                                     />
                                     <span className="text-[10px] text-slate-400 font-medium">kg</span>
@@ -1541,6 +1560,7 @@ export default function DeliveryModal() {
                                     step="0.01"
                                     value={item.valor_unitario}
                                     onChange={(e) => handleItemChange(idx, 'valor_unitario', e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
                                     className="w-20 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-right font-mono focus:ring-1 focus:ring-blue-500 outline-none"
                                   />
                                 </td>
@@ -1554,6 +1574,7 @@ export default function DeliveryModal() {
                                     step="0.01"
                                     value={item.valor_total}
                                     onChange={(e) => handleItemChange(idx, 'valor_total', e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
                                     className="w-20 px-1.5 py-1 rounded-[3px] border border-slate-300 text-xs text-right font-mono font-semibold text-slate-900 focus:ring-1 focus:ring-blue-500 outline-none"
                                   />
                                 </td>

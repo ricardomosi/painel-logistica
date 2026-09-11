@@ -111,6 +111,7 @@ export default function CollectionModal() {
     placa: '',
     telefone: '',
     coluna_kanban: 'atualizacoes',
+    data_registro: '',
     status: 'pendente',
     urgente: false,
     data_conclusao: '',
@@ -127,6 +128,7 @@ export default function CollectionModal() {
         placa: selectedCollection.placa || '',
         telefone: selectedCollection.telefone || '',
         coluna_kanban: selectedCollection.coluna_kanban?.split('|')[0] || 'atualizacoes',
+        data_registro: selectedCollection.data_registro || '',
         status: selectedCollection.status || 'pendente',
         urgente: !!selectedCollection.urgente,
         data_conclusao: selectedCollection.data_conclusao || '',
@@ -141,6 +143,7 @@ export default function CollectionModal() {
         placa: '',
         telefone: '',
         coluna_kanban: 'atualizacoes',
+        data_registro: '',
         status: 'pendente',
         urgente: false,
         data_conclusao: '',
@@ -225,6 +228,7 @@ export default function CollectionModal() {
     try {
       setSaving(true);
       const targetDayDate = getWeekDayDateStr(formData.coluna_kanban);
+      const finalDataRegistro = targetDayDate || formData.data_registro || selectedCollection?.data_registro || new Date().toISOString().split('T')[0];
 
       const cleanPayload = {
         ...formData,
@@ -234,7 +238,7 @@ export default function CollectionModal() {
         placa: formData.placa?.trim() || null,
         telefone: formData.telefone?.trim() || null,
         coluna_kanban: formData.coluna_kanban || 'atualizacoes',
-        data_registro: targetDayDate || formData.data_registro || null,
+        data_registro: finalDataRegistro,
         motorista_id: formData.motorista_id || null,
         veiculo_id: formData.veiculo_id || null,
         data_conclusao: formData.data_conclusao?.trim() || null,
@@ -306,7 +310,16 @@ export default function CollectionModal() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-5 sm:p-6 font-inter space-y-4">
+          <form 
+            onSubmit={handleSubmit} 
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                if (typeof e.target.blur === 'function') e.target.blur();
+              }
+            }}
+            className="p-5 sm:p-6 font-inter space-y-4"
+          >
             {/* Fornecedor / Logística */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">

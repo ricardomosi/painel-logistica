@@ -24,6 +24,10 @@ export const romaneioService = {
     // 2. Check if a romaneio already exists for this delivery
     const existing = await this.getByDeliveryId(deliveryId);
 
+    if (!existing && safeItens.length === 0 && !observacoes) {
+      return null;
+    }
+
     let romaneioId;
 
     if (existing) {
