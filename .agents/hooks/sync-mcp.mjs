@@ -79,7 +79,7 @@ function resolveEnvPlaceholders(workspace, root) {
   }
 
   const token = envMap.SUPABASE_ACCESS_TOKEN || process.env.SUPABASE_ACCESS_TOKEN;
-  const projectRef = envMap.SUPABASE_PROJECT_REF || process.env.SUPABASE_PROJECT_REF || 'vljftyhuzylljrgppmve';
+  const projectRef = envMap.SUPABASE_PROJECT_REF || process.env.SUPABASE_PROJECT_REF || 'uslfcoqbagllhuxvteql';
 
   const walkAndReplace = item => {
     if (typeof item === 'string') {

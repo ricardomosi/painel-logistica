@@ -1,5 +1,5 @@
 // Service Worker para Notificações e PWA - Logística JPatrício
-const CACHE_NAME = 'logistica-pwa-v1';
+const CACHE_NAME = 'logistica-pwa-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

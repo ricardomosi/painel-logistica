@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "supabase": {
-      "serverUrl": "https://mcp.supabase.com/mcp?project_ref=vljftyhuzylljrgppmve",
+      "serverUrl": "https://mcp.supabase.com/mcp?project_ref=uslfcoqbagllhuxvteql",
       "headers": {
         "Authorization": "Bearer YOUR_SUPABASE_ACCESS_TOKEN"
       }

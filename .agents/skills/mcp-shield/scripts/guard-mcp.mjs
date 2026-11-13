@@ -69,7 +69,7 @@ export function inspectMcp(root = process.cwd()) {
   const cursorCreds = extractCursorCredentials(cursorPath);
 
   const token = envCreds.token || cursorCreds.token || process.env.SUPABASE_ACCESS_TOKEN || null;
-  const projectRef = envCreds.projectRef || cursorCreds.projectRef || 'vljftyhuzylljrgppmve';
+  const projectRef = envCreds.projectRef || cursorCreds.projectRef || 'uslfcoqbagllhuxvteql';
 
   const findings = [];
 

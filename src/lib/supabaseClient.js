@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vljftyhuzylljrgppmve.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsamZ0eWh1enlsbGpyZ3BwbXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1MzM4MzYsImV4cCI6MjEwMzEwOTgzNn0.IQEzd1XHlQT88WDiwGXvoGiiEPRN3l-9KhPoDsiR3LQ';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://uslfcoqbagllhuxvteql.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzbGZjb3FiYWdsbGh1eHZ0ZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MzM3MzcsImV4cCI6MjExMDEwOTczN30.inXTK2k6yqVMOuR_hx87ffgjkT_oV12ekLRK3vRclps';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️ Supabase credentials missing. Check your .env file.');
