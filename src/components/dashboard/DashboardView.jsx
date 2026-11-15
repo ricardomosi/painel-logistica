@@ -1,798 +1,1263 @@
-import React, { useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
+  BarElement,
   PointElement,
   LineElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
   Filler,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
+import {
+  FileBarChart2,
+  FileText,
+  FileSpreadsheet,
+  RefreshCw,
+  Calendar,
+  Truck,
+  Route,
+  DollarSign,
+  Clock,
+  Award,
+  Users,
+  Package,
+  UserCheck,
+  MapPin,
+  TrendingUp,
+  TrendingDown,
+  Maximize2,
+  AlertTriangle,
+  CheckCircle2,
+  SlidersHorizontal,
+} from 'lucide-react';
 import { useLogistics } from '../../contexts/LogisticsContext';
+import { fetchAllRomaneioItemsMap } from '../../services/reportsService';
+import {
+  buildReportAnalytics,
+  formatCurrencyBRL,
+  formatDurationHours,
+  parseLocalDate,
+} from '../../lib/reportAnalytics';
+import { downloadReportExcel } from '../../lib/reportExportExcel';
+import { downloadReportPdf } from '../../lib/reportExportPdf';
+import DeliveryHeatmap from './DeliveryHeatmap';
+import FullScreenReportModal from './FullScreenReportModal';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
+  BarElement,
   PointElement,
   LineElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
   Filler
 );
 
-function parseDate(dateStr) {
-  if (!dateStr) return null;
-  if (dateStr instanceof Date) return dateStr;
-  const str = String(dateStr).trim();
-  if (str.includes('T')) return new Date(str);
-  if (str.includes('/')) {
-    const parts = str.split('/');
-    if (parts.length === 3) {
-      return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
-    }
-  }
-  if (str.includes('-')) {
-    const parts = str.split('-');
-    if (parts.length === 3) {
-      if (parts[0].length === 4) {
-        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      } else {
-        return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
-      }
-    }
-  }
-  return new Date(str);
+function formatIsoDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
-function parseMonetaryValue(valStr) {
-  if (typeof valStr === 'number') return valStr;
-  if (!valStr) return 0;
-  let str = String(valStr).trim();
-  if (str.includes('.') && str.includes(',')) {
-    if (str.lastIndexOf(',') > str.lastIndexOf('.')) {
-      str = str.replace(/\./g, '').replace(',', '.');
-    } else {
-      str = str.replace(/,/g, '');
-    }
-  } else if (str.includes(',')) {
-    str = str.replace(',', '.');
+function DeltaBadge({ current, previous, inverse = false }) {
+  if (!previous || previous <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] bg-white/5 text-[10px] font-data-mono text-slate-400">
+        Base inicial
+      </span>
+    );
   }
-  const parsed = parseFloat(str);
-  return isNaN(parsed) ? 0 : parsed;
+  const pct = ((current - previous) / previous) * 100;
+  const isPositive = pct >= 0;
+  const isGood = inverse ? !isPositive : isPositive;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold font-data-mono tabular-nums ${
+        isGood
+          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+          : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+      }`}
+    >
+      {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+      {isPositive ? '+' : ''}
+      {pct.toFixed(1)}%
+    </span>
+  );
 }
 
-const PLACAS_FILTER_OPTIONS = [
-  'TODAS',
-  'RGF9F21 (Jefferson)',
-  'GVQ9436 (Jailson)',
-  'QGT4I78 (Leandro)',
-  'RGK9D89 (Fabio)',
-  'RGK8J70 (Jucier)',
-  'QGO-5D66 (Laercio)',
-  'QGO-5D76 (Otoniel)',
-  'RGF-9F11 (Ronys)',
-  'OJW-0A50 (Genilson)',
-  'TSW-3I57',
-  'TSW-2F58 (Caninde)',
-  'NOC-7041',
-  'QGT-5D69 (Francinildo)',
-  'TSW-7G98',
-];
-
-const VENDEDORES_FILTER_OPTIONS = [
-  'TODAS',
-  'BEBEZINHO (Filial)',
-  'BRUNO (Matriz)',
-  'CARLOS (Matriz)',
-  'DANIEL HELIO (Matriz)',
-  'DARLAN (Filial)',
-  'JORGE (Matriz)',
-  'LEONARDO (Matriz)',
-  'MANOEL (Matriz)',
-  'MARCOS (Matriz)',
-  'PLASMA (Matriz)',
-  'RODOLFO (Filial)',
-];
+const CHART_OPTIONS = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: {
+      labels: {
+        color: '#cbd5e1',
+        font: { family: "'Hanken Grotesk', sans-serif", size: 11, weight: '600' },
+        boxWidth: 12,
+      },
+    },
+    tooltip: {
+      backgroundColor: '#020D1A',
+      titleColor: '#ffffff',
+      bodyColor: '#d3e3ff',
+      borderColor: '#0081A7',
+      borderWidth: 1,
+      padding: 10,
+    },
+  },
+  scales: {
+    x: {
+      ticks: { color: '#94a3b8', font: { family: "'IBM Plex Sans', sans-serif", size: 10 } },
+      grid: { color: 'rgba(255,255,255,0.06)' },
+    },
+    y: {
+      beginAtZero: true,
+      ticks: { color: '#94a3b8', font: { family: "'IBM Plex Sans', sans-serif", size: 10 } },
+      grid: { color: 'rgba(255,255,255,0.06)' },
+    },
+  },
+};
 
 export default function DashboardView() {
-  const { deliveries, loadData } = useLogistics();
+  const { deliveries, vehicles, sellers, loadData, addToast } = useLogistics();
 
-  // Filters State
-  const now = new Date();
-  const defaultStartDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const defaultEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-
-  const [dateStart, setDateStart] = useState(defaultStartDate);
-  const [dateEnd, setDateEnd] = useState(defaultEndDate);
+  // Period defaults: current month
+  const [dateStart, setDateStart] = useState(() => {
+    const now = new Date();
+    return formatIsoDate(new Date(now.getFullYear(), now.getMonth(), 1));
+  });
+  const [dateEnd, setDateEnd] = useState(() => {
+    const now = new Date();
+    return formatIsoDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  });
   const [selectedPlaca, setSelectedPlaca] = useState('TODAS');
   const [selectedVendedor, setSelectedVendedor] = useState('TODAS');
-  const [custoKm, setCustoKm] = useState(5.24);
-
-  // Compute all metrics based on historical deliveries
-  const computed = useMemo(() => {
-    const sF = parseDate(dateStart) || new Date(now.getFullYear(), now.getMonth(), 1);
-    sF.setHours(0, 0, 0, 0);
-
-    const eF = parseDate(dateEnd) || new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    eF.setHours(23, 59, 59, 999);
-
-    const diffTime = Math.abs(eF - sF);
-    const prevEndFilter = new Date(sF.getTime() - 1);
-    prevEndFilter.setHours(23, 59, 59, 999);
-    const prevStartFilter = new Date(prevEndFilter.getTime() - diffTime);
-    prevStartFilter.setHours(0, 0, 0, 0);
-
-    const currentDeliveries = [];
-    const previousDeliveries = [];
-
-    deliveries.forEach(card => {
-      const placaCard = card.placa || '';
-      const vendedorCard = card.vendedor || '';
-
-      if (selectedPlaca !== 'TODAS' && placaCard !== selectedPlaca) return;
-      if (selectedVendedor !== 'TODAS' && vendedorCard !== selectedVendedor) return;
-
-      const cardDate = parseDate(card.data_registro || card.created_at || card.data_inicio);
-      if (!cardDate || isNaN(cardDate.getTime())) return;
-
-      if (cardDate >= sF && cardDate <= eF) currentDeliveries.push(card);
-      if (cardDate >= prevStartFilter && cardDate <= prevEndFilter) previousDeliveries.push(card);
-    });
-
-    // 1. Entregas
-    const totalEntregas = currentDeliveries.length;
-    const prevEntregas = previousDeliveries.length;
-    const matrizCount = currentDeliveries.filter(c => c.local_carregamento === 'MATRIZ').length;
-    const filialCount = currentDeliveries.filter(c => c.local_carregamento === 'FILIAL').length;
-
-    let totalKm = 0, prevKm = 0, matrizKm = 0, filialKm = 0;
-    let totalValor = 0, matrizValor = 0, filialValor = 0, prevTotalValor = 0;
-    let totalFrete = 0, matrizFrete = 0, filialFrete = 0, prevTotalFrete = 0;
-
-    let totalInFull = 0, inFullCount = 0;
-    let totalOnTime = 0, onTimeCount = 0;
-    let totalTempoMs = 0, completedCountForTime = 0;
-    let prevTempoMs = 0, prevCompletedForTime = 0;
-
-    const ofensoresPlaca = {};
-    const veiculoStats = {};
-    const vendStats = {};
-
-    currentDeliveries.forEach(c => {
-      const km = parseFloat(String(c.km_total || '0').replace(',', '.')) || 0;
-      totalKm += km;
-
-      const val = parseMonetaryValue(c.valor_entrega);
-      const frete = parseMonetaryValue(c.frete);
-      const totalComFrete = val + frete;
-
-      totalValor += totalComFrete;
-      totalFrete += frete;
-
-      if (c.local_carregamento === 'MATRIZ') {
-        matrizValor += totalComFrete;
-        matrizFrete += frete;
-        matrizKm += km;
-      } else if (c.local_carregamento === 'FILIAL') {
-        filialValor += totalComFrete;
-        filialFrete += frete;
-        filialKm += km;
-      }
-
-      const vend = c.vendedor || 'Não Informado';
-      if (!vendStats[vend]) vendStats[vend] = { loc: c.local_carregamento || '-', total: 0, valor: 0 };
-      vendStats[vend].total++;
-      vendStats[vend].valor += totalComFrete;
-
-      const placaDesc = c.placa || 'Sem Placa';
-      if (!veiculoStats[placaDesc]) {
-        veiculoStats[placaDesc] = { entregas: 0, km: 0, tempoMs: 0, concluidasTempo: 0 };
-      }
-      veiculoStats[placaDesc].entregas++;
-      veiculoStats[placaDesc].km += km;
-
-      if (c.status === 'concluido') {
-        totalInFull++;
-        const ocorrencia = c.como_foi_entrega || 'Sem ocorrências';
-
-        if (ocorrencia === 'Sem ocorrências') {
-          inFullCount++;
-        } else {
-          ofensoresPlaca[placaDesc] = (ofensoresPlaca[placaDesc] || 0) + 1;
-        }
-
-        if (c.data_inicio && c.data_conclusao) {
-          totalOnTime++;
-          const startDt = parseDate(c.data_inicio);
-          if (c.hora_inicio && startDt) {
-            const [hS, minS] = c.hora_inicio.split(':');
-            startDt.setHours(parseInt(hS, 10) || 0, parseInt(minS, 10) || 0);
-          }
-
-          const endDt = parseDate(c.data_conclusao);
-          if (c.hora_conclusao && endDt) {
-            const [hE, minE] = c.hora_conclusao.split(':');
-            endDt.setHours(parseInt(hE, 10) || 0, parseInt(minE, 10) || 0);
-          }
-
-          if (startDt && endDt) {
-            const diffMs = endDt.getTime() - startDt.getTime();
-            if (diffMs > 0) {
-              totalTempoMs += diffMs;
-              completedCountForTime++;
-              veiculoStats[placaDesc].tempoMs += diffMs;
-              veiculoStats[placaDesc].concluidasTempo++;
-
-              if (diffMs <= 24 * 60 * 60 * 1000) onTimeCount++;
-            }
-          }
-        }
-      }
-    });
-
-    previousDeliveries.forEach(c => {
-      const km = parseFloat(String(c.km_total || '0').replace(',', '.')) || 0;
-      prevKm += km;
-
-      const val = parseMonetaryValue(c.valor_entrega);
-      const frete = parseMonetaryValue(c.frete);
-      prevTotalValor += (val + frete);
-      prevTotalFrete += frete;
-
-      if (c.status === 'concluido' && c.data_inicio && c.data_conclusao) {
-        const startDt = parseDate(c.data_inicio);
-        if (c.hora_inicio && startDt) {
-          const [hS, minS] = c.hora_inicio.split(':');
-          startDt.setHours(parseInt(hS, 10) || 0, parseInt(minS, 10) || 0);
-        }
-
-        const endDt = parseDate(c.data_conclusao);
-        if (c.hora_conclusao && endDt) {
-          const [hE, minE] = c.hora_conclusao.split(':');
-          endDt.setHours(parseInt(hE, 10) || 0, parseInt(minE, 10) || 0);
-        }
-
-        if (startDt && endDt && (endDt.getTime() - startDt.getTime()) > 0) {
-          prevTempoMs += (endDt.getTime() - startDt.getTime());
-          prevCompletedForTime++;
-        }
-      }
-    });
-
-    // 2. Costs
-    const totalCost = totalKm * (parseFloat(custoKm) || 5.24);
-    const prevCost = prevKm * (parseFloat(custoKm) || 5.24);
-    const matrizCost = matrizKm * (parseFloat(custoKm) || 5.24);
-    const filialCost = filialKm * (parseFloat(custoKm) || 5.24);
-
-    // 3. Average Duration
-    let avgTimeH = 0;
-    let prevAvgTimeH = 0;
-    if (completedCountForTime > 0) avgTimeH = (totalTempoMs / completedCountForTime) / (1000 * 60 * 60);
-    if (prevCompletedForTime > 0) prevAvgTimeH = (prevTempoMs / prevCompletedForTime) / (1000 * 60 * 60);
-
-    // 4. OTIF
-    const onTimePct = totalOnTime > 0 ? (onTimeCount / totalOnTime) * 100 : 0;
-    const inFullPct = totalInFull > 0 ? (inFullCount / totalInFull) * 100 : 0;
-    const otifPct = (onTimePct / 100) * (inFullPct / 100) * 100;
-
-    let maxErros = 0;
-    let ofensorName = 'Nenhum Registro';
-    for (const [placa, count] of Object.entries(ofensoresPlaca)) {
-      if (count > maxErros) {
-        maxErros = count;
-        ofensorName = placa;
-      }
+  const [selectedUnidade, setSelectedUnidade] = useState('TODOS');
+  const [custoKm, setCustoKm] = useState(() => {
+    try {
+      return localStorage.getItem('logistica_custo_km') || '5.24';
+    } catch {
+      return '5.24';
     }
+  });
 
-    // 5. Line chart volume by day
-    const diasGrafico = {};
-    currentDeliveries.forEach(c => {
-      const d = parseDate(c.data_registro || c.created_at || c.data_inicio);
-      if (!d) return;
-      const dayStr = String(d.getDate()).padStart(2, '0');
-      const monthStr = String(d.getMonth() + 1).padStart(2, '0');
-      const fmt = `${dayStr}/${monthStr}`;
-      diasGrafico[fmt] = (diasGrafico[fmt] || 0) + 1;
+  const [romaneioItemsMap, setRomaneioItemsMap] = useState(() => new Map());
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [chartGranularity, setChartGranularity] = useState('monthly'); // 'monthly' | 'daily'
+  const [sellersMode, setSellersMode] = useState('total');
+  const [vehiclesMode, setVehiclesMode] = useState('total');
+  const [materialsMode, setMaterialsMode] = useState('total');
+  const [clientsMode, setClientsMode] = useState('total');
+  const [activePreset, setActivePreset] = useState('current_month');
+
+  useEffect(() => {
+    document.body.classList.add('theme-relatorio');
+    return () => {
+      document.body.classList.remove('theme-relatorio');
+    };
+  }, []);
+
+  const syncReportsData = useCallback(
+    async (notify = false) => {
+      setIsSyncing(true);
+      try {
+        await Promise.all([
+          typeof loadData === 'function' ? loadData(true) : Promise.resolve(),
+          fetchAllRomaneioItemsMap().then((map) => setRomaneioItemsMap(map)),
+        ]);
+        if (notify) {
+          addToast?.('Histórico de entregas e romaneios sincronizado.', 'success');
+        }
+      } catch (err) {
+        if (notify) {
+          addToast?.(`Aviso na sincronização: ${err?.message || 'usando cache local'}`, 'warning');
+        }
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    [loadData, addToast]
+  );
+
+  useEffect(() => {
+    fetchAllRomaneioItemsMap()
+      .then((map) => setRomaneioItemsMap(map))
+      .catch(() => {
+        // Silent fallback when offline; delivery-level metrics continue normally
+      });
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('logistica_custo_km', String(custoKm));
+    } catch {
+      // Ignore storage error
+    }
+  }, [custoKm]);
+
+  // Dynamic filter dropdown options merged from Supabase catalogs + historical deliveries
+  const placaOptions = useMemo(() => {
+    const set = new Set();
+    (vehicles || []).forEach((v) => {
+      if (v?.placa) {
+        const label = v.motorista_padrao ? `${v.placa} (${v.motorista_padrao})` : v.placa;
+        set.add(label);
+      }
     });
-
-    const labelsGrafico = Object.keys(diasGrafico).sort((a, b) => {
-      const [da, ma] = a.split('/');
-      const [db, mb] = b.split('/');
-      return new Date(2020, parseInt(ma, 10) - 1, parseInt(da, 10)) - new Date(2020, parseInt(mb, 10) - 1, parseInt(db, 10));
+    (deliveries || []).forEach((d) => {
+      if (d?.placa && String(d.placa).trim()) set.add(String(d.placa).trim());
     });
-    const dataGrafico = labelsGrafico.map(l => diasGrafico[l]);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [vehicles, deliveries]);
 
-    // 6. Sellers ranking
-    const vendArr = Object.entries(vendStats)
-      .map(([name, data]) => ({ name, ...data }))
-      .sort((a, b) => b.valor - a.valor);
+  const vendedorOptions = useMemo(() => {
+    const set = new Set();
+    (sellers || []).forEach((s) => {
+      if (s?.nome) {
+        const label = s.unidade ? `${s.nome} (${s.unidade === 'FILIAL' ? 'Filial' : 'Matriz'})` : s.nome;
+        set.add(label);
+      }
+    });
+    (deliveries || []).forEach((d) => {
+      if (d?.vendedor && String(d.vendedor).trim()) set.add(String(d.vendedor).trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [sellers, deliveries]);
 
-    // 7. Fleet ranking
-    const veicArr = Object.entries(veiculoStats)
-      .map(([placa, data]) => ({ placa, ...data }))
-      .sort((a, b) => b.entregas - a.entregas);
+  const applyDatePreset = useCallback(
+    (preset) => {
+      setActivePreset(preset);
+      const now = new Date();
+      if (preset === 'current_month') {
+        setDateStart(formatIsoDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+        setDateEnd(formatIsoDate(new Date(now.getFullYear(), now.getMonth() + 1, 0)));
+        return;
+      }
+      if (preset === 'last_3_months') {
+        setDateStart(formatIsoDate(new Date(now.getFullYear(), now.getMonth() - 2, 1)));
+        setDateEnd(formatIsoDate(new Date(now.getFullYear(), now.getMonth() + 1, 0)));
+        return;
+      }
+      if (preset === 'all_history') {
+        let minTime = Infinity;
+        let maxTime = -Infinity;
+        (deliveries || []).forEach((d) => {
+          const parsed = parseLocalDate(d?.data_registro || d?.created_at || d?.data_inicio);
+          if (!parsed) return;
+          const t = parsed.getTime();
+          if (t < minTime) minTime = t;
+          if (t > maxTime) maxTime = t;
+        });
+        const start = isFinite(minTime) ? new Date(minTime) : new Date(now.getFullYear(), 0, 1);
+        const end = isFinite(maxTime) && maxTime > now.getTime() ? new Date(maxTime) : now;
+        setDateStart(formatIsoDate(start));
+        setDateEnd(formatIsoDate(end));
+      }
+    },
+    [deliveries]
+  );
+
+  // Full analytics dataset driven by active filters
+  const analytics = useMemo(() => {
+    return buildReportAnalytics({
+      deliveries,
+      romaneioItemsByEntregaId: romaneioItemsMap,
+      dateStart,
+      dateEnd,
+      selectedPlaca,
+      selectedVendedor,
+      selectedLocalCarregamento: selectedUnidade,
+      custoKm,
+    });
+  }, [
+    deliveries,
+    romaneioItemsMap,
+    dateStart,
+    dateEnd,
+    selectedPlaca,
+    selectedVendedor,
+    selectedUnidade,
+    custoKm,
+  ]);
+
+  const { meta, summary, months, monthlySeries, dailySeries, sellers: sellersStats, vehicles: vehiclesStats, materials: materialsStats, clients: clientsStats, locations: locationsStats } = analytics;
+
+  const mainChartData = useMemo(() => {
+    if (chartGranularity === 'monthly') {
+      return {
+        labels: monthlySeries.map((m) => m.label),
+        datasets: [
+          {
+            label: 'Entregas',
+            data: monthlySeries.map((m) => m.entregas),
+            backgroundColor: 'rgba(0, 212, 255, 0.78)',
+            borderColor: '#00D4FF',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'KM (centenas)',
+            data: monthlySeries.map((m) => Number((m.km / 100).toFixed(1))),
+            backgroundColor: 'rgba(240, 113, 39, 0.78)',
+            borderColor: '#F07127',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'Valor Total (mil R$)',
+            data: monthlySeries.map((m) => Number((m.valorTotal / 1000).toFixed(1))),
+            backgroundColor: 'rgba(16, 185, 129, 0.72)',
+            borderColor: '#10B981',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+        ],
+      };
+    }
 
     return {
-      totalEntregas,
-      prevEntregas,
-      matrizCount,
-      filialCount,
-      totalKm,
-      prevKm,
-      totalCost,
-      prevCost,
-      matrizCost,
-      filialCost,
-      avgTimeH,
-      prevAvgTimeH,
-      totalValor,
-      prevTotalValor,
-      matrizValor,
-      filialValor,
-      totalFrete,
-      prevTotalFrete,
-      matrizFrete,
-      filialFrete,
-      onTimePct,
-      inFullPct,
-      otifPct,
-      ofensorName,
-      maxErros,
-      labelsGrafico,
-      dataGrafico,
-      vendArr,
-      veicArr,
+      labels: dailySeries.labels,
+      datasets: [
+        {
+          label: 'Entregas / Dia',
+          data: dailySeries.counts,
+          borderColor: '#00D4FF',
+          backgroundColor: 'rgba(0, 212, 255, 0.14)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 3,
+        },
+        {
+          label: 'KM / Dia (x10)',
+          data: dailySeries.kms.map((k) => Number((k / 10).toFixed(1))),
+          borderColor: '#F07127',
+          backgroundColor: 'transparent',
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 2.5,
+        },
+      ],
     };
-  }, [deliveries, dateStart, dateEnd, selectedPlaca, selectedVendedor, custoKm]);
+  }, [chartGranularity, monthlySeries, dailySeries]);
 
-  // MoM calculation helper
-  const renderMoM = (current, prev, reverseColor = false) => {
-    if (prev === 0) {
-      if (current > 0) {
-        return (
-          <span className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${reverseColor ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
-            100% ↗
-          </span>
-        );
-      }
-      return <span className="px-1.5 py-0.5 rounded bg-white/10 text-white">0%</span>;
+  const handleQuickPdf = async () => {
+    try {
+      const fileName = await downloadReportPdf(analytics, {});
+      addToast?.(`PDF gerado: ${fileName}`, 'success');
+    } catch (err) {
+      addToast?.(`Erro ao exportar PDF: ${err?.message || 'falha inesperada'}`, 'error');
     }
-    const perc = ((current - prev) / prev) * 100;
-    const absPerc = Math.abs(perc).toFixed(1);
+  };
 
-    if (perc > 0) {
-      return (
-        <span className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${reverseColor ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
-          {absPerc}% ↗
-        </span>
-      );
-    } else if (perc < 0) {
-      return (
-        <span className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${reverseColor ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
-          {absPerc}% ↘
-        </span>
-      );
+  const handleQuickExcel = () => {
+    try {
+      const fileName = downloadReportExcel(analytics);
+      addToast?.(`Excel gerado: ${fileName}`, 'success');
+    } catch (err) {
+      addToast?.(`Erro ao exportar Excel: ${err?.message || 'falha inesperada'}`, 'error');
     }
-    return <span className="px-1.5 py-0.5 rounded bg-white/10 text-white">0%</span>;
   };
 
-  const otifCircleColor = computed.otifPct >= 90 ? '#10B981' : computed.otifPct >= 70 ? '#F59E0B' : '#EF4444';
-  const otifStrokeDashoffset = 283 - (283 * (computed.otifPct / 100));
-
-  const chartData = {
-    labels: computed.labelsGrafico,
-    datasets: [
-      {
-        label: 'Nº de Entregas',
-        data: computed.dataGrafico,
-        borderColor: '#00D4FF',
-        backgroundColor: 'rgba(0, 212, 255, 0.1)',
-        borderWidth: 2,
-        pointBackgroundColor: '#172090',
-        pointBorderColor: '#00D4FF',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        fill: true,
-        tension: 0.4,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-        ticks: { color: 'rgba(255, 255, 255, 0.6)' },
-      },
-      x: {
-        grid: { display: false },
-        ticks: { color: 'rgba(255, 255, 255, 0.6)' },
-      },
-    },
-  };
+  const otifAngle = Math.min(Math.max(summary.otif.otifPct, 0), 100);
 
   return (
-    <div id="dashboard-view" className="h-full flex flex-col overflow-y-auto w-full font-inter p-4 lg:p-6 text-white transition-opacity duration-500 relative z-10 pb-32">
-      
-      {/* Page Title & Sincronizar button */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-cunia tracking-wider text-[#00D4FF] flex items-center gap-3">
-            Análise de Entregas
-            <button 
-              onClick={loadData}
-              className="text-[10px] font-inter bg-blue-600/20 text-[#00D4FF] border border-[#00D4FF]/30 px-2 py-1 rounded hover:bg-[#00D4FF]/20 transition flex items-center gap-1 focus:outline-none"
-            >
-              <span className="material-symbols-outlined text-[14px]">sync</span> Sincronizar Histórico
-            </button>
-          </h2>
-          <p className="text-sm text-blue-200/70 mt-1">
-            Métricas e performance logística baseadas em todo o histórico de entregas.
+    <div
+      id="dashboard-view"
+      className="h-full flex flex-col overflow-y-auto overflow-x-hidden w-full font-hanken p-3 sm:p-5 lg:p-6 text-on-surface relative z-10 pb-28 space-y-5"
+    >
+      {/* HEADER BAR & REPORT EXPORT COMMAND CENTER */}
+      <header className="dash-card p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border border-[#0081A7]/40">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#0081A7]/25 border border-[#0081A7]/50 text-[#00D4FF] text-[10px] font-bold uppercase tracking-wider">
+              <FileBarChart2 size={12} />
+              Central de Inteligência & Relatórios
+            </span>
+            <span className="text-[11px] font-data-mono text-slate-400 tabular-nums">
+              {meta.totalRegistrosFiltrados} entregas no recorte
+            </span>
+          </div>
+          <h1 className="text-lg sm:text-2xl font-extrabold tracking-tight text-white">
+            Relatórios Gerenciais — J Patrício Metais
+          </h1>
+          <p className="text-xs text-slate-300 font-data-mono tabular-nums">
+            Período ativo: <strong className="text-[#00D4FF]">{meta.formattedPeriod}</strong> ({months.length}{' '}
+            {months.length === 1 ? 'mês' : 'meses'}) • Custos calculados a R$ {Number(meta.custoKm).toFixed(2)}/km
           </p>
         </div>
-      </div>
 
-      {/* Top Filter Bar */}
-      <div className="dash-card p-5 mb-6">
-        <h3 className="text-sm font-bold text-[#00D4FF] mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined">tune</span> Filtros do Relatório
-        </h3>
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            id="btn-open-fullscreen-report"
+            type="button"
+            onClick={() => setIsReportModalOpen(true)}
+            className="px-4 py-2.5 rounded-[4px] bg-[#0081A7] hover:bg-[#0099c4] text-white text-xs font-extrabold uppercase tracking-wider flex items-center gap-2 transition-colors shadow-md"
+          >
+            <Maximize2 size={15} />
+            <span>Baixar Relatório</span>
+          </button>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          <div className="flex flex-col">
-            <label className="text-[10px] font-semibold text-blue-200 mb-1 uppercase tracking-wider">Data Inicial</label>
-            <input 
-              type="date" 
-              value={dateStart} 
-              onChange={(e) => setDateStart(e.target.value)} 
-              className="dash-input text-sm h-10"
+          <button
+            id="btn-quick-pdf"
+            type="button"
+            onClick={handleQuickPdf}
+            className="px-3.5 py-2.5 rounded-[4px] bg-[#F07127] hover:bg-[#d9621d] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+            title="Baixar PDF executivo diretamente"
+          >
+            <FileText size={14} />
+            <span>PDF</span>
+          </button>
+
+          <button
+            id="btn-quick-excel"
+            type="button"
+            onClick={handleQuickExcel}
+            className="px-3.5 py-2.5 rounded-[4px] bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+            title="Baixar planilha Excel multi-abas (.xlsx)"
+          >
+            <FileSpreadsheet size={14} />
+            <span>Excel</span>
+          </button>
+
+          <button
+            id="btn-sync-reports"
+            type="button"
+            onClick={() => syncReportsData(true)}
+            disabled={isSyncing}
+            className="px-3 py-2.5 rounded-[4px] bg-[#020D1A] hover:bg-slate-800 border border-white/15 text-slate-200 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors disabled:opacity-60"
+            title="Recarregar dados completos do Supabase"
+          >
+            <RefreshCw size={14} className={isSyncing ? 'animate-spin text-[#00D4FF]' : ''} />
+            <span className="hidden sm:inline">{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+          </button>
+        </div>
+      </header>
+
+      {/* FILTER CONTROLS */}
+      <section className="dash-card p-3.5 sm:p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/10">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white">
+            <SlidersHorizontal size={14} className="text-[#00D4FF]" />
+            <span>Filtros & Recorte Temporal</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[
+              { id: 'current_month', label: 'Este Mês' },
+              { id: 'last_3_months', label: 'Últimos 3 Meses' },
+              { id: 'all_history', label: 'Todo Histórico' },
+            ].map((p) => (
+              <button
+                key={p.id}
+                id={`btn-preset-${p.id}`}
+                type="button"
+                onClick={() => applyDatePreset(p.id)}
+                className={`px-2.5 py-1 rounded-[4px] text-[11px] font-bold transition-colors border ${
+                  activePreset === p.id
+                    ? 'bg-[#0081A7] border-[#00D4FF]/60 text-white'
+                    : 'bg-[#020D1A] border-white/10 text-slate-300 hover:text-white'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5">
+          <div>
+            <label htmlFor="dash-date-start" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Data Início
+            </label>
+            <input
+              id="dash-date-start"
+              type="date"
+              value={dateStart}
+              onChange={(e) => {
+                setActivePreset('custom');
+                setDateStart(e.target.value);
+              }}
+              className="dash-input w-full text-xs py-1.5 px-2.5 rounded-[4px] font-data-mono"
             />
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-[10px] font-semibold text-blue-200 mb-1 uppercase tracking-wider">Data Final</label>
-            <input 
-              type="date" 
-              value={dateEnd} 
-              onChange={(e) => setDateEnd(e.target.value)} 
-              className="dash-input text-sm h-10"
+          <div>
+            <label htmlFor="dash-date-end" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Data Fim
+            </label>
+            <input
+              id="dash-date-end"
+              type="date"
+              value={dateEnd}
+              onChange={(e) => {
+                setActivePreset('custom');
+                setDateEnd(e.target.value);
+              }}
+              className="dash-input w-full text-xs py-1.5 px-2.5 rounded-[4px] font-data-mono"
             />
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-[10px] font-semibold text-blue-200 mb-1 uppercase tracking-wider">Placa do Veículo</label>
-            <select 
-              value={selectedPlaca} 
-              onChange={(e) => setSelectedPlaca(e.target.value)} 
-              className="dash-input text-sm h-10"
+          <div>
+            <label htmlFor="dash-filter-unidade" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Unidade
+            </label>
+            <select
+              id="dash-filter-unidade"
+              value={selectedUnidade}
+              onChange={(e) => setSelectedUnidade(e.target.value)}
+              className="dash-input w-full text-xs py-1.5 px-2.5 rounded-[4px]"
             >
-              {PLACAS_FILTER_OPTIONS.map((p) => (
-                <option key={p} value={p}>{p === 'TODAS' ? 'Todas as Placas' : p}</option>
+              <option value="TODOS">Todas as Unidades</option>
+              <option value="MATRIZ">MATRIZ</option>
+              <option value="FILIAL">FILIAL</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="dash-filter-placa" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Veículo / Placa
+            </label>
+            <select
+              id="dash-filter-placa"
+              value={selectedPlaca}
+              onChange={(e) => setSelectedPlaca(e.target.value)}
+              className="dash-input w-full text-xs py-1.5 px-2.5 rounded-[4px]"
+            >
+              <option value="TODAS">Todos os Veículos</option>
+              {placaOptions.map((pl) => (
+                <option key={pl} value={pl}>
+                  {pl}
+                </option>
               ))}
             </select>
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-[10px] font-semibold text-blue-200 mb-1 uppercase tracking-wider">Vendedor</label>
-            <select 
-              value={selectedVendedor} 
-              onChange={(e) => setSelectedVendedor(e.target.value)} 
-              className="dash-input text-sm h-10"
+          <div>
+            <label htmlFor="dash-filter-vendedor" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Vendedor
+            </label>
+            <select
+              id="dash-filter-vendedor"
+              value={selectedVendedor}
+              onChange={(e) => setSelectedVendedor(e.target.value)}
+              className="dash-input w-full text-xs py-1.5 px-2.5 rounded-[4px]"
             >
-              {VENDEDORES_FILTER_OPTIONS.map((v) => (
-                <option key={v} value={v}>{v === 'TODAS' ? 'Todos os Vendedores' : v}</option>
+              <option value="TODAS">Todos os Vendedores</option>
+              {vendedorOptions.map((vend) => (
+                <option key={vend} value={vend}>
+                  {vend}
+                </option>
               ))}
             </select>
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-[10px] font-semibold text-blue-200 mb-1 uppercase tracking-wider">Custo do KM rodado</label>
-            <input 
-              type="number" 
-              step="0.01" 
-              value={custoKm} 
-              onChange={(e) => setCustoKm(e.target.value)} 
-              className="dash-input text-sm text-[#00D4FF] font-bold h-10"
+          <div>
+            <label htmlFor="dash-cost-km" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Custo / KM (R$)
+            </label>
+            <input
+              id="dash-cost-km"
+              type="number"
+              step="0.01"
+              min="0.1"
+              value={custoKm}
+              onChange={(e) => setCustoKm(e.target.value)}
+              className="dash-input w-full text-xs py-1.5 px-2.5 rounded-[4px] font-data-mono"
             />
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 6 KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 lg:gap-6 mb-6">
-        
-        {/* KPI 1: Entregas */}
-        <div className="dash-card p-5 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all" />
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-xs font-semibold text-blue-200 uppercase tracking-wider">Entregas</p>
-            <span className="material-symbols-outlined text-blue-400">local_shipping</span>
+      {/* 6 EXECUTIVE KPI CARDS */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        <div className="dash-card p-3.5 border-t-2 border-t-[#00D4FF]">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Entregas Totais</span>
+            <Truck size={15} className="text-[#00D4FF]" />
           </div>
-          <h3 className="text-3xl font-bold text-white mb-1">{computed.totalEntregas}</h3>
-          <div className="flex items-center gap-2 text-[10px] font-medium">
-            {renderMoM(computed.totalEntregas, computed.prevEntregas)}
-            <span className="text-blue-300/80">vs Período Ant.</span>
+          <div className="mt-1.5 flex items-baseline justify-between gap-2">
+            <span className="text-2xl font-extrabold font-data-mono tabular-nums text-white">
+              {summary.totalEntregas}
+            </span>
+            <DeltaBadge current={summary.totalEntregas} previous={summary.prevEntregas} />
           </div>
-          <div className="mt-3 pt-3 border-t border-white/10 flex justify-between text-[10px] font-semibold text-blue-200">
-            <span>Matriz: {computed.matrizCount}</span>
-            <span>Filial: {computed.filialCount}</span>
+          <div className="mt-1.5 text-[11px] font-data-mono text-slate-400">
+            M:{summary.matrizCount} | F:{summary.filialCount} • {summary.concluidas} concl.
           </div>
         </div>
 
-        {/* KPI 2: KM Percorrido */}
-        <div className="dash-card p-5 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all" />
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-xs font-semibold text-emerald-200 uppercase tracking-wider">KM Percorrido</p>
-            <span className="material-symbols-outlined text-emerald-400">route</span>
+        <div className="dash-card p-3.5 border-t-2 border-t-[#F07127]">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">KM Percorrido</span>
+            <Route size={15} className="text-[#F07127]" />
           </div>
-          <h3 className="text-3xl font-bold text-white mb-1">
-            <span>{computed.totalKm.toLocaleString('pt-BR')}</span> <span className="text-sm font-normal text-emerald-200/70">km</span>
-          </h3>
-          <div className="flex items-center gap-2 text-[10px] font-medium">
-            {renderMoM(computed.totalKm, computed.prevKm)}
-            <span className="text-emerald-300/80">vs Período Ant.</span>
+          <div className="mt-1.5 flex items-baseline justify-between gap-2">
+            <span className="text-2xl font-extrabold font-data-mono tabular-nums text-white">
+              {summary.totalKm.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} <span className="text-xs font-normal text-slate-400">km</span>
+            </span>
+            <DeltaBadge current={summary.totalKm} previous={summary.prevKm} />
           </div>
-        </div>
-
-        {/* KPI 3: Custo Entrega */}
-        <div className="dash-card p-5 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-20 h-20 bg-orange-500/10 rounded-full blur-xl group-hover:bg-orange-500/20 transition-all" />
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-xs font-semibold text-orange-200 uppercase tracking-wider">Custo Entrega</p>
-            <span className="material-symbols-outlined text-orange-400">local_gas_station</span>
-          </div>
-          <h3 className="text-3xl font-bold text-white mb-1">
-            <span className="text-sm font-normal text-orange-200/70">R$</span> {computed.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </h3>
-          <div className="flex items-center gap-2 text-[10px] font-medium">
-            {renderMoM(computed.totalCost, computed.prevCost, true)}
-            <span className="text-orange-300/80">vs Período Ant.</span>
-          </div>
-          <div className="mt-3 pt-3 border-t border-white/10 flex justify-between text-[10px] font-semibold text-orange-200">
-            <span>Matriz: R$ {computed.matrizCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span>Filial: R$ {computed.filialCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <div className="mt-1.5 text-[11px] font-data-mono text-slate-400">
+            Média {summary.avgKmPerDelivery.toFixed(1)} km / entrega
           </div>
         </div>
 
-        {/* KPI 4: Tempo Médio */}
-        <div className="dash-card p-5 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-20 h-20 bg-purple-500/10 rounded-full blur-xl group-hover:bg-purple-500/20 transition-all" />
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-xs font-semibold text-purple-200 uppercase tracking-wider">Tempo Médio</p>
-            <span className="material-symbols-outlined text-purple-400">timer</span>
+        <div className="dash-card p-3.5 border-t-2 border-t-rose-400">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Custo Entregas</span>
+            <DollarSign size={15} className="text-rose-400" />
           </div>
-          <h3 className="text-3xl font-bold text-white mb-1">
-            {Math.floor(computed.avgTimeH)}h {Math.round((computed.avgTimeH % 1) * 60)}m
-          </h3>
-          <div className="flex items-center gap-2 text-[10px] font-medium">
-            {renderMoM(computed.avgTimeH, computed.prevAvgTimeH, true)}
-            <span className="text-purple-300/80">vs Período Ant.</span>
+          <div className="mt-1.5 flex items-baseline justify-between gap-2">
+            <span className="text-lg font-extrabold font-data-mono tabular-nums text-white truncate">
+              {formatCurrencyBRL(summary.totalCost)}
+            </span>
+            <DeltaBadge current={summary.totalCost} previous={summary.prevCost} inverse />
           </div>
-        </div>
-
-        {/* KPI 5: Valor das Entregas */}
-        <div className="dash-card p-5 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-20 h-20 bg-yellow-500/10 rounded-full blur-xl group-hover:bg-yellow-500/20 transition-all" />
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-xs font-semibold text-yellow-200 uppercase tracking-wider">Valor das Entregas</p>
-            <span className="material-symbols-outlined text-yellow-400">payments</span>
-          </div>
-          <h3 className="text-3xl font-bold text-white mb-1">
-            <span className="text-sm font-normal text-yellow-200/70">R$</span> {computed.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </h3>
-          <div className="flex items-center gap-2 text-[10px] font-medium">
-            {renderMoM(computed.totalValor, computed.prevTotalValor)}
-            <span className="text-yellow-300/80">vs Período Ant.</span>
-          </div>
-          <div className="mt-3 pt-3 border-t border-white/10 flex justify-between text-[10px] font-semibold text-yellow-200">
-            <span>Matriz: R$ {computed.matrizValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span>Filial: R$ {computed.filialValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <div className="mt-1.5 text-[11px] font-data-mono text-slate-400 truncate">
+            Méd: {formatCurrencyBRL(summary.avgCostPerDelivery)} / entrega
           </div>
         </div>
 
-        {/* KPI 6: Total Fretes */}
-        <div className="dash-card p-5 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-20 h-20 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition-all" />
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-xs font-semibold text-rose-200 uppercase tracking-wider">Total Fretes</p>
-            <span className="material-symbols-outlined text-rose-400">local_shipping</span>
+        <div className="dash-card p-3.5 border-t-2 border-t-amber-400">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Média de Tempo</span>
+            <Clock size={15} className="text-amber-400" />
           </div>
-          <h3 className="text-3xl font-bold text-white mb-1">
-            <span className="text-sm font-normal text-rose-200/70">R$</span> {computed.totalFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </h3>
-          <div className="flex items-center gap-2 text-[10px] font-medium">
-            {renderMoM(computed.totalFrete, computed.prevTotalFrete)}
-            <span className="text-rose-300/80">vs Período Ant.</span>
+          <div className="mt-1.5 flex items-baseline justify-between gap-2">
+            <span className="text-2xl font-extrabold font-data-mono tabular-nums text-white">
+              {formatDurationHours(summary.avgTimeH)}
+            </span>
+            <DeltaBadge current={summary.avgTimeH} previous={summary.prevAvgTimeH} inverse />
           </div>
-          <div className="mt-3 pt-3 border-t border-white/10 flex justify-between text-[10px] font-semibold text-rose-200">
-            <span>Matriz: R$ {computed.matrizFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span>Filial: R$ {computed.filialFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <div className="mt-1.5 text-[11px] font-data-mono text-slate-400">
+            {summary.completedCountForTime} entregas cronometradas
           </div>
         </div>
 
-      </div>
+        <div className="dash-card p-3.5 border-t-2 border-t-emerald-400">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Valores Entregas</span>
+            <DollarSign size={15} className="text-emerald-400" />
+          </div>
+          <div className="mt-1.5 flex items-baseline justify-between gap-2">
+            <span className="text-lg font-extrabold font-data-mono tabular-nums text-emerald-300 truncate">
+              {formatCurrencyBRL(summary.totalValorGeral)}
+            </span>
+            <DeltaBadge current={summary.totalValorGeral} previous={summary.prevTotalValorGeral} />
+          </div>
+          <div className="mt-1.5 text-[11px] font-data-mono text-slate-400 truncate">
+            Carga {formatCurrencyBRL(summary.totalValorCarga)} | Fr {formatCurrencyBRL(summary.totalFrete)}
+          </div>
+        </div>
 
-      {/* OTIF & Volume Chart Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        
-        {/* OTIF Gauge Card */}
-        <div className="dash-card p-5 lg:col-span-1 flex flex-col relative overflow-hidden">
-          <div className="absolute bottom-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-          
-          <h3 className="text-sm font-bold text-[#00D4FF] mb-1">OTIF (On-Time In-Full)</h3>
-          <p className="text-[10px] text-blue-200/80 mb-6">Eficiência das entregas: Feitas até 24h e sem ocorrências.</p>
-          
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="relative w-36 h-36 flex items-center justify-center mb-6">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
-                <circle 
-                  id="otif-circle" 
-                  cx="50" 
-                  cy="50" 
-                  r="45" 
-                  fill="none" 
-                  stroke={otifCircleColor} 
-                  strokeWidth="8" 
-                  strokeDasharray="283" 
-                  strokeDashoffset={otifStrokeDashoffset} 
-                  className="transition-all duration-1000 ease-out" 
-                  strokeLinecap="round" 
-                />
-              </svg>
-              <div className="absolute flex flex-col items-center justify-center">
-                <span className="text-3xl font-cunia text-white">{Math.round(computed.otifPct)}%</span>
-                <span className="text-[9px] font-bold text-[#00D4FF] tracking-widest uppercase">OTIF</span>
-              </div>
-            </div>
+        <div className="dash-card p-3.5 border-t-2 border-t-[#2E97C2]">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">OTIF Global</span>
+            <Award size={15} className="text-[#2E97C2]" />
+          </div>
+          <div className="mt-1.5 flex items-baseline justify-between gap-2">
+            <span className="text-2xl font-extrabold font-data-mono tabular-nums text-[#00D4FF]">
+              {Math.round(summary.otif.otifPct)}%
+            </span>
+            <span className="text-[10px] font-data-mono text-slate-300">
+              {summary.otif.ocorrenciasCount} ocorr.
+            </span>
+          </div>
+          <div className="mt-1.5 text-[11px] font-data-mono text-slate-400">
+            On-Time {Math.round(summary.otif.onTimePct)}% • In-Full {Math.round(summary.otif.inFullPct)}%
+          </div>
+        </div>
+      </section>
 
-            <div className="w-full grid grid-cols-2 gap-4 border-t border-white/10 pt-4 mb-4">
-              <div className="text-center">
-                <p className="text-[10px] text-emerald-300 font-semibold mb-0.5 uppercase tracking-wider">On-Time</p>
-                <p className="text-lg font-bold text-white">{Math.round(computed.onTimePct)}%</p>
-                <p className="text-[8px] text-slate-400">Em até 24h</p>
-              </div>
-              <div className="text-center border-l border-white/10">
-                <p className="text-[10px] text-blue-300 font-semibold mb-0.5 uppercase tracking-wider">In-Full</p>
-                <p className="text-lg font-bold text-white">{Math.round(computed.inFullPct)}%</p>
-                <p className="text-[8px] text-slate-400">Sem Ocorrências</p>
-              </div>
-            </div>
-            
-            <div className="w-full bg-red-500/20 border border-red-500/30 rounded-lg p-3 text-center">
-              <p className="text-[9px] text-red-200 uppercase font-bold tracking-widest mb-1">⚠️ Maior Ofensor de Ocorrências</p>
-              <p className="text-sm font-bold text-white truncate">
-                {computed.maxErros > 0 ? `${computed.ofensorName} (${computed.maxErros} Erros)` : 'Perfeito! Zero erros.'}
+      {/* CHART + OTIF ORGANIZED PANEL */}
+      <section className="grid grid-cols-1 xl:grid-cols-12 gap-4 min-w-0">
+        <div className="xl:col-span-8 dash-card p-4 flex flex-col gap-3 min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+                Evolução de Entregas, KM e Valores
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Alterne entre comparativo mês a mês ou ritmo diário no período
               </p>
             </div>
+            <div className="inline-flex items-center bg-[#020D1A] border border-white/10 rounded-[4px] p-0.5">
+              <button
+                type="button"
+                onClick={() => setChartGranularity('monthly')}
+                className={`px-2.5 py-1 rounded-[4px] text-[11px] font-bold uppercase ${
+                  chartGranularity === 'monthly' ? 'bg-[#0081A7] text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Por Mês
+              </button>
+              <button
+                type="button"
+                onClick={() => setChartGranularity('daily')}
+                className={`px-2.5 py-1 rounded-[4px] text-[11px] font-bold uppercase ${
+                  chartGranularity === 'daily' ? 'bg-[#0081A7] text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Por Dia
+              </button>
+            </div>
+          </div>
+
+          <div className="h-[250px] sm:h-[280px] w-full relative">
+            {chartGranularity === 'monthly' ? (
+              <Bar data={mainChartData} options={CHART_OPTIONS} />
+            ) : (
+              <Line data={mainChartData} options={CHART_OPTIONS} />
+            )}
           </div>
         </div>
 
-        {/* Volume Chart */}
-        <div className="dash-card p-5 lg:col-span-2 flex flex-col relative h-[400px] lg:h-auto">
-          <h3 className="text-sm font-bold text-[#00D4FF] mb-1">Volume de Entregas por Dia</h3>
-          <p className="text-[10px] text-blue-200/80 mb-4">Acompanhamento diário dentro do período filtrado.</p>
-          
-          <div className="flex-1 relative w-full h-full min-h-[250px]">
-            <Line data={chartData} options={chartOptions} />
+        {/* Structured OTIF Panel */}
+        <div className="xl:col-span-4 dash-card p-4 flex flex-col justify-between gap-3 min-w-0">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+              Painel OTIF Estruturado
+            </h2>
+            <span className="text-[10px] font-data-mono text-emerald-400 font-bold uppercase">
+              SLA 24h
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div
+              className="w-24 h-24 rounded-full flex items-center justify-center shrink-0"
+              style={{
+                background: `conic-gradient(#10B981 ${otifAngle * 3.6}deg, rgba(255,255,255,0.08) 0deg)`,
+              }}
+            >
+              <div className="w-[74px] h-[74px] rounded-full bg-[#020D1A] flex flex-col items-center justify-center">
+                <span className="text-xl font-extrabold font-data-mono text-white">
+                  {Math.round(summary.otif.otifPct)}%
+                </span>
+                <span className="text-[9px] uppercase tracking-wider text-slate-400">OTIF</span>
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0 space-y-2 text-xs">
+              <div>
+                <div className="flex justify-between text-[11px] font-data-mono mb-0.5">
+                  <span className="text-slate-300">On-Time (&lt;=24h)</span>
+                  <span className="text-[#00D4FF] font-bold">{summary.otif.onTimePct.toFixed(1)}%</span>
+                </div>
+                <div className="w-full h-1.5 bg-white/10 rounded-[2px] overflow-hidden">
+                  <div className="h-full bg-[#00D4FF]" style={{ width: `${Math.min(summary.otif.onTimePct, 100)}%` }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] font-data-mono mb-0.5">
+                  <span className="text-slate-300">In-Full (Sem ocorr.)</span>
+                  <span className="text-emerald-400 font-bold">{summary.otif.inFullPct.toFixed(1)}%</span>
+                </div>
+                <div className="w-full h-1.5 bg-white/10 rounded-[2px] overflow-hidden">
+                  <div className="h-full bg-emerald-400" style={{ width: `${Math.min(summary.otif.inFullPct, 100)}%` }} />
+                </div>
+              </div>
+
+              <div className="pt-1 text-[11px] text-slate-300 font-data-mono">
+                Ofensor principal:{' '}
+                <strong className={summary.otif.maxErros > 0 ? 'text-[#F07127]' : 'text-emerald-400'}>
+                  {summary.otif.maxErros > 0 ? `${summary.otif.ofensorName} (${summary.otif.maxErros})` : 'Zero ocorrências'}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#020D1A]/80 border border-white/10 rounded-[4px] p-2.5 space-y-1.5 max-h-[125px] overflow-y-auto">
+            {(summary.otif.occurrencesBreakdown || []).slice(0, 4).map((occ) => (
+              <div key={occ.motivo} className="flex items-center justify-between gap-2 text-[11px]">
+                <span className="text-slate-200 truncate flex items-center gap-1.5">
+                  {occ.motivo.toLowerCase().includes('sem ocorr') ? (
+                    <CheckCircle2 size={11} className="text-emerald-400 shrink-0" />
+                  ) : (
+                    <AlertTriangle size={11} className="text-amber-400 shrink-0" />
+                  )}
+                  <span className="truncate">{occ.motivo}</span>
+                </span>
+                <span className="font-data-mono font-bold text-slate-300 shrink-0">
+                  {occ.count} ({occ.pct.toFixed(0)}%)
+                </span>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-      </div>
+      {/* MONTHLY CONSOLIDATION PREVIEW TABLE */}
+      <section className="dash-card overflow-hidden min-w-0">
+        <div className="px-4 py-2.5 bg-[#07182c] border-b border-white/10 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Calendar size={14} className="text-[#00D4FF]" />
+            <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white">
+              Resumo Separado por Mês & Total
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsReportModalOpen(true)}
+            className="text-[11px] font-bold text-[#00D4FF] hover:underline uppercase tracking-wider"
+          >
+            Abrir relatório tela cheia →
+          </button>
+        </div>
 
-      {/* Sellers & Vehicles Performance Tables */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-10">
-        
-        {/* Performance por Vendedor */}
-        <div className="dash-card p-5 overflow-hidden">
-          <h3 className="text-sm font-bold text-[#00D4FF] mb-1">Performance por Vendedor</h3>
-          <p className="text-[10px] text-blue-200/80 mb-4">Volume financeiro de entregas registradas por equipe de vendas.</p>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="text-[10px] text-blue-300 uppercase font-bold tracking-wider border-b border-white/10">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs font-data-mono tabular-nums whitespace-nowrap">
+            <thead>
+              <tr className="bg-[#020D1A] text-slate-400 uppercase text-[10px] border-b border-white/10">
+                <th className="py-2 px-3 font-hanken">Mês</th>
+                <th className="py-2 px-3 text-right">Entregas</th>
+                <th className="py-2 px-3 text-right">KM</th>
+                <th className="py-2 px-3 text-right">Custo Est.</th>
+                <th className="py-2 px-3 text-right">Tempo Médio</th>
+                <th className="py-2 px-3 text-right">Carga + Frete</th>
+                <th className="py-2 px-3 text-right">OTIF</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {monthlySeries.map((m) => (
+                <tr key={m.monthKey} className="hover:bg-white/[0.03]">
+                  <td className="py-2 px-3 font-hanken font-bold text-white">{m.fullLabel}</td>
+                  <td className="py-2 px-3 text-right font-bold text-[#00D4FF]">{m.entregas}</td>
+                  <td className="py-2 px-3 text-right">{m.km.toFixed(1)} km</td>
+                  <td className="py-2 px-3 text-right text-rose-300">{formatCurrencyBRL(m.custo)}</td>
+                  <td className="py-2 px-3 text-right text-amber-300">{formatDurationHours(m.avgTimeH)}</td>
+                  <td className="py-2 px-3 text-right font-bold text-emerald-300">{formatCurrencyBRL(m.valorTotal)}</td>
+                  <td className="py-2 px-3 text-right font-bold text-emerald-400">{Math.round(m.otifPct)}%</td>
+                </tr>
+              ))}
+              {monthlySeries.length === 0 && (
                 <tr>
-                  <th className="px-4 py-3">Vendedor</th>
-                  <th className="px-4 py-3">Local</th>
-                  <th className="px-4 py-3 text-right">Qtd Entregas</th>
-                  <th className="px-4 py-3 text-right">Valor Total (R$)</th>
+                  <td colSpan={7} className="py-4 text-center text-slate-400 font-hanken">
+                    Nenhum movimento encontrado para este período.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            {monthlySeries.length > 0 && (
+              <tfoot>
+                <tr className="bg-[#0081A7]/20 border-t border-[#0081A7]/40 font-bold text-white">
+                  <td className="py-2 px-3 font-hanken uppercase">TOTAL</td>
+                  <td className="py-2 px-3 text-right text-[#00D4FF]">{summary.totalEntregas}</td>
+                  <td className="py-2 px-3 text-right">{summary.totalKm.toFixed(1)} km</td>
+                  <td className="py-2 px-3 text-right text-rose-300">{formatCurrencyBRL(summary.totalCost)}</td>
+                  <td className="py-2 px-3 text-right text-amber-300">{formatDurationHours(summary.avgTimeH)}</td>
+                  <td className="py-2 px-3 text-right text-emerald-300">{formatCurrencyBRL(summary.totalValorGeral)}</td>
+                  <td className="py-2 px-3 text-right text-emerald-400">{Math.round(summary.otif.otifPct)}%</td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </section>
+
+      {/* SELLERS & VEHICLES PERFORMANCE (TOTAL OR MONTHLY) */}
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-4 min-w-0">
+        {/* Sellers */}
+        <div className="dash-card overflow-hidden flex flex-col min-w-0">
+          <div className="px-4 py-2.5 bg-[#07182c] border-b border-white/10 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Users size={15} className="text-[#00D4FF] shrink-0" />
+              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white truncate">
+                Performance Vendedores
+              </h2>
+            </div>
+            <div className="inline-flex bg-[#020D1A] border border-white/10 rounded-[4px] p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSellersMode('total')}
+                className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase ${
+                  sellersMode === 'total' ? 'bg-[#0081A7] text-white' : 'text-slate-400'
+                }`}
+              >
+                Total
+              </button>
+              <button
+                type="button"
+                onClick={() => setSellersMode('monthly')}
+                className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase ${
+                  sellersMode === 'monthly' ? 'bg-[#0081A7] text-white' : 'text-slate-400'
+                }`}
+              >
+                Por Mês
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs font-data-mono tabular-nums whitespace-nowrap">
+              <thead>
+                <tr className="bg-[#020D1A] text-slate-400 uppercase text-[10px] border-b border-white/10">
+                  <th className="py-2 px-3 font-hanken">Vendedor</th>
+                  {sellersMode === 'monthly' ? (
+                    <>
+                      {months.map((m) => (
+                        <th key={m.monthKey} className="py-2 px-3 text-right">
+                          {m.label}
+                        </th>
+                      ))}
+                      <th className="py-2 px-3 text-right text-[#00D4FF]">Total</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="py-2 px-3 text-right">Entr.</th>
+                      <th className="py-2 px-3 text-right">Valor Total</th>
+                      <th className="py-2 px-3 text-right">Share</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {computed.vendArr.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-4 text-center text-slate-400">Nenhum dado encontrado no período</td>
+                {sellersStats.ranking.slice(0, 10).map((s) => (
+                  <tr key={s.name} className="hover:bg-white/[0.03]">
+                    <td className="py-2 px-3 font-hanken font-semibold text-white">{s.displayName}</td>
+                    {sellersMode === 'monthly' ? (
+                      <>
+                        {months.map((m) => (
+                          <td key={m.monthKey} className="py-2 px-3 text-right text-slate-300">
+                            {s.byMonth?.[m.monthKey]?.entregas || 0}
+                          </td>
+                        ))}
+                        <td className="py-2 px-3 text-right font-bold text-[#00D4FF]">{s.entregas}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 px-3 text-right font-bold text-[#00D4FF]">{s.entregas}</td>
+                        <td className="py-2 px-3 text-right text-emerald-300">{formatCurrencyBRL(s.valorTotal)}</td>
+                        <td className="py-2 px-3 text-right">{s.sharePct.toFixed(1)}%</td>
+                      </>
+                    )}
                   </tr>
-                ) : (
-                  computed.vendArr.map(v => (
-                    <tr key={v.name} className="hover:bg-white/5 transition-colors">
-                      <td className="px-4 py-3 font-semibold text-white">
-                        {v.name.replace(/\s*\((Matriz|Filial)\)/gi, '')}
-                      </td>
-                      <td className={`px-4 py-3 text-[10px] font-bold ${v.loc === 'MATRIZ' ? 'text-blue-400' : 'text-orange-400'}`}>
-                        {v.loc}
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-[#00D4FF]">
-                        {v.total}
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-emerald-400">
-                        R$ {v.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  ))
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Vehicles */}
+        <div className="dash-card overflow-hidden flex flex-col min-w-0">
+          <div className="px-4 py-2.5 bg-[#07182c] border-b border-white/10 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Truck size={15} className="text-[#F07127] shrink-0" />
+              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white truncate">
+                Performance Veículos / Frota
+              </h2>
+            </div>
+            <div className="inline-flex bg-[#020D1A] border border-white/10 rounded-[4px] p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setVehiclesMode('total')}
+                className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase ${
+                  vehiclesMode === 'total' ? 'bg-[#0081A7] text-white' : 'text-slate-400'
+                }`}
+              >
+                Total
+              </button>
+              <button
+                type="button"
+                onClick={() => setVehiclesMode('monthly')}
+                className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase ${
+                  vehiclesMode === 'monthly' ? 'bg-[#0081A7] text-white' : 'text-slate-400'
+                }`}
+              >
+                Por Mês
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs font-data-mono tabular-nums whitespace-nowrap">
+              <thead>
+                <tr className="bg-[#020D1A] text-slate-400 uppercase text-[10px] border-b border-white/10">
+                  <th className="py-2 px-3 font-hanken">Placa / Motorista</th>
+                  {vehiclesMode === 'monthly' ? (
+                    <>
+                      {months.map((m) => (
+                        <th key={m.monthKey} className="py-2 px-3 text-right">
+                          {m.label}
+                        </th>
+                      ))}
+                      <th className="py-2 px-3 text-right text-[#F07127]">Total</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="py-2 px-3 text-right">Entr.</th>
+                      <th className="py-2 px-3 text-right">KM</th>
+                      <th className="py-2 px-3 text-right">T. Médio</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {vehiclesStats.ranking.slice(0, 10).map((v) => (
+                  <tr key={v.placa} className="hover:bg-white/[0.03]">
+                    <td className="py-2 px-3 font-hanken font-semibold text-white">
+                      {v.placaCurta} <span className="text-[10px] text-slate-400">({v.motorista})</span>
+                    </td>
+                    {vehiclesMode === 'monthly' ? (
+                      <>
+                        {months.map((m) => (
+                          <td key={m.monthKey} className="py-2 px-3 text-right text-slate-300">
+                            {v.byMonth?.[m.monthKey]?.entregas || 0}
+                          </td>
+                        ))}
+                        <td className="py-2 px-3 text-right font-bold text-[#F07127]">{v.entregas}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 px-3 text-right font-bold text-[#F07127]">{v.entregas}</td>
+                        <td className="py-2 px-3 text-right">{v.km.toFixed(0)} km</td>
+                        <td className="py-2 px-3 text-right text-amber-300">{formatDurationHours(v.avgTimeH)}</td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* MOST SOLD MATERIALS (ROMANEIO) + TOP CLIENTS */}
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-4 min-w-0">
+        {/* Romaneio Materials */}
+        <div className="dash-card overflow-hidden flex flex-col min-w-0">
+          <div className="px-4 py-2.5 bg-[#07182c] border-b border-white/10 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Package size={15} className="text-emerald-400 shrink-0" />
+              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white truncate">
+                Materiais Mais Vendidos (Romaneio)
+              </h2>
+            </div>
+            <div className="inline-flex bg-[#020D1A] border border-white/10 rounded-[4px] p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMaterialsMode('total')}
+                className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase ${
+                  materialsMode === 'total' ? 'bg-[#0081A7] text-white' : 'text-slate-400'
+                }`}
+              >
+                Total
+              </button>
+              <button
+                type="button"
+                onClick={() => setMaterialsMode('monthly')}
+                className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase ${
+                  materialsMode === 'monthly' ? 'bg-[#0081A7] text-white' : 'text-slate-400'
+                }`}
+              >
+                Por Mês
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs font-data-mono tabular-nums whitespace-nowrap">
+              <thead>
+                <tr className="bg-[#020D1A] text-slate-400 uppercase text-[10px] border-b border-white/10">
+                  <th className="py-2 px-3 font-hanken">Material</th>
+                  {materialsMode === 'monthly' ? (
+                    <>
+                      {months.map((m) => (
+                        <th key={m.monthKey} className="py-2 px-3 text-right">
+                          {m.label}
+                        </th>
+                      ))}
+                      <th className="py-2 px-3 text-right text-emerald-400">Qtd Total</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="py-2 px-3 text-right">Entr.</th>
+                      <th className="py-2 px-3 text-right">Qtd</th>
+                      <th className="py-2 px-3 text-right">Valor</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {materialsStats.ranking.slice(0, 10).map((mat) => (
+                  <tr key={mat.key} className="hover:bg-white/[0.03]">
+                    <td className="py-2 px-3 font-hanken font-semibold text-white max-w-[200px] truncate" title={mat.nome}>
+                      {mat.nome}
+                    </td>
+                    {materialsMode === 'monthly' ? (
+                      <>
+                        {months.map((m) => (
+                          <td key={m.monthKey} className="py-2 px-3 text-right text-slate-300">
+                            {mat.byMonth?.[m.monthKey]?.ocorrencias || 0}x
+                          </td>
+                        ))}
+                        <td className="py-2 px-3 text-right font-bold text-emerald-300">
+                          {mat.quantidadeTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} {mat.unidade}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 px-3 text-right font-bold text-[#00D4FF]">{mat.entregasDistintas}</td>
+                        <td className="py-2 px-3 text-right">
+                          {mat.quantidadeTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} {mat.unidade}
+                        </td>
+                        <td className="py-2 px-3 text-right text-emerald-300">{formatCurrencyBRL(mat.valorTotal)}</td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+                {materialsStats.ranking.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-slate-400 font-hanken">
+                      Nenhum item de romaneio encontrado no recorte.
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Performance por Veículo */}
-        <div className="dash-card p-5 overflow-hidden">
-          <h3 className="text-sm font-bold text-[#00D4FF] mb-1">Performance por Veículo</h3>
-          <p className="text-[10px] text-blue-200/80 mb-4">Ranking de eficiência de rota, tempo e custo da frota.</p>
-          
+        {/* Clients */}
+        <div className="dash-card overflow-hidden flex flex-col min-w-0">
+          <div className="px-4 py-2.5 bg-[#07182c] border-b border-white/10 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <UserCheck size={15} className="text-[#00D4FF] shrink-0" />
+              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white truncate">
+                Clientes que Mais Receberam
+              </h2>
+            </div>
+            <div className="inline-flex bg-[#020D1A] border border-white/10 rounded-[4px] p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setClientsMode('total')}
+                className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase ${
+                  clientsMode === 'total' ? 'bg-[#0081A7] text-white' : 'text-slate-400'
+                }`}
+              >
+                Total
+              </button>
+              <button
+                type="button"
+                onClick={() => setClientsMode('monthly')}
+                className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase ${
+                  clientsMode === 'monthly' ? 'bg-[#0081A7] text-white' : 'text-slate-400'
+                }`}
+              >
+                Por Mês
+              </button>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="text-[10px] text-indigo-300 uppercase font-bold tracking-wider border-b border-white/10">
-                <tr>
-                  <th className="px-4 py-3">Placa / Veículo</th>
-                  <th className="px-4 py-3 text-right">Entregas</th>
-                  <th className="px-4 py-3 text-right">Tempo Médio</th>
-                  <th className="px-4 py-3 text-right">KM Total</th>
-                  <th className="px-4 py-3 text-right">Custo Total (R$)</th>
+            <table className="w-full text-left border-collapse text-xs font-data-mono tabular-nums whitespace-nowrap">
+              <thead>
+                <tr className="bg-[#020D1A] text-slate-400 uppercase text-[10px] border-b border-white/10">
+                  <th className="py-2 px-3 font-hanken">Cliente</th>
+                  {clientsMode === 'monthly' ? (
+                    <>
+                      {months.map((m) => (
+                        <th key={m.monthKey} className="py-2 px-3 text-right">
+                          {m.label}
+                        </th>
+                      ))}
+                      <th className="py-2 px-3 text-right text-[#00D4FF]">Total</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="py-2 px-3 text-right">Entregas</th>
+                      <th className="py-2 px-3 text-right">KM</th>
+                      <th className="py-2 px-3 text-right">Valor Total</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {computed.veicArr.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-4 text-center text-slate-400">Nenhum dado encontrado no período</td>
+                {clientsStats.ranking.slice(0, 10).map((cli) => (
+                  <tr key={cli.cliente} className="hover:bg-white/[0.03]">
+                    <td className="py-2 px-3 font-hanken font-semibold text-white max-w-[200px] truncate" title={cli.cliente}>
+                      {cli.cliente}
+                    </td>
+                    {clientsMode === 'monthly' ? (
+                      <>
+                        {months.map((m) => (
+                          <td key={m.monthKey} className="py-2 px-3 text-right text-slate-300">
+                            {cli.byMonth?.[m.monthKey]?.entregas || 0}
+                          </td>
+                        ))}
+                        <td className="py-2 px-3 text-right font-bold text-[#00D4FF]">{cli.entregas}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 px-3 text-right font-bold text-[#00D4FF]">{cli.entregas}</td>
+                        <td className="py-2 px-3 text-right">{cli.km.toFixed(0)} km</td>
+                        <td className="py-2 px-3 text-right text-emerald-300">{formatCurrencyBRL(cli.valorTotal)}</td>
+                      </>
+                    )}
                   </tr>
-                ) : (
-                  computed.veicArr.map(v => {
-                    const avgT = v.concluidasTempo > 0 ? (v.tempoMs / v.concluidasTempo) / (1000 * 60 * 60) : 0;
-                    const timeStr = v.concluidasTempo > 0 ? `${Math.floor(avgT)}h ${Math.round((avgT % 1) * 60)}m` : '-';
-                    const custoTotalVeic = v.km * (parseFloat(custoKm) || 5.24);
-
-                    return (
-                      <tr key={v.placa} className="hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-2 font-semibold text-white truncate max-w-[140px]" title={v.placa}>
-                          {v.placa.split('(')[0].trim()}
-                        </td>
-                        <td className="px-4 py-2 text-right font-bold text-[#00D4FF]">
-                          {v.entregas}
-                        </td>
-                        <td className="px-4 py-2 text-right text-purple-300 text-xs">
-                          {timeStr}
-                        </td>
-                        <td className="px-4 py-2 text-right text-emerald-300 text-xs">
-                          {v.km.toFixed(1)} km
-                        </td>
-                        <td className="px-4 py-2 text-right font-bold text-orange-300 text-xs">
-                          R$ {custoTotalVeic.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         </div>
+      </section>
 
-      </div>
+      {/* TOP DELIVERY LOCATIONS & INTERACTIVE MAP */}
+      <section className="dash-card p-4 space-y-3 min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2.5">
+          <div className="flex items-center gap-2">
+            <MapPin size={16} className="text-[#F07127]" />
+            <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white">
+              Mapa & Locais onde Fizemos Mais Entregas
+            </h2>
+          </div>
+          <span className="text-[11px] font-data-mono text-slate-400">
+            Clique nos polos do ranking para centralizar no mapa
+          </span>
+        </div>
 
+        <DeliveryHeatmap
+          locationsRanking={locationsStats.ranking}
+          mapStats={locationsStats.mapStats}
+          heightClass="h-[300px] sm:h-[360px]"
+          maxLocationsList={10}
+        />
+      </section>
+
+      {/* FULL-SCREEN EXECUTIVE REPORT OVERLAY */}
+      <FullScreenReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        analytics={analytics}
+        dateStart={dateStart}
+        dateEnd={dateEnd}
+        onChangeDateStart={(val) => {
+          setActivePreset('custom');
+          setDateStart(val);
+        }}
+        onChangeDateEnd={(val) => {
+          setActivePreset('custom');
+          setDateEnd(val);
+        }}
+        onApplyPreset={applyDatePreset}
+        onRefreshSync={() => syncReportsData(true)}
+        isSyncing={isSyncing}
+        addToast={addToast}
+      />
     </div>
   );
 }
