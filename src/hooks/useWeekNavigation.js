@@ -36,9 +36,10 @@ export function useWeekNavigation() {
     return addDays(weekStart, 5);
   }, [weekStart]);
 
+  // Recompute real current week whenever currentDate/weekStart updates (prevents stale week across midnight)
   const currentRealWeekStart = useMemo(
     () => startOfWeek(new Date(), { weekStartsOn: 1 }),
-    []
+    [weekStart]
   );
 
   const isCurrentWeek = useMemo(
