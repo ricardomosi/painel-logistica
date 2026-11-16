@@ -5,6 +5,14 @@ import {
   extractCoordinates,
   isShortMapsUrl,
 } from '../src/lib/locationUtils.js';
+import {
+  PRE_SUPABASE_CUTOVER_ISO,
+  parseBrDateToIso,
+  parseLegacyTime,
+  parseLegacyNumber,
+  normalizeLegacyDeliveryRow,
+  mergeHistoricalAndLiveDeliveries,
+} from '../src/lib/legacyDeliveries.js';
 import { buildReportAnalytics } from '../src/lib/reportAnalytics.js';
 import { buildReportWorkbook } from '../src/lib/reportExportExcel.js';
 import { buildReportPdfDoc } from '../src/lib/reportExportPdf.js';
@@ -128,6 +136,11 @@ test('locationUtils: extracts coordinates, identifies short links and normalizes
 
   const coords = extractCoordinates('https://www.google.com/maps?q=-5.0806,-37.6167');
   assert.deepEqual(coords, { lat: -5.0806, lng: -37.6167 });
+
+  const dmsCoords = extractCoordinates(`5°13'18.5"S 37°17'40.3"W`);
+  assert.ok(dmsCoords);
+  assert.ok(Math.abs(dmsCoords.lat - (-5.221806)) < 0.0001);
+  assert.ok(Math.abs(dmsCoords.lng - (-37.294528)) < 0.0001);
 
   const santaJulia = normalizeDeliveryLocation({ endereco: 'Distrito Industrial Dehuel Vieira Diniz' });
   assert.equal(santaJulia.key, 'santa-julia');
@@ -276,6 +289,98 @@ test('reportExportPdf: builds non-empty multi-page A4 executive PDF document', a
   const bytes = new Uint8Array(doc.output('arraybuffer'));
   assert.ok(bytes.length > 5000);
   // Check PDF magic header "%PDF"
+  const header = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
+  assert.equal(header, '%PDF');
+});
+
+test('legacyDeliveries: normalizes pre-Sept sheets rows, skips coletas, deduplicates and preserves historical months', () => {
+  assert.equal(parseBrDateToIso('10/03/2026'), '2026-03-10');
+  assert.equal(parseLegacyTime('1899-12-30T14:25:00'), '14:25:00');
+  assert.equal(parseLegacyTime('08:15'), '08:15:00');
+  assert.equal(parseLegacyNumber('R$ 3.500,50'), 3500.5);
+
+  const skippedColeta = normalizeLegacyDeliveryRow({ boardType: 'coleta', tipo: 'Busca', id: 1, dataRegistro: '10/03/2026' });
+  assert.equal(skippedColeta, null);
+
+  const marchLegacy = normalizeLegacyDeliveryRow({
+    boardType: 'entrega',
+    id: 1,
+    dataRegistro: '10/03/2026',
+    horaRegistro: '08:00',
+    dataConclusao: '10/03/2026',
+    horaConclusao: '13:00',
+    status: 'entregue',
+    cliente: 'CLIENTE MARCO',
+    vendedor: 'Carlos Silva (Matriz)',
+    placa: 'ABC-1234',
+    localCarregamento: 'MATRIZ',
+    kmTotal: '35,5',
+    valorEntrega: 'R$ 2.500,00',
+    frete: 'R$ 180,00',
+    comoFoiEntrega: 'Sem ocorrências',
+  });
+  assert.ok(marchLegacy);
+  assert.equal(marchLegacy.isHistorical, true);
+  assert.equal(marchLegacy.data_registro, '2026-03-10');
+  assert.equal(marchLegacy.status, 'concluido');
+  assert.equal(marchLegacy.km_total, 35.5);
+
+  const postCutoverRow = normalizeLegacyDeliveryRow({
+    boardType: 'entrega',
+    id: 17,
+    dataRegistro: PRE_SUPABASE_CUTOVER_ISO,
+    cliente: 'JA NO SUPABASE',
+  });
+
+  const merged = mergeHistoricalAndLiveDeliveries(createSampleDeliveries(), [marchLegacy, postCutoverRow]);
+  assert.equal(merged.length, 6);
+  assert.ok(merged.some((d) => d.data_registro === '2026-03-10'));
+  assert.ok(!merged.some((d) => d.cliente === 'JA NO SUPABASE'));
+
+  const analytics = buildReportAnalytics({
+    deliveries: merged,
+    romaneioItemsByEntregaId: createSampleRomaneiosMap(),
+    dateStart: '2026-03-01',
+    dateEnd: '2026-11-30',
+    custoKm: 5.24,
+  });
+
+  assert.equal(analytics.summary.totalEntregas, 6);
+  assert.equal(analytics.summary.legacyCount, 1);
+  assert.equal(analytics.summary.liveCount, 5);
+  assert.deepEqual(
+    analytics.monthlySeries.map((m) => m.monthKey),
+    ['2026-03', '2026-09', '2026-10', '2026-11']
+  );
+  // 5 completed deliveries with times: [5h (march fallback via data_registro+hora_registro), 4h, 32h, 6h, 6h] -> avg = 53/5 = 10.6h
+  assert.equal(analytics.summary.completedCountForTime, 5);
+  assert.ok(Math.abs(analytics.summary.avgTimeH - 10.6) < 0.01);
+});
+
+test('reportExportPdf: builds crisp multi-month vector PDF across 9 months without canvas PNG stretching', async () => {
+  const nineMonthSamples = [
+    { id: 1, isHistorical: true, data_registro: '2026-03-12', hora_registro: '08:00', data_conclusao: '2026-03-12', hora_conclusao: '11:00', status: 'concluido', local_carregamento: 'MATRIZ', vendedor: 'Carlos Silva', placa: 'RGF9F21', cliente: 'Cliente A', endereco: 'Mossoro', km_total: 40, valor_entrega: 5000, frete: 200 },
+    { id: 2, isHistorical: true, data_registro: '2026-04-14', hora_registro: '09:00', data_conclusao: '2026-04-14', hora_conclusao: '14:00', status: 'concluido', local_carregamento: 'MATRIZ', vendedor: 'Carlos Silva', placa: 'RGF9F21', cliente: 'Cliente B', endereco: 'Barauna', km_total: 70, valor_entrega: 7500, frete: 350 },
+    { id: 3, isHistorical: true, data_registro: '2026-05-18', hora_registro: '08:30', data_conclusao: '2026-05-18', hora_conclusao: '12:30', status: 'concluido', local_carregamento: 'FILIAL', vendedor: 'Ana Lima', placa: 'TSW-7G98', cliente: 'Cliente C', endereco: 'Santa Julia', km_total: 30, valor_entrega: 4200, frete: 180 },
+    { id: 4, isHistorical: true, data_registro: '2026-06-20', hora_registro: '07:00', data_conclusao: '2026-06-20', hora_conclusao: '11:00', status: 'concluido', local_carregamento: 'MATRIZ', vendedor: 'Carlos Silva', placa: 'QGT-4I78', cliente: 'Cliente D', endereco: 'Mossoro', km_total: 55, valor_entrega: 6100, frete: 260 },
+    { id: 5, isHistorical: true, data_registro: '2026-07-09', hora_registro: '10:00', data_conclusao: '2026-07-09', hora_conclusao: '16:00', status: 'concluido', local_carregamento: 'MATRIZ', vendedor: 'Marina Souza', placa: 'RGF9F21', cliente: 'Cliente E', endereco: 'Mossoro', km_total: 60, valor_entrega: 9100, frete: 400 },
+    { id: 6, isHistorical: true, data_registro: '2026-08-19', hora_registro: '08:00', data_conclusao: '2026-08-19', hora_conclusao: '10:00', status: 'concluido', local_carregamento: 'FILIAL', vendedor: 'Ana Lima', placa: 'TSW-7G98', cliente: 'Cliente F', endereco: 'Assu', km_total: 95, valor_entrega: 11200, frete: 520 },
+    ...createSampleDeliveries(),
+  ];
+
+  const analytics = buildReportAnalytics({
+    deliveries: nineMonthSamples,
+    romaneioItemsByEntregaId: createSampleRomaneiosMap(),
+    dateStart: '2026-03-01',
+    dateEnd: '2026-11-30',
+    custoKm: 5.24,
+  });
+
+  assert.equal(analytics.monthlySeries.length, 9);
+  const doc = await buildReportPdfDoc(analytics, {});
+  assert.ok(doc.getNumberOfPages() >= 3);
+  const bytes = new Uint8Array(doc.output('arraybuffer'));
+  assert.ok(bytes.length > 8000);
   const header = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
   assert.equal(header, '%PDF');
 });

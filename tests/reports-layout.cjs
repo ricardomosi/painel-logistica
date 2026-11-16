@@ -210,13 +210,35 @@ async function run() {
     }
 
     // Functional & Download E2E checks on Desktop 1280x800
-    console.log('4. Verifying full E2E report behavior, multi-month switch & PDF/Excel exports...');
+    console.log('4. Verifying default Todo Historico (Mar-Nov 2026), map selection & PDF/Excel exports...');
     await page.setViewportSize({ width: 1280, height: 800 });
     await openRelatoriosTab(page, 1280);
 
-    // Switch to all history preset so multi-month live/loaded history renders cleanly
-    await page.locator('#btn-preset-all_history').click();
-    await page.waitForTimeout(400);
+    // Wait briefly for Supabase + legacy Sheets history to load & verify Todo Historico is default
+    await page.waitForTimeout(2500);
+    const presetActiveClass = await page.locator('#btn-preset-all_history').getAttribute('class');
+    if (!presetActiveClass || !presetActiveClass.includes('bg-[#0081A7]')) {
+      throw new Error(`Expected #btn-preset-all_history to be active by default, got class: ${presetActiveClass}`);
+    }
+    const dashDateStart = await page.locator('#dash-date-start').inputValue();
+    const dashDateEnd = await page.locator('#dash-date-end').inputValue();
+    console.log(`   Default Todo Histórico date window: ${dashDateStart} -> ${dashDateEnd}`);
+    if (dashDateStart >= '2026-09-01') {
+      throw new Error(`Expected historical deliveries before Sep 2026 in Todo Histórico, got start=${dashDateStart}`);
+    }
+
+    // Stress-test DeliveryHeatmap location list selection on DashboardView (must never freeze)
+    const heatBtns = page.locator('#dashboard-view button:has-text("entregas")');
+    const heatBtnCount = await heatBtns.count();
+    if (heatBtnCount === 0) {
+      throw new Error('Expected at least 1 clickable location button in DeliveryHeatmap');
+    }
+    const t0 = Date.now();
+    for (let i = 0; i < Math.min(heatBtnCount, 3); i++) {
+      await heatBtns.nth(i).click();
+    }
+    const elapsed = Date.now() - t0;
+    console.log(`   [PASS] Clicked ${Math.min(heatBtnCount, 3)} heatmap locations smoothly in ${elapsed}ms.`);
 
     // Open full-screen report
     await page.locator('#btn-open-fullscreen-report').click();
@@ -283,6 +305,30 @@ async function run() {
     await page.keyboard.press('Escape');
     await page.locator('#fullscreen-report-modal').waitFor({ state: 'hidden', timeout: 5000 });
     console.log('   [PASS] Escape key closes FullScreenReportModal cleanly.');
+
+    // 5. Verify MapPickerModal open -> DMS coordinate pick -> confirm -> close -> RE-OPEN flow (must not freeze)
+    console.log('5. Stress-testing MapPickerModal open/confirm/reopen stability on Entregas...');
+    await page.locator('#btn-tab-entrega-desk').click();
+    await page.locator('button:has-text("Nova Entrega")').first().click();
+    await page.locator('h2:has-text("Nova Entrega"), h3:has-text("Nova Entrega")').first().waitFor({ state: 'visible', timeout: 8000 });
+
+    const openMapAndTest = async (attempt) => {
+      await page.locator('button:has-text("Mapa")').first().click();
+      await page.locator('h3:has-text("Confirmar Local")').waitFor({ state: 'visible', timeout: 5000 });
+      const searchBox = page.locator('input[placeholder*="coordenadas"]');
+      await searchBox.fill("5°13'18.5\"S 37°17'40.3\"W");
+      await page.locator('button:has-text("Buscar")').click();
+      await page.locator('button:has-text("Confirmar Local")').click();
+      await page.locator('h3:has-text("Confirmar Local")').waitFor({ state: 'hidden', timeout: 5000 });
+      console.log(`   [PASS] MapPickerModal cycle #${attempt} completed with zero freeze.`);
+    };
+
+    await openMapAndTest(1);
+    await openMapAndTest(2);
+
+    // Close DeliveryModal cleanly via Escape or close button
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
 
     if (pageErrors.length > 0) {
       throw new Error(`Page runtime errors encountered:\n${pageErrors.join('\n')}`);

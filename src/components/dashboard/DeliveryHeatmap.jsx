@@ -37,6 +37,8 @@ export default function DeliveryHeatmap({
   const googleMapRef = useRef(null);
   const overlaysRef = useRef([]);
   const infoWindowRef = useRef(null);
+  const attemptedGeocodeKeysRef = useRef(new Set());
+  const selectedLocKeyRef = useRef(null);
 
   const [geocodeCache, setGeocodeCache] = useState(() => loadGeocodeCache());
   const [selectedLocKey, setSelectedLocKey] = useState(null);
@@ -115,15 +117,22 @@ export default function DeliveryHeatmap({
     };
   }, [mappablePoints, resolvedLocations, mapStats]);
 
-  // Background throttled geocoding for unresolved textual addresses when Google Maps is loaded
+  // Background throttled geocoding for unresolved textual addresses (runs once per unique location key)
   useEffect(() => {
     if (!googleMapsReady || typeof window === 'undefined' || !window.google?.maps?.Geocoder) {
       return undefined;
     }
 
     const candidates = resolvedLocations
-      .filter((loc) => !loc.coords && !loc.isShortUrl && !loc.isEmpty && loc.geocodeQuery)
-      .slice(0, 14);
+      .filter(
+        (loc) =>
+          !loc.coords &&
+          !loc.isShortUrl &&
+          !loc.isEmpty &&
+          loc.geocodeQuery &&
+          !attemptedGeocodeKeysRef.current.has(loc.key)
+      )
+      .slice(0, 12);
 
     if (candidates.length === 0) return undefined;
 
@@ -137,16 +146,19 @@ export default function DeliveryHeatmap({
 
       for (const candidate of candidates) {
         if (cancelled) break;
+        attemptedGeocodeKeysRef.current.add(candidate.key);
         if (nextCache[candidate.key]) continue;
 
         try {
           const result = await new Promise((resolve) => {
+            const timer = setTimeout(() => resolve(null), 2500);
             geocoder.geocode(
               {
                 address: candidate.geocodeQuery,
                 region: 'BR',
               },
               (results, status) => {
+                clearTimeout(timer);
                 if (status === 'OK' && results?.[0]?.geometry?.location) {
                   resolve({
                     lat: results[0].geometry.location.lat(),
@@ -186,7 +198,7 @@ export default function DeliveryHeatmap({
     };
   }, [googleMapsReady, resolvedLocations]);
 
-  // Initialize & sync Google Map overlays
+  // 1. Create / update overlays ONLY when map becomes ready or mappablePoints data changes
   useEffect(() => {
     if (!googleMapsReady || !mapContainerRef.current || typeof window === 'undefined' || !window.google?.maps) {
       return undefined;
@@ -202,6 +214,7 @@ export default function DeliveryHeatmap({
         streetViewControl: false,
         fullscreenControl: true,
         zoomControl: true,
+        gestureHandling: 'cooperative',
         backgroundColor: '#020D1A',
       });
       infoWindowRef.current = new window.google.maps.InfoWindow();
@@ -209,8 +222,18 @@ export default function DeliveryHeatmap({
 
     const map = googleMapRef.current;
 
-    // Clear old overlays
-    overlaysRef.current.forEach((ov) => ov.setMap(null));
+    // Tear down previous dataset overlays safely
+    if (infoWindowRef.current) infoWindowRef.current.close();
+    overlaysRef.current.forEach((ov) => {
+      try {
+        window.google.maps.event.clearInstanceListeners(ov.circle);
+        window.google.maps.event.clearInstanceListeners(ov.marker);
+      } catch {
+        // Ignore cleanup errors
+      }
+      ov.circle.setMap(null);
+      ov.marker.setMap(null);
+    });
     overlaysRef.current = [];
 
     if (mappablePoints.length === 0) {
@@ -227,20 +250,21 @@ export default function DeliveryHeatmap({
       bounds.extend(position);
 
       const isHotspot = idx < 3;
-      const isSelected = selectedLocKey === loc.key;
       const ratio = loc.entregas / maxEntregas;
-      const fillColor = isSelected ? '#00D4FF' : isHotspot ? '#F07127' : '#0081A7';
-      const strokeColor = isSelected ? '#ffffff' : isHotspot ? '#fdba74' : '#38bdf8';
+      const baseFill = isHotspot ? '#F07127' : '#0081A7';
+      const baseStroke = isHotspot ? '#fdba74' : '#38bdf8';
+      const baseScale = 10 + ratio * 7;
+      const baseFillOpacity = 0.16 + ratio * 0.24;
 
       const circle = new window.google.maps.Circle({
         map,
         center: position,
         radius: 520 + Math.sqrt(loc.entregas) * 650,
-        strokeColor,
+        strokeColor: baseStroke,
         strokeOpacity: 0.78,
-        strokeWeight: isSelected ? 2.5 : 1.5,
-        fillColor,
-        fillOpacity: 0.16 + ratio * 0.24,
+        strokeWeight: 1.5,
+        fillColor: baseFill,
+        fillOpacity: baseFillOpacity,
         clickable: true,
       });
 
@@ -256,45 +280,37 @@ export default function DeliveryHeatmap({
         },
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
-          scale: isSelected ? 15 : 10 + ratio * 7,
-          fillColor,
+          scale: baseScale,
+          fillColor: baseFill,
           fillOpacity: 0.94,
           strokeColor: '#ffffff',
-          strokeWeight: isSelected ? 2.5 : 1.5,
+          strokeWeight: 1.5,
         },
-        zIndex: isSelected ? 999 : 100 - idx,
+        zIndex: 100 - idx,
       });
 
-      const openPopup = () => {
+      const selectOverlay = () => {
+        selectedLocKeyRef.current = loc.key;
         setSelectedLocKey(loc.key);
-        if (infoWindowRef.current) {
-          infoWindowRef.current.setContent(`
-            <div style="font-family: 'Hanken Grotesk', sans-serif; color: #0f172a; min-width: 190px; padding: 2px;">
-              <div style="font-weight: 800; font-size: 13px; margin-bottom: 4px;">${loc.label}</div>
-              <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">${loc.category} • ${loc.resolutionType}</div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
-                <div><strong>${loc.entregas}</strong> entregas (${loc.sharePct.toFixed(1)}%)</div>
-                <div><strong>${loc.km.toFixed(0)}</strong> km</div>
-                <div style="grid-column: span 2; color: #0369a1; font-weight: 700;">Total: ${formatCurrencyBRL(loc.valorTotal)}</div>
-              </div>
-            </div>
-          `);
-          infoWindowRef.current.open({ map, anchor: marker });
-        }
       };
 
-      circle.addListener('click', openPopup);
-      marker.addListener('click', openPopup);
-      overlaysRef.current.push(circle, marker);
+      circle.addListener('click', selectOverlay);
+      marker.addListener('click', selectOverlay);
+
+      overlaysRef.current.push({
+        key: loc.key,
+        loc,
+        idx,
+        circle,
+        marker,
+        baseFill,
+        baseStroke,
+        baseScale,
+        baseFillOpacity,
+      });
     });
 
-    if (selectedLocKey) {
-      const activeLoc = mappablePoints.find((p) => p.key === selectedLocKey);
-      if (activeLoc) {
-        map.panTo(activeLoc.coords);
-        if ((map.getZoom() || 10) < 12) map.setZoom(12);
-      }
-    } else if (mappablePoints.length === 1) {
+    if (mappablePoints.length === 1) {
       map.setCenter(mappablePoints[0].coords);
       map.setZoom(13);
     } else {
@@ -302,7 +318,58 @@ export default function DeliveryHeatmap({
     }
 
     return undefined;
-  }, [googleMapsReady, mappablePoints, selectedLocKey]);
+  }, [googleMapsReady, mappablePoints]);
+
+  // 2. Lightweight selection update without destroying overlays (prevents stutter/freeze on click)
+  useEffect(() => {
+    selectedLocKeyRef.current = selectedLocKey;
+    if (!googleMapsReady || !googleMapRef.current || overlaysRef.current.length === 0) return;
+
+    const map = googleMapRef.current;
+    let activeItem = null;
+
+    overlaysRef.current.forEach((ov) => {
+      const isSelected = Boolean(selectedLocKey && ov.key === selectedLocKey);
+      if (isSelected) activeItem = ov;
+
+      ov.circle.setOptions({
+        strokeColor: isSelected ? '#ffffff' : ov.baseStroke,
+        strokeWeight: isSelected ? 2.5 : 1.5,
+        fillColor: isSelected ? '#00D4FF' : ov.baseFill,
+        fillOpacity: isSelected ? 0.34 : ov.baseFillOpacity,
+      });
+
+      ov.marker.setIcon({
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: isSelected ? 15 : ov.baseScale,
+        fillColor: isSelected ? '#00D4FF' : ov.baseFill,
+        fillOpacity: 0.96,
+        strokeColor: '#ffffff',
+        strokeWeight: isSelected ? 2.5 : 1.5,
+      });
+      ov.marker.setZIndex(isSelected ? 999 : 100 - ov.idx);
+    });
+
+    if (activeItem) {
+      const { loc, marker } = activeItem;
+      map.panTo(loc.coords);
+      if ((map.getZoom() || 10) < 12) map.setZoom(12);
+      if (infoWindowRef.current) {
+        infoWindowRef.current.setContent(`
+          <div style="font-family: 'Hanken Grotesk', sans-serif; color: #0f172a; min-width: 190px; padding: 2px;">
+            <div style="font-weight: 800; font-size: 13px; margin-bottom: 4px;">${loc.label}</div>
+            <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">${loc.category} • ${loc.resolutionType}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+              <div><strong>${loc.entregas}</strong> entregas (${loc.sharePct.toFixed(1)}%)</div>
+              <div><strong>${loc.km.toFixed(0)}</strong> km</div>
+              <div style="grid-column: span 2; color: #0369a1; font-weight: 700;">Total: ${formatCurrencyBRL(loc.valorTotal)}</div>
+            </div>
+          </div>
+        `);
+        infoWindowRef.current.open({ map, anchor: marker, shouldFocus: false });
+      }
+    }
+  }, [selectedLocKey, googleMapsReady]);
 
   const selectedLocation = useMemo(
     () => resolvedLocations.find((l) => l.key === selectedLocKey) || resolvedLocations[0] || null,

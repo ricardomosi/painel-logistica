@@ -98,14 +98,19 @@ export function formatCurrencyBRL(value) {
 
 export function computeDeliveryDurationMs(delivery) {
   if (!delivery || delivery.status !== 'concluido') return null;
-  if (!delivery.data_inicio || !delivery.data_conclusao) return null;
+  const hasExplicitStart = Boolean(delivery.data_inicio);
+  const startField = hasExplicitStart ? delivery.data_inicio : delivery.data_registro;
+  const startTimeField = hasExplicitStart ? delivery.hora_inicio : delivery.hora_registro;
 
-  const startDt = parseLocalDate(delivery.data_inicio);
+  if (!startField || !delivery.data_conclusao) return null;
+  if (!hasExplicitStart && (!startTimeField || !delivery.hora_conclusao)) return null;
+
+  const startDt = parseLocalDate(startField);
   const endDt = parseLocalDate(delivery.data_conclusao);
   if (!startDt || !endDt) return null;
 
-  if (delivery.hora_inicio) {
-    const [hS, minS, secS] = String(delivery.hora_inicio).split(':');
+  if (startTimeField) {
+    const [hS, minS, secS] = String(startTimeField).split(':');
     startDt.setHours(parseInt(hS, 10) || 0, parseInt(minS, 10) || 0, parseInt(secS, 10) || 0, 0);
   }
   if (delivery.hora_conclusao) {
@@ -261,6 +266,8 @@ export function buildReportAnalytics({
   }
 
   let entregasComRomaneio = 0;
+  let legacyCount = 0;
+  let liveCount = 0;
   let totalRomaneioItensLinhas = 0;
   let totalRomaneioQtd = 0;
   let totalRomaneioPeso = 0;
@@ -276,6 +283,8 @@ export function buildReportAnalytics({
   };
 
   for (const { card, cardDate } of currentDeliveries) {
+    if (card.isHistorical) legacyCount += 1;
+    else liveCount += 1;
     const monthKey = formatMonthKey(cardDate);
     if (!monthlyMap.has(monthKey)) {
       monthlyMap.set(monthKey, createEmptyMonthBucket(monthKey));
@@ -689,6 +698,8 @@ export function buildReportAnalytics({
     },
     summary: {
       totalEntregas: summary.entregas,
+      legacyCount,
+      liveCount,
       prevEntregas,
       concluidas: summary.concluidas,
       emAndamento: summary.emAndamento,

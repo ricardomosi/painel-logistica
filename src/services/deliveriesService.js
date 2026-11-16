@@ -62,18 +62,32 @@ function cleanFkOrNull(val) {
 
 export const deliveriesService = {
   async getAll() {
-    const { data, error } = await supabase
-      .from('entregas')
-      .select(`
-        *,
-        motorista:motorista_id(id, nome, telefone, cnh),
-        veiculo:veiculo_id(id, placa, modelo),
-        romaneio:romaneios(id, numero_romaneio, peso_total_kg, valor_total, observacoes)
-      `)
-      .order('created_at', { ascending: false });
+    const PAGE_SIZE = 1000;
+    const allRows = [];
+    let from = 0;
+    let hasMore = true;
 
-    if (error) throw error;
-    return data || [];
+    while (hasMore) {
+      const to = from + PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from('entregas')
+        .select(`
+          *,
+          motorista:motorista_id(id, nome, telefone, cnh),
+          veiculo:veiculo_id(id, placa, modelo),
+          romaneio:romaneios(id, numero_romaneio, peso_total_kg, valor_total, observacoes)
+        `)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+      const rows = data || [];
+      allRows.push(...rows);
+      hasMore = rows.length === PAGE_SIZE;
+      from += PAGE_SIZE;
+    }
+
+    return allRows;
   },
 
   async getById(id) {

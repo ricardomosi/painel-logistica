@@ -36,7 +36,8 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useLogistics } from '../../contexts/LogisticsContext';
-import { fetchAllRomaneioItemsMap } from '../../services/reportsService';
+import { fetchAllHistoricalDeliveries, fetchAllRomaneioItemsMap } from '../../services/reportsService';
+import { mergeHistoricalAndLiveDeliveries } from '../../lib/legacyDeliveries';
 import {
   buildReportAnalytics,
   formatCurrencyBRL,
@@ -131,10 +132,10 @@ const CHART_OPTIONS = {
 export default function DashboardView() {
   const { deliveries, vehicles, sellers, loadData, addToast } = useLogistics();
 
-  // Period defaults: current month
+  // Period defaults: full available historical range once legacy + Supabase data arrive
   const [dateStart, setDateStart] = useState(() => {
     const now = new Date();
-    return formatIsoDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    return formatIsoDate(new Date(now.getFullYear(), 0, 1));
   });
   const [dateEnd, setDateEnd] = useState(() => {
     const now = new Date();
@@ -152,6 +153,7 @@ export default function DashboardView() {
   });
 
   const [romaneioItemsMap, setRomaneioItemsMap] = useState(() => new Map());
+  const [historicalDeliveries, setHistoricalDeliveries] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [chartGranularity, setChartGranularity] = useState('monthly'); // 'monthly' | 'daily'
@@ -159,7 +161,7 @@ export default function DashboardView() {
   const [vehiclesMode, setVehiclesMode] = useState('total');
   const [materialsMode, setMaterialsMode] = useState('total');
   const [clientsMode, setClientsMode] = useState('total');
-  const [activePreset, setActivePreset] = useState('current_month');
+  const [activePreset, setActivePreset] = useState('all_history');
 
   useEffect(() => {
     document.body.classList.add('theme-relatorio');
@@ -172,12 +174,15 @@ export default function DashboardView() {
     async (notify = false) => {
       setIsSyncing(true);
       try {
-        await Promise.all([
+        const [, map, hist] = await Promise.all([
           typeof loadData === 'function' ? loadData(true) : Promise.resolve(),
-          fetchAllRomaneioItemsMap().then((map) => setRomaneioItemsMap(map)),
+          fetchAllRomaneioItemsMap(),
+          fetchAllHistoricalDeliveries(true),
         ]);
+        setRomaneioItemsMap(map);
+        setHistoricalDeliveries(hist);
         if (notify) {
-          addToast?.('Histórico de entregas e romaneios sincronizado.', 'success');
+          addToast?.('Histórico completo de entregas e romaneios sincronizado.', 'success');
         }
       } catch (err) {
         if (notify) {
@@ -191,11 +196,18 @@ export default function DashboardView() {
   );
 
   useEffect(() => {
-    fetchAllRomaneioItemsMap()
-      .then((map) => setRomaneioItemsMap(map))
-      .catch(() => {
-        // Silent fallback when offline; delivery-level metrics continue normally
-      });
+    let active = true;
+    Promise.all([
+      fetchAllRomaneioItemsMap().catch(() => new Map()),
+      fetchAllHistoricalDeliveries(false).catch(() => []),
+    ]).then(([map, hist]) => {
+      if (!active) return;
+      setRomaneioItemsMap(map);
+      setHistoricalDeliveries(hist);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -206,7 +218,38 @@ export default function DashboardView() {
     }
   }, [custoKm]);
 
-  // Dynamic filter dropdown options merged from Supabase catalogs + historical deliveries
+  const allDeliveries = useMemo(
+    () => mergeHistoricalAndLiveDeliveries(deliveries, historicalDeliveries),
+    [deliveries, historicalDeliveries]
+  );
+
+  const allHistoryBounds = useMemo(() => {
+    const now = new Date();
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    let minTime = Infinity;
+    let maxTime = -Infinity;
+    (allDeliveries || []).forEach((d) => {
+      const parsed = parseLocalDate(d?.data_registro || d?.created_at || d?.data_inicio);
+      if (!parsed) return;
+      const t = parsed.getTime();
+      if (t < minTime) minTime = t;
+      if (t > maxTime) maxTime = t;
+    });
+    const start = isFinite(minTime) ? new Date(minTime) : new Date(now.getFullYear(), 0, 1);
+    const end = isFinite(maxTime) && maxTime > endOfMonth.getTime() ? new Date(maxTime) : endOfMonth;
+    return {
+      startIso: formatIsoDate(start),
+      endIso: formatIsoDate(end),
+    };
+  }, [allDeliveries]);
+
+  useEffect(() => {
+    if (activePreset !== 'all_history') return;
+    setDateStart(allHistoryBounds.startIso);
+    setDateEnd(allHistoryBounds.endIso);
+  }, [activePreset, allHistoryBounds]);
+
+  // Dynamic filter dropdown options merged from Supabase catalogs + live & historical deliveries
   const placaOptions = useMemo(() => {
     const set = new Set();
     (vehicles || []).forEach((v) => {
@@ -215,11 +258,11 @@ export default function DashboardView() {
         set.add(label);
       }
     });
-    (deliveries || []).forEach((d) => {
+    (allDeliveries || []).forEach((d) => {
       if (d?.placa && String(d.placa).trim()) set.add(String(d.placa).trim());
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  }, [vehicles, deliveries]);
+  }, [vehicles, allDeliveries]);
 
   const vendedorOptions = useMemo(() => {
     const set = new Set();
@@ -229,11 +272,11 @@ export default function DashboardView() {
         set.add(label);
       }
     });
-    (deliveries || []).forEach((d) => {
+    (allDeliveries || []).forEach((d) => {
       if (d?.vendedor && String(d.vendedor).trim()) set.add(String(d.vendedor).trim());
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  }, [sellers, deliveries]);
+  }, [sellers, allDeliveries]);
 
   const applyDatePreset = useCallback(
     (preset) => {
@@ -250,28 +293,17 @@ export default function DashboardView() {
         return;
       }
       if (preset === 'all_history') {
-        let minTime = Infinity;
-        let maxTime = -Infinity;
-        (deliveries || []).forEach((d) => {
-          const parsed = parseLocalDate(d?.data_registro || d?.created_at || d?.data_inicio);
-          if (!parsed) return;
-          const t = parsed.getTime();
-          if (t < minTime) minTime = t;
-          if (t > maxTime) maxTime = t;
-        });
-        const start = isFinite(minTime) ? new Date(minTime) : new Date(now.getFullYear(), 0, 1);
-        const end = isFinite(maxTime) && maxTime > now.getTime() ? new Date(maxTime) : now;
-        setDateStart(formatIsoDate(start));
-        setDateEnd(formatIsoDate(end));
+        setDateStart(allHistoryBounds.startIso);
+        setDateEnd(allHistoryBounds.endIso);
       }
     },
-    [deliveries]
+    [allHistoryBounds]
   );
 
   // Full analytics dataset driven by active filters
   const analytics = useMemo(() => {
     return buildReportAnalytics({
-      deliveries,
+      deliveries: allDeliveries,
       romaneioItemsByEntregaId: romaneioItemsMap,
       dateStart,
       dateEnd,
@@ -281,7 +313,7 @@ export default function DashboardView() {
       custoKm,
     });
   }, [
-    deliveries,
+    allDeliveries,
     romaneioItemsMap,
     dateStart,
     dateEnd,
@@ -395,6 +427,12 @@ export default function DashboardView() {
           <p className="text-xs text-slate-300 font-data-mono tabular-nums">
             Período ativo: <strong className="text-[#00D4FF]">{meta.formattedPeriod}</strong> ({months.length}{' '}
             {months.length === 1 ? 'mês' : 'meses'}) • Custos calculados a R$ {Number(meta.custoKm).toFixed(2)}/km
+            {summary.legacyCount > 0 ? (
+              <span className="text-slate-400">
+                {' '}
+                • Inclui {summary.legacyCount} entregas históricas pré-Set/26 (sem romaneio/mapa detalhado)
+              </span>
+            ) : null}
           </p>
         </div>
 

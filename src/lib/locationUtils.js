@@ -69,8 +69,14 @@ export function isHttpUrl(val) {
   return /^https?:\/\//i.test(String(val).trim());
 }
 
+function parseDmsCoordinate(deg, min, sec, hemi) {
+  const decimal = parseFloat(deg) + parseFloat(min) / 60 + parseFloat(sec) / 3600;
+  const h = String(hemi || '').toUpperCase();
+  return h === 'S' || h === 'W' || h === 'O' ? -decimal : decimal;
+}
+
 /**
- * Extracts explicit coordinates from Google Maps URLs or raw "lat, lng" strings.
+ * Extracts explicit coordinates from Google Maps URLs, DMS strings, or raw "lat, lng" strings.
  */
 export function extractCoordinates(val) {
   if (!val) return null;
@@ -82,6 +88,17 @@ export function extractCoordinates(val) {
   const dataParam = str.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
   if (dataParam) {
     return { lat: parseFloat(dataParam[1]), lng: parseFloat(dataParam[2]) };
+  }
+
+  // DMS format e.g. 5°13'18.5"S 37°17'40.3"W
+  const dms = str.match(
+    /(\d{1,2})\s*[°º]\s*(\d{1,2})\s*['′]\s*(\d{1,2}(?:\.\d+)?)\s*["″]?\s*([NS])\s*[,;\s]+(\d{1,3})\s*[°º]\s*(\d{1,2})\s*['′]\s*(\d{1,2}(?:\.\d+)?)\s*["″]?\s*([WEOLweol])/i
+  );
+  if (dms) {
+    return {
+      lat: Number(parseDmsCoordinate(dms[1], dms[2], dms[3], dms[4]).toFixed(6)),
+      lng: Number(parseDmsCoordinate(dms[5], dms[6], dms[7], dms[8]).toFixed(6)),
+    };
   }
 
   const plain = str.match(/^(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})$/);

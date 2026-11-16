@@ -378,6 +378,14 @@ export default function FullScreenReportModal({
                 </span>
                 <span className="text-slate-500">•</span>
                 <span>{meta.totalRegistrosFiltrados} reg.</span>
+                {summary.legacyCount > 0 && (
+                  <>
+                    <span className="text-slate-500">•</span>
+                    <span className="text-amber-300">
+                      {summary.legacyCount} pré-Set/26
+                    </span>
+                  </>
+                )}
                 <span className="hidden sm:inline text-slate-500">•</span>
                 <span className="hidden sm:inline truncate">
                   Filtros: {meta.selectedLocalCarregamento || 'TODOS'} | Placa: {meta.selectedPlaca} | Vendedor: {meta.selectedVendedor}
@@ -981,6 +989,9 @@ export default function FullScreenReportModal({
               </div>
               <p className="text-[11px] text-slate-400 mt-1 font-data-mono">
                 {materials?.totals?.itensDistintos || 0} materiais distintos em {materials?.totals?.entregasComRomaneio || 0} entregas com romaneio • Total {Number(materials?.totals?.pesoTotalKg || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg • {formatCurrencyBRL(materials?.totals?.valorTotalRomaneios || 0)}
+                {summary.legacyCount > 0
+                  ? ` • Obs: ${summary.legacyCount} entregas pré-Set/2026 antecedem o módulo de romaneio detalhado.`
+                  : ''}
               </p>
             </div>
             <ModeSwitch mode={materialViewMode} onChange={setMaterialViewMode} testIdPrefix="material-mode" />

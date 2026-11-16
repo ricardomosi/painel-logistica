@@ -1,6 +1,65 @@
 import { supabase } from '../lib/supabaseClient';
+import {
+  LEGACY_SHEETS_WEBHOOK_URL,
+  normalizeLegacyDeliveryRow,
+} from '../lib/legacyDeliveries';
 
 const PAGE_SIZE = 1000;
+const LEGACY_CACHE_KEY = 'jpatricio_legacy_entregas_pre_v2_v1';
+let memoryLegacyCache = null;
+
+/**
+ * Fetches legacy pre-September 2026 deliveries from Google Sheets archive
+ * so multi-month reports include Mar-Sep 2026 even without romaneios/map pins.
+ */
+export async function fetchAllHistoricalDeliveries(forceRefresh = false) {
+  if (!forceRefresh && Array.isArray(memoryLegacyCache)) {
+    return memoryLegacyCache;
+  }
+
+  if (!forceRefresh && typeof sessionStorage !== 'undefined') {
+    try {
+      const cachedRaw = sessionStorage.getItem(LEGACY_CACHE_KEY);
+      if (cachedRaw) {
+        const parsed = JSON.parse(cachedRaw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          memoryLegacyCache = parsed;
+          return parsed;
+        }
+      }
+    } catch {
+      // Ignore storage error
+    }
+  }
+
+  const res = await fetch(LEGACY_SHEETS_WEBHOOK_URL, { redirect: 'follow' });
+  if (!res.ok) {
+    throw new Error(`Falha ao consultar histórico legado (${res.status})`);
+  }
+
+  const payload = await res.json();
+  const rawRows = Array.isArray(payload)
+    ? payload
+    : payload?.deliveries || payload?.data || payload?.rows || [];
+  if (!Array.isArray(rawRows)) return [];
+
+  const normalized = [];
+  for (const row of rawRows) {
+    const item = normalizeLegacyDeliveryRow(row);
+    if (item) normalized.push(item);
+  }
+
+  memoryLegacyCache = normalized;
+  if (typeof sessionStorage !== 'undefined') {
+    try {
+      sessionStorage.setItem(LEGACY_CACHE_KEY, JSON.stringify(normalized));
+    } catch {
+      // Ignore sessionStorage quota limits
+    }
+  }
+
+  return normalized;
+}
 
 /**
  * Fetches all romaneios and their nested romaneio_itens in pages.
@@ -66,6 +125,7 @@ export async function fetchAllRomaneioItemsMap() {
 
 export const reportsService = {
   fetchAllRomaneioItemsMap,
+  fetchAllHistoricalDeliveries,
 };
 
 export default reportsService;

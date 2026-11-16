@@ -154,3 +154,6 @@
 
 .animate-fade-slide { animation: fadeSlide 0.2s ease-out forwards; }
 @keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Ensure Google Places Autocomplete dropdown always sits above modals without clipping/locking clicks */
+.pac-container { z-index: 9999 !important; }
