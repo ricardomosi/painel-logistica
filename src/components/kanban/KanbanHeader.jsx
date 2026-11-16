@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLogistics } from '../../contexts/LogisticsContext';
 import { useSound } from '../../contexts/SoundContext';
 import { LOGO_COLETAS, LOGO_ENTREGAS } from '../../assets/logo';
+import WeekCalendarModal from './WeekCalendarModal';
 
 export function KanbanHeader({ weekNav }) {
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const { user, profile, role, switchRole, isAdmin, isGestor, isMotorista, signOut } = useAuth();
   const { soundEnabled, toggleSound } = useSound();
   const { 
@@ -23,6 +25,7 @@ export function KanbanHeader({ weekNav }) {
   } = useLogistics();
 
   const {
+    weekStart,
     formattedWeekRange,
     shortWeekRange,
     isCurrentWeek,
@@ -30,6 +33,7 @@ export function KanbanHeader({ weekNav }) {
     goToPrevWeek,
     goToNextWeek,
     goToCurrentWeek,
+    goToDate,
   } = weekNav;
 
   const currentLogo = activeTab === 'coletas' ? LOGO_COLETAS : LOGO_ENTREGAS;
@@ -205,9 +209,9 @@ export function KanbanHeader({ weekNav }) {
             <button
               id="week-display-mob"
               type="button"
-              onClick={goToCurrentWeek}
-              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-0.5 text-[11px] font-bold truncate cursor-pointer"
-              title="Toque para voltar à semana atual"
+              onClick={() => setCalendarOpen(true)}
+              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-[3px] hover:bg-white/15 text-[11px] font-bold truncate cursor-pointer"
+              title="Toque para abrir o calendário e escolher a semana"
             >
               <span className="material-symbols-outlined text-sm shrink-0">calendar_month</span>
               <span className="truncate">{shortWeekRange || formattedWeekRange}</span>
@@ -217,6 +221,18 @@ export function KanbanHeader({ weekNav }) {
                 </span>
               )}
             </button>
+
+            {!isCurrentWeek && (
+              <button
+                id="btn-current-week-mob"
+                type="button"
+                onClick={goToCurrentWeek}
+                className="h-7 px-2 rounded-[3px] bg-cyan-300 text-cyan-950 hover:bg-cyan-200 text-[10px] font-extrabold uppercase shrink-0 cursor-pointer"
+                title="Voltar para a semana atual"
+              >
+                Hoje
+              </button>
+            )}
 
             <button
               id="btn-next-week-mob"
@@ -330,13 +346,17 @@ export function KanbanHeader({ weekNav }) {
                   <span className="material-symbols-outlined text-base">chevron_left</span>
                 </button>
 
-                <span
+                <button
                   id="week-display"
-                  className="text-xs font-bold px-2 flex items-center gap-1.5 whitespace-nowrap"
+                  type="button"
+                  onClick={() => setCalendarOpen(true)}
+                  className="text-xs font-bold px-2.5 h-7 rounded-[3px] hover:bg-white/20 flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer"
+                  title="Abrir calendário para escolher mês e semana"
                 >
                   <span className="material-symbols-outlined text-sm">calendar_month</span>
                   <span>{formattedWeekRange}</span>
-                </span>
+                  <span className="material-symbols-outlined text-xs opacity-80">arrow_drop_down</span>
+                </button>
 
                 <button
                   id="btn-next-week-desk"
@@ -441,6 +461,14 @@ export function KanbanHeader({ weekNav }) {
           </div>
         </div>
       </header>
+
+      <WeekCalendarModal
+        isOpen={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        selectedWeekStart={weekStart}
+        onSelectDate={(dateObj) => goToDate(dateObj)}
+        onGoCurrentWeek={goToCurrentWeek}
+      />
     </>
   );
 }

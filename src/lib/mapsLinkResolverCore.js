@@ -141,7 +141,7 @@ function buildCompactPtBrAddress(nominatimJson) {
   };
 }
 
-export async function reverseGeocodeCoords(lat, lng, timeoutMs = 4500) {
+export async function reverseGeocodeCoords(lat, lng, timeoutMs = 1800) {
   if (lat === null || lng === null || !isFinite(lat) || !isFinite(lng)) return null;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -237,20 +237,25 @@ export async function resolveSingleMapsUrl(rawUrl, options = {}) {
   }
 }
 
-export async function handleResolveMapsRequest({ url, urls, reverseGeocode = true }) {
+export async function handleResolveMapsRequest({ url, urls, reverseGeocode }) {
   if (Array.isArray(urls)) {
     const unique = Array.from(new Set(urls.map((u) => String(u || '').trim()).filter(Boolean))).slice(0, 15);
     const results = {};
-    // Process sequentially in small slices when reverseGeocode is active to respect Nominatim rate policy
-    for (let i = 0; i < unique.length; i += 1) {
-      const item = unique[i];
-      results[item] = await resolveSingleMapsUrl(item, { reverseGeocode });
-      if (reverseGeocode && i < unique.length - 1) {
-        await new Promise((r) => setTimeout(r, 180));
-      }
+    const useReverse = reverseGeocode === true;
+    const concurrency = useReverse ? 1 : 5;
+
+    for (let i = 0; i < unique.length; i += concurrency) {
+      const slice = unique.slice(i, i + concurrency);
+      const settled = await Promise.all(
+        slice.map((item) => resolveSingleMapsUrl(item, { reverseGeocode: useReverse }))
+      );
+      slice.forEach((item, idx) => {
+        results[item] = settled[idx];
+      });
     }
     return { ok: true, results };
   }
 
-  return resolveSingleMapsUrl(url, { reverseGeocode });
+  return resolveSingleMapsUrl(url, { reverseGeocode: reverseGeocode !== false });
 }
+

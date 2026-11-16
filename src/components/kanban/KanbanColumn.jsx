@@ -60,11 +60,12 @@ const COLUMN_THEMES = {
   },
 };
 
-export default function KanbanColumn({ 
-  column, 
-  items = [], 
+export default function KanbanColumn({
+  column,
+  items = [],
   type = 'entrega',
-  onDropItem 
+  onDropItem,
+  resolvedShortLinks = null,
 }) {
   const { isMotorista } = useAuth();
   const [isDragOver, setIsDragOver] = useState(false);
@@ -96,9 +97,8 @@ export default function KanbanColumn({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`kanban-column flex flex-col flex-1 min-w-0 min-h-full rounded-[4px] max-h-full transition-colors ${theme.columnBg} ${
-        isDragOver ? 'drag-over' : ''
-      }`}
+      className={`kanban-column flex flex-col flex-1 min-w-0 min-h-full rounded-[4px] max-h-full transition-colors ${theme.columnBg} ${isDragOver ? 'drag-over' : ''
+        }`}
     >
       {/* Desktop Column Header */}
       <div className={`hidden lg:flex p-2.5 border-b rounded-t-[3px] justify-between items-center shrink-0 ${theme.headerBg}`}>
@@ -129,6 +129,7 @@ export default function KanbanColumn({
             key={item.id}
             item={item}
             type={type}
+            resolvedShortLinks={resolvedShortLinks}
             onDragStart={(e, id) => {
               e.dataTransfer.setData('text/plain', id.toString());
             }}

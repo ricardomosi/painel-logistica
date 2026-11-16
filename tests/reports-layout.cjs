@@ -320,14 +320,28 @@ async function run() {
     console.log('5. Verifying Week Navigation, Short Maps Link conversion, Future Scheduling & MapPickerModal...');
     await page.locator('#btn-tab-entrega-desk').click();
 
-    // Test week transition on Entregas (Past -> Future -> Hoje)
+    // Test week transition on Entregas (Calendar Month/Week Modal + Prev/Next/Hoje)
     const initialWeekText = await page.locator('#week-display').innerText();
+    await page.locator('#week-display').click();
+    await page.locator('#week-calendar-modal').waitFor({ state: 'visible', timeout: 4000 });
+    await page.locator('#btn-cal-prev-month').click();
+    // Pick first week row inside the previous month in Calendar
+    await page.locator('#week-calendar-modal button[data-week-key]').first().click();
+    await page.locator('#week-calendar-modal').waitFor({ state: 'hidden', timeout: 4000 });
+    await page.locator('#week-context-banner').waitFor({ state: 'visible', timeout: 4000 });
+    const calSelectedWeekText = await page.locator('#week-display').innerText();
+    if (calSelectedWeekText === initialWeekText) {
+      throw new Error('Week display did not jump via WeekCalendarModal');
+    }
+    // Reset back to current week via Calendar -> Semana Atual button
+    await page.locator('#week-display').click();
+    await page.locator('#week-calendar-modal').waitFor({ state: 'visible', timeout: 4000 });
+    await page.locator('#btn-cal-today-week').click();
+    await page.locator('#week-context-banner').waitFor({ state: 'hidden', timeout: 4000 });
+    console.log('   [PASS] WeekCalendarModal month browse, week pick & reset verified.');
+
     await page.locator('#btn-prev-week-desk').click();
     await page.locator('#week-context-banner').waitFor({ state: 'visible', timeout: 4000 });
-    const pastWeekText = await page.locator('#week-display').innerText();
-    if (pastWeekText === initialWeekText) {
-      throw new Error('Week display did not change after clicking Previous Week on Entregas');
-    }
     await page.locator('#btn-next-week-desk').click();
     await page.locator('#btn-next-week-desk').click();
     await page.locator('#week-context-banner').waitFor({ state: 'visible', timeout: 4000 });
@@ -357,20 +371,19 @@ async function run() {
     }
     console.log('   [PASS] Future scheduled date (2026-11-26) auto-synced column to quinta.');
 
-    // Verify Short Maps Link conversion button inside DeliveryModal
+    // Verify hands-free auto-conversion when pasting/entering a shortened Google Maps link inside DeliveryModal
     const addrBox = page.locator('textarea[placeholder*="Maps"]');
     await addrBox.fill('https://maps.app.goo.gl/z1pJHdj7ZtYU5QWP6');
-    await page.locator('#btn-convert-short-link-delivery').click();
     await page.waitForFunction(
       () => {
         const el = document.querySelector('textarea[placeholder*="Maps"]');
-        return el && el.value.includes('(GPS:');
+        return el && el.value.includes('(GPS:') && !el.value.includes('maps.app.goo.gl');
       },
       null,
       { timeout: 12000 }
     );
     const convertedAddrVal = await addrBox.inputValue();
-    console.log(`   [PASS] Short link expanded cleanly in form: ${convertedAddrVal}`);
+    console.log(`   [PASS] Short link auto-expanded hands-free in form: ${convertedAddrVal}`);
 
     const openMapAndTest = async (attempt) => {
       await page.locator('button:has-text("Mapa")').first().click();

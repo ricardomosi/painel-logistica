@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLogistics } from '../../contexts/LogisticsContext';
-import { buildGoogleMapsDirectionsUrl } from '../../lib/locationUtils';
+import { buildGoogleMapsDirectionsUrl, formatAddressForDisplay } from '../../lib/locationUtils';
 import { extractScheduledDateFromItem, formatIsoBoardDate } from '../../lib/kanbanWeekUtils';
 
 const TIPO_CONFIG = {
@@ -80,7 +80,7 @@ const getTipoConfig = (tipo) => {
   };
 };
 
-export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
+export default function KanbanCard({ item, type = 'entrega', onDragStart, resolvedShortLinks = null }) {
   const { isMotorista } = useAuth();
   const { 
     setSelectedDelivery, 
@@ -97,6 +97,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
   const isAtualizacoes = (item.coluna || '').includes('atualizacoes');
   const hasOccurrence = !isColeta && item.como_foi_entrega && item.como_foi_entrega !== 'Sem ocorrências';
   const hasStarted = !isColeta && !isCompleted && (Boolean(item.data_inicio) || Boolean(item.hora_inicio) || (parseFloat(item.km_inicial) > 0));
+  const addressDisplay = formatAddressForDisplay(item.endereco, resolvedShortLinks);
   const scheduledDateStr = extractScheduledDateFromItem(item, type);
   const todayIso = formatIsoBoardDate(new Date());
   const isFutureScheduled = Boolean(!isCompleted && scheduledDateStr && scheduledDateStr > todayIso);
@@ -282,17 +283,17 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     <span className="material-symbols-outlined text-[12px] text-slate-400 mt-0.5 shrink-0">location_on</span> 
                     <div className="flex flex-col w-full min-w-0">
                       <span className="break-words whitespace-normal leading-tight min-w-0 w-full text-slate-700 font-medium" style={{ wordBreak: 'break-word' }}>
-                        {item.endereco}
+                        {addressDisplay.text}
                       </span>
                       <a 
-                        href={buildGoogleMapsDirectionsUrl(item.endereco)} 
+                        href={buildGoogleMapsDirectionsUrl(item.endereco, resolvedShortLinks)} 
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()} 
                         className="mt-1 w-full py-1 px-2 rounded-[4px] bg-[#0081A7]/10 hover:bg-[#0081A7]/20 text-[#0081A7] border border-[#0081A7]/30 flex items-center justify-center gap-1.5 text-[10px] font-bold shadow-2xs transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[13px]">near_me</span>
-                        <span>Traçar Rota no Mapa</span>
+                        <span>{addressDisplay.hasExactGps ? 'Traçar Rota GPS Exato' : 'Traçar Rota no Mapa'}</span>
                       </a>
                     </div>
                   </div>
@@ -414,17 +415,17 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                     <span className="material-symbols-outlined text-[12px] text-slate-400 mt-0.5 shrink-0">location_on</span> 
                     <div className="flex flex-col w-full min-w-0">
                       <span className="break-words whitespace-normal leading-tight min-w-0 w-full text-slate-700 font-medium" style={{ wordBreak: 'break-word' }}>
-                        {item.endereco}
+                        {addressDisplay.text}
                       </span>
                       <a 
-                        href={buildGoogleMapsDirectionsUrl(item.endereco)} 
+                        href={buildGoogleMapsDirectionsUrl(item.endereco, resolvedShortLinks)} 
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()} 
                         className="mt-1 w-full py-1 px-2 rounded-[4px] bg-[#0081A7]/10 hover:bg-[#0081A7]/20 text-[#0081A7] border border-[#0081A7]/30 flex items-center justify-center gap-1.5 text-[10px] font-bold shadow-2xs transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[13px]">near_me</span>
-                        <span>Traçar Rota no Mapa</span>
+                        <span>{addressDisplay.hasExactGps ? 'Traçar Rota GPS Exato' : 'Traçar Rota no Mapa'}</span>
                       </a>
                     </div>
                   </div>

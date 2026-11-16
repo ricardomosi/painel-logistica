@@ -123,9 +123,9 @@ export function extractCoordinates(val) {
 
 /**
  * Builds an accurate Google Maps directions URL prioritizing exact extracted coordinates
- * so drivers/managers never get routed to an ambiguous text match or broken concatenated URL.
+ * (or cached resolved short links) so drivers/managers never get routed to an ambiguous text match.
  */
-export function buildGoogleMapsDirectionsUrl(endereco) {
+export function buildGoogleMapsDirectionsUrl(endereco, resolvedShortLinks = null) {
   const raw = String(endereco || '').trim();
   if (!raw) return 'https://www.google.com/maps';
   const coords = extractCoordinates(raw);
@@ -133,8 +133,45 @@ export function buildGoogleMapsDirectionsUrl(endereco) {
     return `https://www.google.com/maps/dir/?api=1&destination=${coords.lat},${coords.lng}`;
   }
   const shortUrl = extractFirstShortMapsUrl(raw);
-  if (shortUrl) return shortUrl;
+  if (shortUrl) {
+    const entry = resolvedShortLinks?.[shortUrl];
+    if (entry?.ok && typeof entry.lat === 'number' && typeof entry.lng === 'number') {
+      return `https://www.google.com/maps/dir/?api=1&destination=${entry.lat},${entry.lng}`;
+    }
+    return shortUrl;
+  }
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(raw)}`;
+}
+
+/**
+ * Formats an address for clean visual presentation on Kanban cards:
+ * - Hides noisy inline "(GPS: lat, lng)" technical coordinates while retaining a GPS readiness flag.
+ * - Replaces legacy raw `maps.app.goo.gl/...` short URLs when resolved in cache.
+ */
+export function formatAddressForDisplay(endereco, resolvedShortLinks = null) {
+  const raw = String(endereco || '').trim();
+  if (!raw) return { text: '', hasExactGps: false, isPendingShortLink: false };
+
+  const hasDirectCoords = Boolean(extractCoordinates(raw));
+  const shortUrl = extractFirstShortMapsUrl(raw);
+  const resolvedEntry = shortUrl && resolvedShortLinks ? resolvedShortLinks[shortUrl] : null;
+
+  if (shortUrl && resolvedEntry?.ok && typeof resolvedEntry.lat === 'number' && typeof resolvedEntry.lng === 'number') {
+    const merged = formatResolvedAddressForForm(raw, resolvedEntry);
+    const cleaned = merged.replace(/\s*\(GPS:\s*-?\d+\.\d+\s*,\s*-?\d+\.\d+\)/gi, '').trim();
+    return {
+      text: cleaned || `${resolvedEntry.lat.toFixed(5)}, ${resolvedEntry.lng.toFixed(5)}`,
+      hasExactGps: true,
+      isPendingShortLink: false,
+    };
+  }
+
+  const strippedGps = raw.replace(/\s*\(GPS:\s*-?\d+\.\d+\s*,\s*-?\d+\.\d+\)/gi, '').trim();
+  return {
+    text: strippedGps || raw,
+    hasExactGps: hasDirectCoords,
+    isPendingShortLink: Boolean(shortUrl && !resolvedEntry?.ok),
+  };
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   extractCoordinates,
   extractFirstShortMapsUrl,
   formatResolvedAddressForForm,
+  formatAddressForDisplay,
   buildGoogleMapsDirectionsUrl,
   normalizeDeliveryLocation,
 } from '../src/lib/locationUtils.js';
@@ -59,6 +60,11 @@ test('locationUtils: parses short links, formats readable GPS addresses, builds 
   const dirUrl = buildGoogleMapsDirectionsUrl(converted);
   assert.equal(dirUrl, 'https://www.google.com/maps/dir/?api=1&destination=-5.17296,-37.333125');
 
+  const cardDisplayFromSaved = formatAddressForDisplay(converted);
+  assert.equal(cardDisplayFromSaved.hasExactGps, true);
+  assert.ok(!cardDisplayFromSaved.text.includes('(GPS:'));
+  assert.ok(cardDisplayFromSaved.text.includes('Avenida Alberto Maranhão, Barrocas, Mossoró - RN'));
+
   const shortCache = {
     'https://maps.app.goo.gl/z1pJHdj7ZtYU5QWP6': {
       ok: true,
@@ -70,6 +76,14 @@ test('locationUtils: parses short links, formats readable GPS addresses, builds 
       state: 'RN',
     },
   };
+  const cardDisplayLegacyShort = formatAddressForDisplay('https://maps.app.goo.gl/z1pJHdj7ZtYU5QWP6', shortCache);
+  assert.equal(cardDisplayLegacyShort.hasExactGps, true);
+  assert.equal(cardDisplayLegacyShort.isPendingShortLink, false);
+  assert.equal(cardDisplayLegacyShort.text, 'Avenida Alberto Maranhão, Alto da Conceição, Mossoró - RN');
+  assert.equal(
+    buildGoogleMapsDirectionsUrl('https://maps.app.goo.gl/z1pJHdj7ZtYU5QWP6', shortCache),
+    'https://www.google.com/maps/dir/?api=1&destination=-5.17296,-37.333125'
+  );
   const loc = normalizeDeliveryLocation(
     { endereco: 'https://maps.app.goo.gl/z1pJHdj7ZtYU5QWP6', cliente: 'Queiroz' },
     shortCache
@@ -135,3 +149,4 @@ test('kanbanWeekUtils: accurately separates past weeks, current week rollover, a
   assert.deepEqual(futureGrouped.quarta.map((x) => x.id), []);
   assert.equal(formatIsoBoardDate(parseBoardDate('2026-11-26')), '2026-11-26');
 });
+

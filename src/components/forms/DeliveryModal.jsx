@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   MapPin, 
@@ -139,6 +139,7 @@ export default function DeliveryModal({ weekNav = null } = {}) {
   // Quick Create Modal state
   const [quickMaterialModalOpen, setQuickMaterialModalOpen] = useState(false);
   const [quickMaterialInitialName, setQuickMaterialInitialName] = useState('');
+  const attemptedAutoUrlsRef = useRef(new Set());
 
   // Dynamic Sellers from Database (Admin -> Vendedores)
   const availableSellers = React.useMemo(() => {
@@ -324,6 +325,39 @@ export default function DeliveryModal({ weekNav = null } = {}) {
     // Reset Quick-Add input
     resetQuickItem();
   }, [selectedDelivery, deliveryModalOpen]);
+
+  // Hands-free automatic conversion when pasting or opening an address with shortened Google Maps links
+  useEffect(() => {
+    if (!deliveryModalOpen || isMotorista) return undefined;
+    const shortUrl = extractFirstShortMapsUrl(formData.endereco);
+    if (!shortUrl || attemptedAutoUrlsRef.current.has(shortUrl)) return undefined;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      attemptedAutoUrlsRef.current.add(shortUrl);
+      setResolvingLink(true);
+      try {
+        const resolved = await resolveShortMapsUrlClient(shortUrl);
+        if (cancelled) return;
+        if (resolved?.ok && typeof resolved.lat === 'number' && typeof resolved.lng === 'number') {
+          setFormData((prev) => {
+            if (extractFirstShortMapsUrl(prev.endereco) !== shortUrl) return prev;
+            return { ...prev, endereco: formatResolvedAddressForForm(prev.endereco, resolved) };
+          });
+          addToast?.('Link encurtado convertido para endereço e coordenadas exatas!', 'success');
+        }
+      } catch {
+        // Keep manual retry button available on failure
+      } finally {
+        if (!cancelled) setResolvingLink(false);
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [deliveryModalOpen, isMotorista, formData.endereco, addToast]);
 
   if (!deliveryModalOpen) return null;
 
@@ -1127,15 +1161,6 @@ export default function DeliveryModal({ weekNav = null } = {}) {
                         disabled={isMotorista}
                         value={formData.endereco}
                         onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
-                        onPaste={(e) => {
-                          if (isMotorista) return;
-                          const pasted = e.clipboardData?.getData('text') || '';
-                          if (extractFirstShortMapsUrl(pasted)) {
-                            setTimeout(() => {
-                              handleResolveShortAddressLink(pasted, false);
-                            }, 80);
-                          }
-                        }}
                         placeholder="Rua, Número, Bairro, Cidade - UF ou cole link do Maps" 
                         className={`w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs resize-none ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
                       />

@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import KanbanColumn from './KanbanColumn';
 import MobileWeekNav from './MobileWeekNav';
 import { useLogistics } from '../../contexts/LogisticsContext';
 import { groupItemsByWeekColumns } from '../../lib/kanbanWeekUtils';
+import { extractFirstShortMapsUrl, loadShortMapsCache } from '../../lib/locationUtils';
+import { resolveShortMapsUrlsBatch } from '../../services/mapsLinkService';
 
 export default function KanbanBoard({ weekNav, type = 'entrega' }) {
   const { 
@@ -15,6 +17,8 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
 
   const { columns, weekStart, weekEnd, weekRelation, formattedWeekRange, goToCurrentWeek } = weekNav;
   const [mobileActiveColumnKey, setMobileActiveColumnKey] = useState('atualizacoes');
+  const [shortMapsCache, setShortMapsCache] = useState(() => loadShortMapsCache());
+  const attemptedShortUrlsRef = useRef(new Set());
 
   const rawItems = type === 'entrega' ? filteredDeliveries : filteredCollections;
   const items = Array.isArray(rawItems) ? rawItems.filter(Boolean) : [];
@@ -28,6 +32,34 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
       weekEnd,
     });
   }, [items, type, weekStart, weekEnd]);
+
+  // Background expansion for visible cards that still store shortened maps.app.goo.gl URLs
+  useEffect(() => {
+    const visibleItems = Object.values(itemsByColumn).flat();
+    const pendingUrls = [];
+    for (const card of visibleItems) {
+      const shortUrl = extractFirstShortMapsUrl(card?.endereco);
+      if (shortUrl && !shortMapsCache?.[shortUrl]?.ok && !attemptedShortUrlsRef.current.has(shortUrl)) {
+        pendingUrls.push(shortUrl);
+      }
+    }
+
+    const batch = Array.from(new Set(pendingUrls)).slice(0, 15);
+    if (batch.length === 0) return undefined;
+
+    let cancelled = false;
+    batch.forEach((u) => attemptedShortUrlsRef.current.add(u));
+
+    resolveShortMapsUrlsBatch(batch).then((updated) => {
+      if (!cancelled && updated) {
+        setShortMapsCache(updated);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [itemsByColumn, shortMapsCache]);
 
   const itemCounts = useMemo(() => {
     const counts = {};
@@ -116,6 +148,7 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
           items={itemsByColumn['atualizacoes'] || []}
           type={type}
           onDropItem={handleDropItem}
+          resolvedShortLinks={shortMapsCache}
         />
 
         {/* Divider Bar */}
@@ -129,6 +162,7 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
             items={itemsByColumn[column.key] || []}
             type={type}
             onDropItem={handleDropItem}
+            resolvedShortLinks={shortMapsCache}
           />
         ))}
       </div>
@@ -144,6 +178,7 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
               items={itemsByColumn[column.key] || []}
               type={type}
               onDropItem={handleDropItem}
+              resolvedShortLinks={shortMapsCache}
             />
           ))}
       </div>
