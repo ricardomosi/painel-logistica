@@ -1,6 +1,8 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLogistics } from '../../contexts/LogisticsContext';
+import { buildGoogleMapsDirectionsUrl } from '../../lib/locationUtils';
+import { extractScheduledDateFromItem, formatIsoBoardDate } from '../../lib/kanbanWeekUtils';
 
 const TIPO_CONFIG = {
   'envio': { 
@@ -95,6 +97,10 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
   const isAtualizacoes = (item.coluna || '').includes('atualizacoes');
   const hasOccurrence = !isColeta && item.como_foi_entrega && item.como_foi_entrega !== 'Sem ocorrências';
   const hasStarted = !isColeta && !isCompleted && (Boolean(item.data_inicio) || Boolean(item.hora_inicio) || (parseFloat(item.km_inicial) > 0));
+  const scheduledDateStr = extractScheduledDateFromItem(item, type);
+  const todayIso = formatIsoBoardDate(new Date());
+  const isFutureScheduled = Boolean(!isCompleted && scheduledDateStr && scheduledDateStr > todayIso);
+  const scheduledDateLabel = scheduledDateStr ? `${scheduledDateStr.slice(8, 10)}/${scheduledDateStr.slice(5, 7)}` : '';
 
   const handleClick = () => {
     if (isColeta) {
@@ -226,6 +232,13 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                       <span>Concluído</span>
                     </span>
                   )}
+
+                  {isFutureScheduled && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-[3px] bg-sky-100 border border-sky-300 text-sky-900 text-[8.5px] font-bold shrink-0">
+                      <span className="material-symbols-outlined text-[10px] text-sky-700">event</span>
+                      <span>Agend. {scheduledDateLabel}</span>
+                    </span>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-1 shrink-0">
@@ -272,7 +285,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                         {item.endereco}
                       </span>
                       <a 
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.endereco)}`} 
+                        href={buildGoogleMapsDirectionsUrl(item.endereco)} 
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()} 
@@ -351,6 +364,13 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                       <span>Concluído</span>
                     </span>
                   )}
+
+                  {isFutureScheduled && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-[3px] bg-sky-100 border border-sky-300 text-sky-900 text-[8.5px] font-bold shrink-0">
+                      <span className="material-symbols-outlined text-[10px] text-sky-700">event</span>
+                      <span>Agend. {scheduledDateLabel}</span>
+                    </span>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-1 shrink-0">
@@ -397,7 +417,7 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart }) {
                         {item.endereco}
                       </span>
                       <a 
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.endereco)}`} 
+                        href={buildGoogleMapsDirectionsUrl(item.endereco)} 
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()} 

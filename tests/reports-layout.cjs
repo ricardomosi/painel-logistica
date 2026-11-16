@@ -214,8 +214,15 @@ async function run() {
     await page.setViewportSize({ width: 1280, height: 800 });
     await openRelatoriosTab(page, 1280);
 
-    // Wait briefly for Supabase + legacy Sheets history to load & verify Todo Historico is default
-    await page.waitForTimeout(2500);
+    // Wait for Supabase + legacy Sheets historical data (Mar 2026+) to finish loading
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('#dash-date-start');
+        return el && el.value && el.value < '2026-09-01';
+      },
+      null,
+      { timeout: 20000 }
+    );
     const presetActiveClass = await page.locator('#btn-preset-all_history').getAttribute('class');
     if (!presetActiveClass || !presetActiveClass.includes('bg-[#0081A7]')) {
       throw new Error(`Expected #btn-preset-all_history to be active by default, got class: ${presetActiveClass}`);
@@ -223,22 +230,25 @@ async function run() {
     const dashDateStart = await page.locator('#dash-date-start').inputValue();
     const dashDateEnd = await page.locator('#dash-date-end').inputValue();
     console.log(`   Default Todo Histórico date window: ${dashDateStart} -> ${dashDateEnd}`);
-    if (dashDateStart >= '2026-09-01') {
-      throw new Error(`Expected historical deliveries before Sep 2026 in Todo Histórico, got start=${dashDateStart}`);
-    }
 
-    // Stress-test DeliveryHeatmap location list selection on DashboardView (must never freeze)
-    const heatBtns = page.locator('#dashboard-view button:has-text("entregas")');
+    // Stress-test DeliveryHeatmap location list selection + camera lock/unlock behavior
+    const heatBtns = page.locator('#delivery-heatmap-block button:has-text("entregas")');
     const heatBtnCount = await heatBtns.count();
     if (heatBtnCount === 0) {
       throw new Error('Expected at least 1 clickable location button in DeliveryHeatmap');
     }
     const t0 = Date.now();
-    for (let i = 0; i < Math.min(heatBtnCount, 3); i++) {
-      await heatBtns.nth(i).click();
+    await heatBtns.nth(0).click();
+    await page.locator('#btn-unlock-map-focus').waitFor({ state: 'visible', timeout: 3000 });
+    if (heatBtnCount > 1) {
+      await heatBtns.nth(1).click();
+      await page.locator('#btn-unlock-map-focus').waitFor({ state: 'visible', timeout: 3000 });
     }
+    // Clicking outside #delivery-heatmap-block must auto-unlock
+    await page.locator('#dash-date-start').click();
+    await page.locator('#btn-unlock-map-focus').waitFor({ state: 'hidden', timeout: 3000 });
     const elapsed = Date.now() - t0;
-    console.log(`   [PASS] Clicked ${Math.min(heatBtnCount, 3)} heatmap locations smoothly in ${elapsed}ms.`);
+    console.log(`   [PASS] Heatmap lock -> switch -> outside-block auto-unlock verified in ${elapsed}ms.`);
 
     // Open full-screen report
     await page.locator('#btn-open-fullscreen-report').click();
@@ -306,11 +316,61 @@ async function run() {
     await page.locator('#fullscreen-report-modal').waitFor({ state: 'hidden', timeout: 5000 });
     console.log('   [PASS] Escape key closes FullScreenReportModal cleanly.');
 
-    // 5. Verify MapPickerModal open -> DMS coordinate pick -> confirm -> close -> RE-OPEN flow (must not freeze)
-    console.log('5. Stress-testing MapPickerModal open/confirm/reopen stability on Entregas...');
+    // 5. Verify MapPickerModal, Short URL resolution, Future Scheduling & Week Transition across Entregas and Coletas
+    console.log('5. Verifying Week Navigation, Short Maps Link conversion, Future Scheduling & MapPickerModal...');
+    await page.locator('#btn-tab-entrega-desk').click();
+
+    // Test week transition on Entregas (Past -> Future -> Hoje)
+    const initialWeekText = await page.locator('#week-display').innerText();
+    await page.locator('#btn-prev-week-desk').click();
+    await page.locator('#week-context-banner').waitFor({ state: 'visible', timeout: 4000 });
+    const pastWeekText = await page.locator('#week-display').innerText();
+    if (pastWeekText === initialWeekText) {
+      throw new Error('Week display did not change after clicking Previous Week on Entregas');
+    }
+    await page.locator('#btn-next-week-desk').click();
+    await page.locator('#btn-next-week-desk').click();
+    await page.locator('#week-context-banner').waitFor({ state: 'visible', timeout: 4000 });
+    await page.locator('#btn-current-week-desk').click();
+    await page.locator('#week-context-banner').waitFor({ state: 'hidden', timeout: 4000 });
+    console.log('   [PASS] Entregas week navigation (Prev / Next / Hoje) verified.');
+
+    // Test week transition on Coletas
+    await page.locator('#btn-tab-coleta-desk').click();
+    await page.locator('#btn-prev-week-desk').click();
+    await page.locator('#week-context-banner').waitFor({ state: 'visible', timeout: 4000 });
+    await page.locator('#btn-current-week-desk').click();
+    await page.locator('#week-context-banner').waitFor({ state: 'hidden', timeout: 4000 });
+    console.log('   [PASS] Coletas week navigation (Prev / Hoje) verified.');
+
+    // Switch back to Entregas and open Nova Entrega modal
     await page.locator('#btn-tab-entrega-desk').click();
     await page.locator('button:has-text("Nova Entrega")').first().click();
     await page.locator('h2:has-text("Nova Entrega"), h3:has-text("Nova Entrega")').first().waitFor({ state: 'visible', timeout: 8000 });
+
+    // Verify Future Scheduled Date auto-syncs column dropdown
+    const schedInput = page.locator('#delivery-scheduled-date');
+    await schedInput.fill('2026-11-26'); // Thursday of next week
+    const syncedColumn = await page.locator('form select').filter({ hasText: 'Quinta-feira' }).first().inputValue();
+    if (syncedColumn !== 'quinta') {
+      throw new Error(`Expected scheduled date 2026-11-26 to sync column to quinta, got ${syncedColumn}`);
+    }
+    console.log('   [PASS] Future scheduled date (2026-11-26) auto-synced column to quinta.');
+
+    // Verify Short Maps Link conversion button inside DeliveryModal
+    const addrBox = page.locator('textarea[placeholder*="Maps"]');
+    await addrBox.fill('https://maps.app.goo.gl/z1pJHdj7ZtYU5QWP6');
+    await page.locator('#btn-convert-short-link-delivery').click();
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('textarea[placeholder*="Maps"]');
+        return el && el.value.includes('(GPS:');
+      },
+      null,
+      { timeout: 12000 }
+    );
+    const convertedAddrVal = await addrBox.inputValue();
+    console.log(`   [PASS] Short link expanded cleanly in form: ${convertedAddrVal}`);
 
     const openMapAndTest = async (attempt) => {
       await page.locator('button:has-text("Mapa")').first().click();
@@ -326,8 +386,8 @@ async function run() {
     await openMapAndTest(1);
     await openMapAndTest(2);
 
-    // Close DeliveryModal cleanly via Escape or close button
-    await page.keyboard.press('Escape');
+    // Close DeliveryModal cleanly
+    await page.locator('button:has-text("Cancelar")').first().click().catch(() => page.keyboard.press('Escape'));
     await page.waitForTimeout(200);
 
     if (pageErrors.length > 0) {

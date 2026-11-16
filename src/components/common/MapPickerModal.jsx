@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLogistics } from '../../contexts/LogisticsContext';
-import { extractCoordinates } from '../../lib/locationUtils';
+import {
+  extractCoordinates,
+  extractFirstShortMapsUrl,
+  formatResolvedAddressForForm,
+} from '../../lib/locationUtils';
+import { resolveShortMapsUrlClient } from '../../services/mapsLinkService';
 
 export function extractCoordinatesFromUrl(val) {
   return extractCoordinates(val);
@@ -203,9 +208,20 @@ export default function MapPickerModal({ isOpen, initialAddress = '', onConfirmA
         // Resolve initialAddress safely once after mount
         if (initial) {
           const extractedCoords = extractCoordinates(initial);
+          const shortUrl = extractFirstShortMapsUrl(initial);
           if (extractedCoords) {
             focusLocation(extractedCoords, 17);
             geocodePosition(extractedCoords);
+          } else if (shortUrl) {
+            setResolvingAddress(true);
+            resolveShortMapsUrlClient(shortUrl).then((resolved) => {
+              if (cancelled || !isOpenRef.current) return;
+              setResolvingAddress(false);
+              if (resolved?.ok && typeof resolved.lat === 'number' && typeof resolved.lng === 'number') {
+                focusLocation({ lat: resolved.lat, lng: resolved.lng }, 18);
+                setPickedAddress(formatResolvedAddressForForm(initial, resolved));
+              }
+            });
           } else if (!initial.trim().startsWith('http')) {
             const seq = ++geocodeSeqRef.current;
             setResolvingAddress(true);
@@ -240,7 +256,7 @@ export default function MapPickerModal({ isOpen, initialAddress = '', onConfirmA
     };
   }, [isOpen, focusLocation, geocodePosition]);
 
-  const handleSearchSubmit = () => {
+  const handleSearchSubmit = async () => {
     const val = searchInput.trim();
     if (!val) return;
 
@@ -251,6 +267,30 @@ export default function MapPickerModal({ isOpen, initialAddress = '', onConfirmA
         geocodePosition(extractedCoords);
       } else {
         setPickedAddress(`${extractedCoords.lat}, ${extractedCoords.lng}`);
+      }
+      return;
+    }
+
+    const shortUrl = extractFirstShortMapsUrl(val);
+    if (shortUrl) {
+      setResolvingAddress(true);
+      try {
+        const resolved = await resolveShortMapsUrlClient(shortUrl);
+        if (!isOpenRef.current) return;
+        setResolvingAddress(false);
+        if (resolved?.ok && typeof resolved.lat === 'number' && typeof resolved.lng === 'number') {
+          if (mapInstanceRef.current) {
+            focusLocation({ lat: resolved.lat, lng: resolved.lng }, 18);
+          }
+          setPickedAddress(formatResolvedAddressForForm(val, resolved));
+        } else {
+          showAlert({
+            title: 'Não foi possível converter o link',
+            message: resolved?.error || 'Não foi possível expandir este link encurtado. Tente abrir no Maps ou marcar no pino.',
+          });
+        }
+      } catch {
+        setResolvingAddress(false);
       }
       return;
     }

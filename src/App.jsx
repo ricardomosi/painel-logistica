@@ -206,8 +206,8 @@ export default function App() {
       </main>
 
       {/* Global Modals & Dialogs */}
-      <DeliveryModal />
-      <CollectionModal />
+      <DeliveryModal weekNav={weekNav} />
+      <CollectionModal weekNav={weekNav} />
       <RomaneioModal />
 
       <ModalConfirm

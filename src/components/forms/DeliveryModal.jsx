@@ -35,6 +35,19 @@ import { romaneioService } from '../../services/romaneioService';
 import { printRomaneioPdf, downloadRomaneioPdf } from '../romaneio/RomaneioPdfDocument';
 import MaterialSearchInput from './MaterialSearchInput';
 import QuickCreateMaterialModal from './QuickCreateMaterialModal';
+import {
+  buildGoogleMapsDirectionsUrl,
+  extractFirstShortMapsUrl,
+  formatResolvedAddressForForm,
+} from '../../lib/locationUtils';
+import { resolveShortMapsUrlClient } from '../../services/mapsLinkService';
+import {
+  buildScheduledColumnValue,
+  extractScheduledDateFromItem,
+  formatIsoBoardDate,
+  getColumnKeyFromDate,
+  getWeekDayDateStr,
+} from '../../lib/kanbanWeekUtils';
 
 const VENDEDORES_OPTIONS = [
   { name: 'BEBEZINHO (Filial)', colorClass: 'text-orange-600 font-bold' },
@@ -75,32 +88,6 @@ const CADASTRADORES_ENTREGA = [
   'RODOLFO',
 ];
 
-const DAY_OFFSETS = {
-  segunda: 0,
-  terca: 1,
-  quarta: 2,
-  quinta: 3,
-  sexta: 4,
-  sabado: 5,
-};
-
-const getWeekDayDateStr = (colKey) => {
-  if (!colKey || DAY_OFFSETS[colKey] === undefined) return null;
-  const now = new Date();
-  const currentDay = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
-  const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diffToMonday);
-
-  const targetDate = new Date(monday);
-  targetDate.setDate(monday.getDate() + DAY_OFFSETS[colKey]);
-
-  const y = targetDate.getFullYear();
-  const m = String(targetDate.getMonth() + 1).padStart(2, '0');
-  const d = String(targetDate.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
-
 const OCORRENCIAS_OPTIONS = [
   { value: 'Sem ocorrências', label: 'Sem ocorrências', color: 'text-green-600 font-bold' },
   { value: 'Produto Divergente do Pedido', label: 'Produto Divergente do Pedido', color: 'text-red-600 font-bold' },
@@ -124,7 +111,7 @@ const UNIDADES_MEDIDA = [
   { value: 'ROLO', label: 'ROLO' },
 ];
 
-export default function DeliveryModal() {
+export default function DeliveryModal({ weekNav = null } = {}) {
   const { isMotorista } = useAuth();
   const { 
     deliveryModalOpen, 
@@ -144,6 +131,7 @@ export default function DeliveryModal() {
   } = useLogistics();
 
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
+  const [resolvingLink, setResolvingLink] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState('geral'); // 'geral' | 'romaneio' | 'rota'
   const [saving, setSaving] = useState(false);
   const [loadingRomaneio, setLoadingRomaneio] = useState(false);
@@ -213,6 +201,7 @@ export default function DeliveryModal() {
     telefone: '',
     coluna: 'atualizacoes',
     data_registro: '',
+    data_agendada: '',
     status: 'pendente',
     urgente: false,
     // Início
@@ -250,6 +239,7 @@ export default function DeliveryModal() {
     if (!deliveryModalOpen) return;
 
     if (selectedDelivery) {
+      const embeddedSched = extractScheduledDateFromItem(selectedDelivery, 'entrega');
       setFormData({
         cliente: selectedDelivery.cliente || '',
         endereco: selectedDelivery.endereco || '',
@@ -263,6 +253,7 @@ export default function DeliveryModal() {
         telefone: selectedDelivery.telefone || '',
         coluna: selectedDelivery.coluna?.split('|')[0] || 'atualizacoes',
         data_registro: selectedDelivery.data_registro || '',
+        data_agendada: embeddedSched || '',
         status: selectedDelivery.status || 'pendente',
         urgente: !!selectedDelivery.urgente,
         data_inicio: selectedDelivery.data_inicio || '',
@@ -313,6 +304,7 @@ export default function DeliveryModal() {
         telefone: '',
         coluna: 'atualizacoes',
         data_registro: '',
+        data_agendada: '',
         status: 'pendente',
         urgente: false,
         data_inicio: '',
@@ -692,6 +684,31 @@ export default function DeliveryModal() {
     }));
   };
 
+  const handleResolveShortAddressLink = async (rawVal = formData.endereco, silent = false) => {
+    const targetUrl = extractFirstShortMapsUrl(rawVal);
+    if (!targetUrl) return rawVal;
+    try {
+      setResolvingLink(true);
+      const resolved = await resolveShortMapsUrlClient(targetUrl);
+      if (resolved?.ok && typeof resolved.lat === 'number' && typeof resolved.lng === 'number') {
+        const formatted = formatResolvedAddressForForm(rawVal, resolved);
+        setFormData((prev) => ({ ...prev, endereco: formatted }));
+        if (!silent) {
+          addToast('Link encurtado convertido para endereço e coordenadas exatas!', 'success');
+        }
+        return formatted;
+      }
+      if (!silent) {
+        addToast(resolved?.error || 'Não foi possível expandir este link automaticamente.', 'warning');
+      }
+    } catch {
+      if (!silent) addToast('Falha ao expandir link do Google Maps.', 'warning');
+    } finally {
+      setResolvingLink(false);
+    }
+    return rawVal;
+  };
+
   const handleDelete = () => {
     showConfirm({
       title: 'Excluir Entrega',
@@ -771,26 +788,42 @@ export default function DeliveryModal() {
     try {
       setSaving(true);
 
+      // Se o endereço ainda contiver link encurtado maps.app.goo.gl não convertido, tenta resolver antes de salvar
+      let resolvedEndereco = formData.endereco?.trim() || '';
+      if (resolvedEndereco && extractFirstShortMapsUrl(resolvedEndereco)) {
+        resolvedEndereco = await Promise.race([
+          handleResolveShortAddressLink(resolvedEndereco, true),
+          new Promise((resolve) => setTimeout(() => resolve(resolvedEndereco), 2500)),
+        ]);
+      }
+
       // Sincroniza o valor_entrega com o total do romaneio se houver cálculo
       const finalValorEntrega = (!isMotorista && romaneioTotalValor > 0)
         ? romaneioTotalValor 
         : (parseFloat(formData.valor_entrega) || 0);
 
-      // Calcula a data correspondente ao dia da semana se selecionado
-      const targetDayDate = getWeekDayDateStr(formData.coluna);
-      const finalDataRegistro = targetDayDate || formData.data_registro || selectedDelivery?.data_registro || new Date().toISOString().split('T')[0];
+      // Data específica futura/agendada ou dia da coluna na semana ativa do quadro
+      const scheduledDateStr = formData.data_agendada?.trim() || '';
+      const resolvedColKey = scheduledDateStr
+        ? (formData.coluna === 'atualizacoes' ? getColumnKeyFromDate(scheduledDateStr) : formData.coluna)
+        : (formData.coluna || 'atualizacoes');
+      const targetDayDate = scheduledDateStr || getWeekDayDateStr(resolvedColKey, weekNav?.weekStart);
+      const finalDataRegistro = targetDayDate || formData.data_registro || selectedDelivery?.data_registro || formatIsoBoardDate(new Date());
+      const finalColuna = scheduledDateStr
+        ? buildScheduledColumnValue(resolvedColKey, scheduledDateStr)
+        : (resolvedColKey || 'atualizacoes');
 
       const payload = {
         ...formData,
         cliente: formData.cliente?.trim() || '',
-        endereco: formData.endereco?.trim() || '',
+        endereco: resolvedEndereco,
         placa: formData.placa?.trim() || null,
         boleto: formData.boleto?.trim() || null,
         vendedor: formData.vendedor?.trim() || null,
         local_carregamento: formData.local_carregamento || 'MATRIZ',
         cadastrador_entrega: formData.cadastrador_entrega?.trim() || null,
         telefone: formData.telefone?.trim() || null,
-        coluna: formData.coluna || 'atualizacoes',
+        coluna: finalColuna,
         data_registro: finalDataRegistro,
         como_foi_entrega: formData.como_foi_entrega?.trim() || null,
         motorista_id: formData.motorista_id || null,
@@ -805,6 +838,7 @@ export default function DeliveryModal() {
         hora_conclusao: formData.hora_conclusao?.trim() || null,
       };
       delete payload.km_total; // Generated column in Postgres
+      delete payload.data_agendada; // Virtual UI state synced into coluna + data_registro
 
       let savedDelivery;
       if (isEditing) {
@@ -1049,14 +1083,27 @@ export default function DeliveryModal() {
 
                     {/* Endereço */}
                     <div>
-                      <div className="flex justify-between items-center mb-1">
+                      <div className="flex justify-between items-center mb-1 gap-2 flex-wrap">
                         <label className="block text-xs font-semibold text-slate-700">
                           Endereço de Entrega
                         </label>
                         <div className="flex items-center gap-2">
+                          {!isMotorista && extractFirstShortMapsUrl(formData.endereco) && (
+                            <button
+                              id="btn-convert-short-link-delivery"
+                              type="button"
+                              disabled={resolvingLink}
+                              onClick={() => handleResolveShortAddressLink(formData.endereco, false)}
+                              className="text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-[3px] flex items-center gap-1 cursor-pointer disabled:opacity-60"
+                              title="Expandir link encurtado maps.app.goo.gl para endereço e coordenadas exatas"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              <span>{resolvingLink ? 'Convertendo...' : 'Converter Link GPS'}</span>
+                            </button>
+                          )}
                           {formData.endereco && (
                             <a 
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(formData.endereco)}`} 
+                              href={buildGoogleMapsDirectionsUrl(formData.endereco)} 
                               target="_blank" 
                               rel="noreferrer"
                               className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
@@ -1080,7 +1127,16 @@ export default function DeliveryModal() {
                         disabled={isMotorista}
                         value={formData.endereco}
                         onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
-                        placeholder="Rua, Número, Bairro, Cidade - UF" 
+                        onPaste={(e) => {
+                          if (isMotorista) return;
+                          const pasted = e.clipboardData?.getData('text') || '';
+                          if (extractFirstShortMapsUrl(pasted)) {
+                            setTimeout(() => {
+                              handleResolveShortAddressLink(pasted, false);
+                            }, 80);
+                          }
+                        }}
+                        placeholder="Rua, Número, Bairro, Cidade - UF ou cole link do Maps" 
                         className={`w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs resize-none ${isMotorista ? 'bg-slate-100 text-slate-800' : 'bg-white'}`}
                       />
                     </div>
@@ -1170,7 +1226,15 @@ export default function DeliveryModal() {
                       <select 
                         value={formData.coluna}
                         disabled={isMotorista}
-                        onChange={(e) => setFormData(prev => ({ ...prev, coluna: e.target.value }))}
+                        onChange={(e) => {
+                          const nextCol = e.target.value;
+                          const matchedDate = nextCol === 'atualizacoes' ? '' : getWeekDayDateStr(nextCol, weekNav?.weekStart);
+                          setFormData(prev => ({
+                            ...prev,
+                            coluna: nextCol,
+                            data_agendada: prev.data_agendada && matchedDate ? matchedDate : prev.data_agendada,
+                          }));
+                        }}
                         className={`w-full px-3 py-2 border border-slate-300 rounded-[4px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs font-semibold bg-white cursor-pointer ${isMotorista ? 'bg-slate-100 text-slate-800' : ''}`}
                       >
                         <option value="atualizacoes">Inbox (Pendente / Atualizações)</option>
@@ -1182,6 +1246,47 @@ export default function DeliveryModal() {
                         <option value="sabado">Sábado</option>
                       </select>
                     </div>
+
+                    {/* Agendamento Específico para Dia Futuro (fora ou dentro da semana) */}
+                    {!isMotorista && (
+                      <div className="p-2.5 rounded-[4px] bg-sky-50/80 border border-sky-200 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <label htmlFor="delivery-scheduled-date" className="text-[11px] font-bold text-sky-900 flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-sky-700" />
+                            <span>Agendar Dia Específico (Futuro)</span>
+                          </label>
+                          {formData.data_agendada && (
+                            <button
+                              type="button"
+                              onClick={() => setFormData((prev) => ({ ...prev, data_agendada: '' }))}
+                              className="text-[10px] font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer"
+                            >
+                              Usar semana atual
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          id="delivery-scheduled-date"
+                          type="date"
+                          value={formData.data_agendada}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const mappedCol = val ? getColumnKeyFromDate(val) : formData.coluna;
+                            setFormData((prev) => ({
+                              ...prev,
+                              data_agendada: val,
+                              coluna: val ? mappedCol : prev.coluna,
+                            }));
+                          }}
+                          className="w-full px-2.5 py-1.5 border border-sky-300 rounded-[4px] bg-white text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                        {formData.data_agendada && (
+                          <p className="text-[10px] text-sky-800 font-medium">
+                            Aparecerá automaticamente na semana de {formData.data_agendada.split('-').reverse().join('/')}.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Card 3: Comercial & Faturamento */}

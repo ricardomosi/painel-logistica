@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, format, isSameDay } from 'date-fns';
+import { startOfWeek, addWeeks, subWeeks, addDays, format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseBoardDate, getColumnKeyFromDate as getColFromDate } from '../lib/kanbanWeekUtils';
 
 export const COLUMN_KEYS = {
   ATUALIZACOES: 'atualizacoes',
@@ -35,22 +36,44 @@ export function useWeekNavigation() {
     return addDays(weekStart, 5);
   }, [weekStart]);
 
+  const currentRealWeekStart = useMemo(
+    () => startOfWeek(new Date(), { weekStartsOn: 1 }),
+    []
+  );
+
+  const isCurrentWeek = useMemo(
+    () => isSameDay(weekStart, currentRealWeekStart),
+    [weekStart, currentRealWeekStart]
+  );
+
+  const weekRelation = useMemo(() => {
+    if (isCurrentWeek) return 'current';
+    return weekStart.getTime() < currentRealWeekStart.getTime() ? 'past' : 'future';
+  }, [isCurrentWeek, weekStart, currentRealWeekStart]);
+
   const goToNextWeek = () => {
-    setCurrentDate(prev => addWeeks(prev, 1));
+    setCurrentDate((prev) => addWeeks(prev, 1));
   };
 
   const goToPrevWeek = () => {
-    setCurrentDate(prev => subWeeks(prev, 1));
+    setCurrentDate((prev) => subWeeks(prev, 1));
   };
 
   const goToCurrentWeek = () => {
     setCurrentDate(new Date());
   };
 
+  const goToDate = (dateOrStr) => {
+    const parsed = parseBoardDate(dateOrStr);
+    if (parsed) {
+      setCurrentDate(parsed);
+    }
+  };
+
   // Build column metadata with concrete dates for the active week
   const columns = useMemo(() => {
     const today = new Date();
-    return COLUMNS_CONFIG.map(col => {
+    return COLUMNS_CONFIG.map((col) => {
       if (col.dayOffset === null) {
         return {
           ...col,
@@ -76,34 +99,26 @@ export function useWeekNavigation() {
     return `${startStr} - ${endStr}`;
   }, [weekStart, weekEnd]);
 
-  /**
-   * Translates day of week from a date into column key
-   */
-  const getColumnKeyFromDate = (date) => {
-    if (!date) return COLUMN_KEYS.ATUALIZACOES;
-    const d = new Date(date);
-    const dayOfWeek = d.getDay(); // 0 = Sunday, 1 = Mon, ..., 6 = Sat
-    switch (dayOfWeek) {
-      case 1: return COLUMN_KEYS.SEGUNDA;
-      case 2: return COLUMN_KEYS.TERCA;
-      case 3: return COLUMN_KEYS.QUARTA;
-      case 4: return COLUMN_KEYS.QUINTA;
-      case 5: return COLUMN_KEYS.SEXTA;
-      case 6: return COLUMN_KEYS.SABADO;
-      default: return COLUMN_KEYS.ATUALIZACOES;
-    }
-  };
+  const shortWeekRange = useMemo(() => {
+    return `${format(weekStart, 'dd/MM', { locale: ptBR })} - ${format(weekEnd, 'dd/MM', { locale: ptBR })}`;
+  }, [weekStart, weekEnd]);
+
+  const getColumnKeyFromDate = (date) => getColFromDate(date);
 
   return {
     currentDate,
     setCurrentDate,
     weekStart,
     weekEnd,
+    isCurrentWeek,
+    weekRelation,
     columns,
     formattedWeekRange,
+    shortWeekRange,
     goToNextWeek,
     goToPrevWeek,
     goToCurrentWeek,
+    goToDate,
     getColumnKeyFromDate,
   };
 }

@@ -22,7 +22,15 @@ export function KanbanHeader({ weekNav }) {
     notificationService
   } = useLogistics();
 
-  const { formattedWeekRange } = weekNav;
+  const {
+    formattedWeekRange,
+    shortWeekRange,
+    isCurrentWeek,
+    weekRelation,
+    goToPrevWeek,
+    goToNextWeek,
+    goToCurrentWeek,
+  } = weekNav;
 
   const currentLogo = activeTab === 'coletas' ? LOGO_COLETAS : LOGO_ENTREGAS;
 
@@ -179,6 +187,49 @@ export function KanbanHeader({ weekNav }) {
             </button>
           )}
         </div>
+
+        {/* Mobile Week Transition Strip (Visible on Entregas & Coletas) */}
+        {(activeTab === 'entregas' || activeTab === 'coletas') && (
+          <div className="flex items-center justify-between gap-1.5 bg-black/15 border border-white/20 rounded-[4px] px-1.5 py-1 text-white">
+            <button
+              id="btn-prev-week-mob"
+              type="button"
+              onClick={goToPrevWeek}
+              className="h-7 px-2 rounded-[3px] bg-white/10 hover:bg-white/25 border border-white/15 flex items-center gap-0.5 text-[11px] font-bold transition-colors shrink-0 cursor-pointer"
+              title="Semana anterior"
+            >
+              <span className="material-symbols-outlined text-sm">chevron_left</span>
+              <span>Ant.</span>
+            </button>
+
+            <button
+              id="week-display-mob"
+              type="button"
+              onClick={goToCurrentWeek}
+              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-0.5 text-[11px] font-bold truncate cursor-pointer"
+              title="Toque para voltar à semana atual"
+            >
+              <span className="material-symbols-outlined text-sm shrink-0">calendar_month</span>
+              <span className="truncate">{shortWeekRange || formattedWeekRange}</span>
+              {!isCurrentWeek && (
+                <span className="px-1.5 py-0.2 rounded-[2px] bg-amber-400 text-amber-950 text-[9px] font-extrabold uppercase shrink-0">
+                  {weekRelation === 'past' ? 'Passada' : 'Futura'}
+                </span>
+              )}
+            </button>
+
+            <button
+              id="btn-next-week-mob"
+              type="button"
+              onClick={goToNextWeek}
+              className="h-7 px-2 rounded-[3px] bg-white/10 hover:bg-white/25 border border-white/15 flex items-center gap-0.5 text-[11px] font-bold transition-colors shrink-0 cursor-pointer"
+              title="Próxima semana"
+            >
+              <span>Próx.</span>
+              <span className="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* ============================================== */}
@@ -259,12 +310,73 @@ export function KanbanHeader({ weekNav }) {
         </div>
 
         <div className="flex flex-col items-end gap-1.5">
-          <div className="flex items-center gap-2.5">
-            <span className={`text-xs font-medium border px-3 py-1.5 rounded-[4px] flex items-center gap-1.5 ${
-              isLightTab ? 'bg-white/15 border-white/25 text-white' : 'bg-surface-container border-grid-line text-on-surface'
-            }`} id="week-display">
-              <span>📅</span> {formattedWeekRange}
-            </span>
+          <div className="flex items-center gap-2">
+            {(activeTab === 'entregas' || activeTab === 'coletas') ? (
+              <div
+                className={`flex items-center rounded-[4px] border p-0.5 gap-0.5 ${
+                  isLightTab
+                    ? 'bg-white/15 border-white/25 text-white'
+                    : 'bg-surface-container border-grid-line text-on-surface'
+                }`}
+              >
+                <button
+                  id="btn-prev-week-desk"
+                  type="button"
+                  onClick={goToPrevWeek}
+                  className="h-7 w-7 rounded-[3px] hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer"
+                  title="Ver semana anterior"
+                  aria-label="Semana anterior"
+                >
+                  <span className="material-symbols-outlined text-base">chevron_left</span>
+                </button>
+
+                <span
+                  id="week-display"
+                  className="text-xs font-bold px-2 flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <span className="material-symbols-outlined text-sm">calendar_month</span>
+                  <span>{formattedWeekRange}</span>
+                </span>
+
+                <button
+                  id="btn-next-week-desk"
+                  type="button"
+                  onClick={goToNextWeek}
+                  className="h-7 w-7 rounded-[3px] hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer"
+                  title="Ver próxima semana"
+                  aria-label="Próxima semana"
+                >
+                  <span className="material-symbols-outlined text-base">chevron_right</span>
+                </button>
+
+                {!isCurrentWeek && (
+                  <button
+                    id="btn-current-week-desk"
+                    type="button"
+                    onClick={goToCurrentWeek}
+                    className={`ml-0.5 px-2 py-1 rounded-[3px] text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer ${
+                      weekRelation === 'past'
+                        ? 'bg-amber-400 text-amber-950 hover:bg-amber-300'
+                        : 'bg-cyan-300 text-cyan-950 hover:bg-cyan-200'
+                    }`}
+                    title="Voltar para a semana atual"
+                  >
+                    Hoje
+                  </button>
+                )}
+              </div>
+            ) : (
+              <span
+                className={`text-xs font-medium border px-3 py-1.5 rounded-[4px] flex items-center gap-1.5 ${
+                  isLightTab
+                    ? 'bg-white/15 border-white/25 text-white'
+                    : 'bg-surface-container border-grid-line text-on-surface'
+                }`}
+                id="week-display"
+              >
+                <span>📅</span> {formattedWeekRange}
+              </span>
+            )}
 
             {/* User Profile Capsule */}
             <div className={`flex items-center gap-2 pl-2 border-l ${isLightTab ? 'border-white/20' : 'border-grid-line'}`}>

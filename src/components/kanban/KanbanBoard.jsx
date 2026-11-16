@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import KanbanColumn from './KanbanColumn';
 import MobileWeekNav from './MobileWeekNav';
 import { useLogistics } from '../../contexts/LogisticsContext';
+import { groupItemsByWeekColumns } from '../../lib/kanbanWeekUtils';
 
 export default function KanbanBoard({ weekNav, type = 'entrega' }) {
   const { 
@@ -12,135 +13,21 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
     loading 
   } = useLogistics();
 
-  const { columns, weekStart, weekEnd } = weekNav;
+  const { columns, weekStart, weekEnd, weekRelation, formattedWeekRange, goToCurrentWeek } = weekNav;
   const [mobileActiveColumnKey, setMobileActiveColumnKey] = useState('atualizacoes');
 
   const rawItems = type === 'entrega' ? filteredDeliveries : filteredCollections;
   const items = Array.isArray(rawItems) ? rawItems.filter(Boolean) : [];
 
-  // Start & End of active week
-  const startOfActiveWeek = useMemo(() => {
-    if (!weekStart) return null;
-    const d = new Date(weekStart);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, [weekStart]);
-
-  const endOfActiveWeek = useMemo(() => {
-    if (!weekEnd) return null;
-    const d = new Date(weekEnd);
-    d.setHours(23, 59, 59, 999);
-    return d;
-  }, [weekEnd]);
-
-  // Compute items per column with rollover logic
+  // Compute items per column using unified past / current / future week grouping rules
   const itemsByColumn = useMemo(() => {
-    const map = {
-      atualizacoes: [],
-      segunda: [],
-      terca: [],
-      quarta: [],
-      quinta: [],
-      sexta: [],
-      sabado: []
-    };
-
-    const parseDateSafe = (val) => {
-      if (!val) return null;
-      if (val instanceof Date) return val;
-      if (typeof val === 'string') {
-        const clean = val.includes('T') ? val.split('T')[0] : val.split(' ')[0];
-        const parts = clean.split('-');
-        if (parts.length === 3) {
-          const y = parseInt(parts[0], 10);
-          const m = parseInt(parts[1], 10) - 1;
-          const d = parseInt(parts[2], 10);
-          if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
-            return new Date(y, m, d, 12, 0, 0);
-          }
-        }
-        const dObj = new Date(val);
-        if (!isNaN(dObj.getTime())) return dObj;
-      }
-      return null;
-    };
-
-    items.forEach(item => {
-      if (!item) return;
-
-      const isConcluido = item.status === 'concluido';
-      let rawCol = (type === 'entrega' ? item.coluna : item.coluna_kanban) || 'atualizacoes';
-      let colVal = rawCol;
-      let colEmbeddedDate = null;
-
-      if (typeof rawCol === 'string' && rawCol.includes('|')) {
-        const parts = rawCol.split('|');
-        colVal = parts[0];
-        colEmbeddedDate = parts[1] || null;
-      }
-
-      // Determine item reference date
-      let itemDate = null;
-      if (isConcluido) {
-        itemDate = parseDateSafe(item.data_conclusao) || parseDateSafe(item.data_registro) || parseDateSafe(item.created_at);
-      } else {
-        itemDate = parseDateSafe(colEmbeddedDate) || parseDateSafe(item.data_registro) || parseDateSafe(item.created_at);
-      }
-
-      let isFromPastWeek = false;
-      let isFromFutureWeek = false;
-
-      if (itemDate && startOfActiveWeek && endOfActiveWeek) {
-        if (itemDate.getTime() < startOfActiveWeek.getTime()) {
-          isFromPastWeek = true;
-        } else if (itemDate.getTime() > endOfActiveWeek.getTime()) {
-          isFromFutureWeek = true;
-        }
-      }
-
-      // 1. Concluídos de semanas anteriores NÃO aparecem na semana atual
-      if (isConcluido && (isFromPastWeek || isFromFutureWeek)) {
-        return;
-      }
-
-      // 2. Não concluídos (pendentes) de semanas anteriores vão automaticamente para "Atualizações"
-      if (!isConcluido && isFromPastWeek) {
-        map.atualizacoes.push(item);
-        return;
-      }
-
-      // 3. Itens da semana ativa (ou sem data específica) vão para a coluna correspondente
-      if (map[colVal]) {
-        map[colVal].push(item);
-      } else {
-        map.atualizacoes.push(item);
-      }
+    return groupItemsByWeekColumns({
+      items,
+      type,
+      weekStart,
+      weekEnd,
     });
-
-    // Sort items in each column: URGENT first, pending before concluded, newest first
-    Object.keys(map).forEach(col => {
-      map[col].sort((a, b) => {
-        if (!a || !b) return 0;
-        // 1. Urgente first
-        const aUrg = a.urgente ? 1 : 0;
-        const bUrg = b.urgente ? 1 : 0;
-        if (aUrg !== bUrg) return bUrg - aUrg;
-
-        // 2. Pendentes antes de concluídos
-        const aConcluido = a.status === 'concluido' ? 1 : 0;
-        const bConcluido = b.status === 'concluido' ? 1 : 0;
-        if (aConcluido !== bConcluido) return aConcluido - bConcluido;
-
-        // 3. Mais recentes primeiro
-        const timeA = new Date(a.created_at || a.data_registro || 0).getTime() || 0;
-        const timeB = new Date(b.created_at || b.data_registro || 0).getTime() || 0;
-        if (timeB !== timeA) return timeB - timeA;
-        return (Number(b.id) || 0) - (Number(a.id) || 0);
-      });
-    });
-
-    return map;
-  }, [items, type, startOfActiveWeek, endOfActiveWeek]);
+  }, [items, type, weekStart, weekEnd]);
 
   const itemCounts = useMemo(() => {
     const counts = {};
@@ -180,7 +67,36 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden w-full h-full relative z-0">
-      
+      {weekRelation && weekRelation !== 'current' && (
+        <div
+          id="week-context-banner"
+          className={`shrink-0 px-3 sm:px-5 py-1.5 text-xs font-semibold flex flex-wrap items-center justify-between gap-2 border-b ${
+            weekRelation === 'past'
+              ? 'bg-amber-950/90 border-amber-500/40 text-amber-100'
+              : 'bg-sky-950/90 border-cyan-500/40 text-cyan-100'
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="material-symbols-outlined text-sm shrink-0">
+              {weekRelation === 'past' ? 'history' : 'event_upcoming'}
+            </span>
+            <span className="truncate">
+              {weekRelation === 'past'
+                ? `Histórico da semana passada (${formattedWeekRange}) — exibindo ${type === 'coleta' ? 'coletas' : 'entregas'} registradas nesta semana.`
+                : `Planejamento futuro (${formattedWeekRange}) — exibindo agendamentos marcados para esta semana.`}
+            </span>
+          </div>
+          <button
+            id="btn-banner-current-week"
+            type="button"
+            onClick={goToCurrentWeek}
+            className="px-2.5 py-0.5 rounded-[4px] bg-white/15 hover:bg-white/25 border border-white/25 text-[11px] font-bold text-white transition-colors shrink-0 cursor-pointer"
+          >
+            Voltar para Semana Atual
+          </button>
+        </div>
+      )}
+
       {/* Mobile Week Day Tabs */}
       <MobileWeekNav
         columns={columns}

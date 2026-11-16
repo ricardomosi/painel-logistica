@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MapPin,
   Navigation,
@@ -7,6 +7,8 @@ import {
   CheckCircle2,
   Crosshair,
   Layers,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { loadGeocodeCache, saveGeocodeCache } from '../../lib/locationUtils';
 import { formatCurrencyBRL } from '../../lib/reportAnalytics';
@@ -32,13 +34,18 @@ export default function DeliveryHeatmap({
   mapStats = null,
   heightClass = 'h-[320px] sm:h-[360px]',
   maxLocationsList = 10,
+  isResolvingShortLinks = false,
 }) {
+  const heatmapBlockRef = useRef(null);
   const mapContainerRef = useRef(null);
   const googleMapRef = useRef(null);
   const overlaysRef = useRef([]);
   const infoWindowRef = useRef(null);
   const attemptedGeocodeKeysRef = useRef(new Set());
   const selectedLocKeyRef = useRef(null);
+  const prevSelectedLocKeyRef = useRef(null);
+  const hasInitialFitRef = useRef(false);
+  const mappablePointsRef = useRef([]);
 
   const [geocodeCache, setGeocodeCache] = useState(() => loadGeocodeCache());
   const [selectedLocKey, setSelectedLocKey] = useState(null);
@@ -99,6 +106,35 @@ export default function DeliveryHeatmap({
     () => resolvedLocations.filter((l) => l.coords && typeof l.coords.lat === 'number' && typeof l.coords.lng === 'number'),
     [resolvedLocations]
   );
+
+  mappablePointsRef.current = mappablePoints;
+
+  const pointsSignature = useMemo(
+    () =>
+      mappablePoints
+        .map((p) => `${p.key}:${p.coords.lat.toFixed(5)},${p.coords.lng.toFixed(5)}:${p.entregas}`)
+        .join('|'),
+    [mappablePoints]
+  );
+
+  const fitMapToOverview = useCallback(() => {
+    const map = googleMapRef.current;
+    if (!map || typeof window === 'undefined' || !window.google?.maps) return;
+    const pts = mappablePointsRef.current || [];
+    if (pts.length === 0) {
+      map.setCenter(MOSSORO_CENTER);
+      map.setZoom(11);
+      return;
+    }
+    if (pts.length === 1) {
+      map.setCenter(pts[0].coords);
+      map.setZoom(13);
+      return;
+    }
+    const bounds = new window.google.maps.LatLngBounds();
+    pts.forEach((loc) => bounds.extend({ lat: loc.coords.lat, lng: loc.coords.lng }));
+    map.fitBounds(bounds, { top: 36, right: 36, bottom: 36, left: 36 });
+  }, []);
 
   const coverageStats = useMemo(() => {
     const mappedDeliveries = mappablePoints.reduce((sum, l) => sum + (l.entregas || 0), 0);
@@ -198,7 +234,8 @@ export default function DeliveryHeatmap({
     };
   }, [googleMapsReady, resolvedLocations]);
 
-  // 1. Create / update overlays ONLY when map becomes ready or mappablePoints data changes
+  // 1. Create / update overlays ONLY when map becomes ready or actual point geometry/counts change
+  // NEVER reset/fitBounds while the user is locked on a selected location!
   useEffect(() => {
     if (!googleMapsReady || !mapContainerRef.current || typeof window === 'undefined' || !window.google?.maps) {
       return undefined;
@@ -221,9 +258,13 @@ export default function DeliveryHeatmap({
     }
 
     const map = googleMapRef.current;
+    const points = mappablePointsRef.current || [];
+    const lockedKey = selectedLocKeyRef.current;
 
-    // Tear down previous dataset overlays safely
-    if (infoWindowRef.current) infoWindowRef.current.close();
+    // Only tear down infoWindow when nothing is locked so selected popup stays intact
+    if (!lockedKey && infoWindowRef.current) {
+      infoWindowRef.current.close();
+    }
     overlaysRef.current.forEach((ov) => {
       try {
         window.google.maps.event.clearInstanceListeners(ov.circle);
@@ -236,18 +277,19 @@ export default function DeliveryHeatmap({
     });
     overlaysRef.current = [];
 
-    if (mappablePoints.length === 0) {
-      map.setCenter(MOSSORO_CENTER);
-      map.setZoom(11);
+    if (points.length === 0) {
+      if (!lockedKey) {
+        map.setCenter(MOSSORO_CENTER);
+        map.setZoom(11);
+      }
       return undefined;
     }
 
-    const bounds = new window.google.maps.LatLngBounds();
-    const maxEntregas = Math.max(...mappablePoints.map((p) => p.entregas), 1);
+    const maxEntregas = Math.max(...points.map((p) => p.entregas), 1);
 
-    mappablePoints.forEach((loc, idx) => {
+    points.forEach((loc, idx) => {
       const position = { lat: loc.coords.lat, lng: loc.coords.lng };
-      bounds.extend(position);
+      const isSelected = Boolean(lockedKey && lockedKey === loc.key);
 
       const isHotspot = idx < 3;
       const ratio = loc.entregas / maxEntregas;
@@ -260,11 +302,11 @@ export default function DeliveryHeatmap({
         map,
         center: position,
         radius: 520 + Math.sqrt(loc.entregas) * 650,
-        strokeColor: baseStroke,
+        strokeColor: isSelected ? '#ffffff' : baseStroke,
         strokeOpacity: 0.78,
-        strokeWeight: 1.5,
-        fillColor: baseFill,
-        fillOpacity: baseFillOpacity,
+        strokeWeight: isSelected ? 2.5 : 1.5,
+        fillColor: isSelected ? '#00D4FF' : baseFill,
+        fillOpacity: isSelected ? 0.34 : baseFillOpacity,
         clickable: true,
       });
 
@@ -280,13 +322,13 @@ export default function DeliveryHeatmap({
         },
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
-          scale: baseScale,
-          fillColor: baseFill,
+          scale: isSelected ? 15 : baseScale,
+          fillColor: isSelected ? '#00D4FF' : baseFill,
           fillOpacity: 0.94,
           strokeColor: '#ffffff',
-          strokeWeight: 1.5,
+          strokeWeight: isSelected ? 2.5 : 1.5,
         },
-        zIndex: 100 - idx,
+        zIndex: isSelected ? 999 : 100 - idx,
       });
 
       const selectOverlay = () => {
@@ -310,20 +352,22 @@ export default function DeliveryHeatmap({
       });
     });
 
-    if (mappablePoints.length === 1) {
-      map.setCenter(mappablePoints[0].coords);
-      map.setZoom(13);
-    } else {
-      map.fitBounds(bounds, { top: 36, right: 36, bottom: 36, left: 36 });
+    // Only auto-fit bounds on the very first load while no location is locked
+    if (!lockedKey && !hasInitialFitRef.current) {
+      fitMapToOverview();
+      hasInitialFitRef.current = true;
     }
 
     return undefined;
-  }, [googleMapsReady, mappablePoints]);
+  }, [googleMapsReady, pointsSignature, fitMapToOverview]);
 
-  // 2. Lightweight selection update without destroying overlays (prevents stutter/freeze on click)
+  // 2. Camera lock & highlight update when clicking a location — stays locked until another click or leaving the map block
   useEffect(() => {
+    const wasLocked = Boolean(prevSelectedLocKeyRef.current);
+    prevSelectedLocKeyRef.current = selectedLocKey;
     selectedLocKeyRef.current = selectedLocKey;
-    if (!googleMapsReady || !googleMapRef.current || overlaysRef.current.length === 0) return;
+
+    if (!googleMapsReady || !googleMapRef.current) return;
 
     const map = googleMapRef.current;
     let activeItem = null;
@@ -353,7 +397,9 @@ export default function DeliveryHeatmap({
     if (activeItem) {
       const { loc, marker } = activeItem;
       map.panTo(loc.coords);
-      if ((map.getZoom() || 10) < 12) map.setZoom(12);
+      if ((map.getZoom() || 10) < 15) {
+        map.setZoom(15);
+      }
       if (infoWindowRef.current) {
         infoWindowRef.current.setContent(`
           <div style="font-family: 'Hanken Grotesk', sans-serif; color: #0f172a; min-width: 190px; padding: 2px;">
@@ -368,13 +414,35 @@ export default function DeliveryHeatmap({
         `);
         infoWindowRef.current.open({ map, anchor: marker, shouldFocus: false });
       }
+    } else if (!selectedLocKey && wasLocked) {
+      if (infoWindowRef.current) infoWindowRef.current.close();
+      fitMapToOverview();
     }
-  }, [selectedLocKey, googleMapsReady]);
+  }, [selectedLocKey, googleMapsReady, fitMapToOverview]);
+
+  // 3. Auto-unlock only when user clicks/interacts outside the entire map block
+  useEffect(() => {
+    if (!selectedLocKey) return undefined;
+
+    const handlePointerDownOutside = (e) => {
+      const block = heatmapBlockRef.current;
+      if (!block) return;
+      if (!block.contains(e.target)) {
+        setSelectedLocKey(null);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDownOutside, true);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDownOutside, true);
+    };
+  }, [selectedLocKey]);
 
   const selectedLocation = useMemo(
     () => resolvedLocations.find((l) => l.key === selectedLocKey) || resolvedLocations[0] || null,
     [resolvedLocations, selectedLocKey]
   );
+  const isMapLocked = Boolean(selectedLocKey);
 
   // Blueprint SVG radar projection bounds (used when Google Maps isn't available or headless)
   const radarNodes = useMemo(() => {
@@ -398,7 +466,7 @@ export default function DeliveryHeatmap({
   }, [mappablePoints]);
 
   return (
-    <div className="flex flex-col gap-3 min-w-0">
+    <div ref={heatmapBlockRef} id="delivery-heatmap-block" className="flex flex-col gap-3 min-w-0">
       {/* Coverage Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         <div className="bg-[#020D1A]/75 border border-white/10 rounded-[4px] px-3 py-2 flex items-center justify-between gap-2 min-w-0">
@@ -465,11 +533,28 @@ export default function DeliveryHeatmap({
                 Mapa de Concentração de Entregas (Mossoró/RN & Região)
               </span>
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
+              {isResolvingShortLinks && (
+                <span className="px-2 py-0.5 rounded-[4px] bg-amber-500/20 border border-amber-400/40 text-amber-300">
+                  Expandindo links curtos...
+                </span>
+              )}
               {geocodingPending && (
                 <span className="px-2 py-0.5 rounded-[4px] bg-[#0081A7]/25 border border-[#0081A7]/40 text-[#00D4FF]">
                   Geocodificando endereços...
                 </span>
+              )}
+              {isMapLocked && (
+                <button
+                  id="btn-unlock-map-focus"
+                  type="button"
+                  onClick={() => setSelectedLocKey(null)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#00D4FF]/20 hover:bg-[#00D4FF]/30 border border-[#00D4FF]/50 text-[#00D4FF] transition-colors cursor-pointer"
+                  title="Destravar zoom e voltar à visão geral de todos os polos"
+                >
+                  <Unlock size={11} />
+                  <span>Ver Todos / Destravar</span>
+                </button>
               )}
               <span className="px-2 py-0.5 rounded-[4px] bg-white/5 border border-white/10 text-slate-300">
                 {googleMapsReady ? 'Google Maps Ativo' : 'Radar Espacial Blueprint'}
@@ -559,8 +644,12 @@ export default function DeliveryHeatmap({
               <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:right-auto sm:max-w-sm bg-[#031428]/95 border border-[#0081A7]/60 rounded-[4px] px-3 py-2 shadow-lg pointer-events-auto">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#00D4FF] truncate">
-                      #{selectedLocation.rank} • {selectedLocation.category}
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#00D4FF] truncate flex items-center gap-1">
+                      {isMapLocked && <Lock size={10} className="shrink-0" />}
+                      <span>
+                        #{selectedLocation.rank} • {selectedLocation.category}
+                        {isMapLocked ? ' • Travado' : ''}
+                      </span>
                     </div>
                     <div className="text-xs font-bold text-white truncate" title={selectedLocation.label}>
                       {selectedLocation.label}

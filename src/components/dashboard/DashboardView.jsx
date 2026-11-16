@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -38,6 +38,8 @@ import {
 import { useLogistics } from '../../contexts/LogisticsContext';
 import { fetchAllHistoricalDeliveries, fetchAllRomaneioItemsMap } from '../../services/reportsService';
 import { mergeHistoricalAndLiveDeliveries } from '../../lib/legacyDeliveries';
+import { extractFirstShortMapsUrl, loadShortMapsCache } from '../../lib/locationUtils';
+import { resolveShortMapsUrlsBatch } from '../../services/mapsLinkService';
 import {
   buildReportAnalytics,
   formatCurrencyBRL,
@@ -154,6 +156,9 @@ export default function DashboardView() {
 
   const [romaneioItemsMap, setRomaneioItemsMap] = useState(() => new Map());
   const [historicalDeliveries, setHistoricalDeliveries] = useState([]);
+  const [shortMapsCache, setShortMapsCache] = useState(() => loadShortMapsCache());
+  const [isResolvingShortLinks, setIsResolvingShortLinks] = useState(false);
+  const attemptedShortUrlsRef = useRef(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [chartGranularity, setChartGranularity] = useState('monthly'); // 'monthly' | 'daily'
@@ -222,6 +227,38 @@ export default function DashboardView() {
     () => mergeHistoricalAndLiveDeliveries(deliveries, historicalDeliveries),
     [deliveries, historicalDeliveries]
   );
+
+  // Background batch expansion for shortened maps.app.goo.gl links so old & new points resolve accurately
+  useEffect(() => {
+    const unresolvedUrls = [];
+    for (const d of allDeliveries || []) {
+      const shortUrl = extractFirstShortMapsUrl(d?.endereco);
+      if (shortUrl && !shortMapsCache?.[shortUrl]?.ok && !attemptedShortUrlsRef.current.has(shortUrl)) {
+        unresolvedUrls.push(shortUrl);
+      }
+    }
+
+    const batch = Array.from(new Set(unresolvedUrls)).slice(0, 15);
+    if (batch.length === 0) return undefined;
+
+    let cancelled = false;
+    batch.forEach((u) => attemptedShortUrlsRef.current.add(u));
+    setIsResolvingShortLinks(true);
+
+    resolveShortMapsUrlsBatch(batch)
+      .then((updatedCache) => {
+        if (!cancelled && updatedCache) {
+          setShortMapsCache(updatedCache);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsResolvingShortLinks(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [allDeliveries, shortMapsCache]);
 
   const allHistoryBounds = useMemo(() => {
     const now = new Date();
@@ -305,6 +342,7 @@ export default function DashboardView() {
     return buildReportAnalytics({
       deliveries: allDeliveries,
       romaneioItemsByEntregaId: romaneioItemsMap,
+      resolvedShortLinks: shortMapsCache,
       dateStart,
       dateEnd,
       selectedPlaca,
@@ -315,6 +353,7 @@ export default function DashboardView() {
   }, [
     allDeliveries,
     romaneioItemsMap,
+    shortMapsCache,
     dateStart,
     dateEnd,
     selectedPlaca,
@@ -1273,6 +1312,7 @@ export default function DashboardView() {
           mapStats={locationsStats.mapStats}
           heightClass="h-[300px] sm:h-[360px]"
           maxLocationsList={10}
+          isResolvingShortLinks={isResolvingShortLinks}
         />
       </section>
 

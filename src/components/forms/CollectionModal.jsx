@@ -2,6 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLogistics } from '../../contexts/LogisticsContext';
 import MapPickerModal from '../common/MapPickerModal';
+import {
+  buildGoogleMapsDirectionsUrl,
+  extractFirstShortMapsUrl,
+  formatResolvedAddressForForm,
+} from '../../lib/locationUtils';
+import { resolveShortMapsUrlClient } from '../../services/mapsLinkService';
+import {
+  buildScheduledColumnValue,
+  extractScheduledDateFromItem,
+  formatIsoBoardDate,
+  getColumnKeyFromDate,
+  getWeekDayDateStr,
+} from '../../lib/kanbanWeekUtils';
 
 const RESPONSAVEIS_COLETA = [
   'SAC FILIAL',
@@ -28,33 +41,7 @@ const PLACAS_COLETA = [
   'TSW-7G98',
 ];
 
-const DAY_OFFSETS = {
-  segunda: 0,
-  terca: 1,
-  quarta: 2,
-  quinta: 3,
-  sexta: 4,
-  sabado: 5,
-};
-
-const getWeekDayDateStr = (colKey) => {
-  if (!colKey || DAY_OFFSETS[colKey] === undefined) return null;
-  const now = new Date();
-  const currentDay = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
-  const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diffToMonday);
-
-  const targetDate = new Date(monday);
-  targetDate.setDate(monday.getDate() + DAY_OFFSETS[colKey]);
-
-  const y = targetDate.getFullYear();
-  const m = String(targetDate.getMonth() + 1).padStart(2, '0');
-  const d = String(targetDate.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
-
-export default function CollectionModal() {
+export default function CollectionModal({ weekNav = null } = {}) {
   const { isMotorista } = useAuth();
   const { 
     collectionModalOpen, 
@@ -73,6 +60,7 @@ export default function CollectionModal() {
 
   const isEditing = !!selectedCollection?.id;
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
+  const [resolvingLink, setResolvingLink] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Dynamic Vehicles from Database (Admin -> Veículos & Motoristas)
@@ -112,6 +100,7 @@ export default function CollectionModal() {
     telefone: '',
     coluna_kanban: 'atualizacoes',
     data_registro: '',
+    data_agendada: '',
     status: 'pendente',
     urgente: false,
     data_conclusao: '',
@@ -120,6 +109,7 @@ export default function CollectionModal() {
 
   useEffect(() => {
     if (selectedCollection) {
+      const embeddedSched = extractScheduledDateFromItem(selectedCollection, 'coleta');
       setFormData({
         fornecedor: selectedCollection.fornecedor || '',
         endereco: selectedCollection.endereco || '',
@@ -129,6 +119,7 @@ export default function CollectionModal() {
         telefone: selectedCollection.telefone || '',
         coluna_kanban: selectedCollection.coluna_kanban?.split('|')[0] || 'atualizacoes',
         data_registro: selectedCollection.data_registro || '',
+        data_agendada: embeddedSched || '',
         status: selectedCollection.status || 'pendente',
         urgente: !!selectedCollection.urgente,
         data_conclusao: selectedCollection.data_conclusao || '',
@@ -144,6 +135,7 @@ export default function CollectionModal() {
         telefone: '',
         coluna_kanban: 'atualizacoes',
         data_registro: '',
+        data_agendada: '',
         status: 'pendente',
         urgente: false,
         data_conclusao: '',
@@ -153,6 +145,31 @@ export default function CollectionModal() {
   }, [selectedCollection, collectionModalOpen]);
 
   if (!collectionModalOpen) return null;
+
+  const handleResolveShortAddressLink = async (rawVal = formData.endereco, silent = false) => {
+    const targetUrl = extractFirstShortMapsUrl(rawVal);
+    if (!targetUrl) return rawVal;
+    try {
+      setResolvingLink(true);
+      const resolved = await resolveShortMapsUrlClient(targetUrl);
+      if (resolved?.ok && typeof resolved.lat === 'number' && typeof resolved.lng === 'number') {
+        const formatted = formatResolvedAddressForForm(rawVal, resolved);
+        setFormData((prev) => ({ ...prev, endereco: formatted }));
+        if (!silent) {
+          addToast('Link encurtado convertido para endereço e coordenadas exatas!', 'success');
+        }
+        return formatted;
+      }
+      if (!silent) {
+        addToast(resolved?.error || 'Não foi possível expandir este link automaticamente.', 'warning');
+      }
+    } catch {
+      if (!silent) addToast('Falha ao expandir link do Google Maps.', 'warning');
+    } finally {
+      setResolvingLink(false);
+    }
+    return rawVal;
+  };
 
   const handlePlacaChange = (val) => {
     let matchedDriverId = null;
@@ -227,23 +244,39 @@ export default function CollectionModal() {
 
     try {
       setSaving(true);
-      const targetDayDate = getWeekDayDateStr(formData.coluna_kanban);
-      const finalDataRegistro = targetDayDate || formData.data_registro || selectedCollection?.data_registro || new Date().toISOString().split('T')[0];
+      let resolvedEndereco = formData.endereco?.trim() || '';
+      if (resolvedEndereco && extractFirstShortMapsUrl(resolvedEndereco)) {
+        resolvedEndereco = await Promise.race([
+          handleResolveShortAddressLink(resolvedEndereco, true),
+          new Promise((resolve) => setTimeout(() => resolve(resolvedEndereco), 2500)),
+        ]);
+      }
+
+      const scheduledDateStr = formData.data_agendada?.trim() || '';
+      const resolvedColKey = scheduledDateStr
+        ? (formData.coluna_kanban === 'atualizacoes' ? getColumnKeyFromDate(scheduledDateStr) : formData.coluna_kanban)
+        : (formData.coluna_kanban || 'atualizacoes');
+      const targetDayDate = scheduledDateStr || getWeekDayDateStr(resolvedColKey, weekNav?.weekStart);
+      const finalDataRegistro = targetDayDate || formData.data_registro || selectedCollection?.data_registro || formatIsoBoardDate(new Date());
+      const finalColuna = scheduledDateStr
+        ? buildScheduledColumnValue(resolvedColKey, scheduledDateStr)
+        : (resolvedColKey || 'atualizacoes');
 
       const cleanPayload = {
         ...formData,
         fornecedor: formData.fornecedor?.trim() || '',
-        endereco: formData.endereco?.trim() || null,
+        endereco: resolvedEndereco || null,
         responsavel: formData.responsavel?.trim() || null,
         placa: formData.placa?.trim() || null,
         telefone: formData.telefone?.trim() || null,
-        coluna_kanban: formData.coluna_kanban || 'atualizacoes',
+        coluna_kanban: finalColuna,
         data_registro: finalDataRegistro,
         motorista_id: formData.motorista_id || null,
         veiculo_id: formData.veiculo_id || null,
         data_conclusao: formData.data_conclusao?.trim() || null,
         hora_conclusao: formData.hora_conclusao?.trim() || null,
       };
+      delete cleanPayload.data_agendada;
 
       if (isEditing) {
         await updateCollection(selectedCollection.id, cleanPayload);
@@ -338,14 +371,27 @@ export default function CollectionModal() {
 
             {/* Endereço da Coleta com Mapa e Traçar Rota */}
             <div>
-              <div className="flex justify-between items-center mb-1">
+              <div className="flex justify-between items-center mb-1 gap-2 flex-wrap">
                 <label className="block text-xs font-bold text-slate-700">
                   Endereço da Coleta / Fornecedor
                 </label>
                 <div className="flex items-center gap-2">
+                  {!isMotorista && extractFirstShortMapsUrl(formData.endereco) && (
+                    <button
+                      id="btn-convert-short-link-collection"
+                      type="button"
+                      disabled={resolvingLink}
+                      onClick={() => handleResolveShortAddressLink(formData.endereco, false)}
+                      className="text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md flex items-center gap-1 cursor-pointer disabled:opacity-60"
+                      title="Expandir link encurtado maps.app.goo.gl para endereço e coordenadas exatas"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">auto_fix_high</span>
+                      <span>{resolvingLink ? 'Convertendo...' : 'Converter Link GPS'}</span>
+                    </button>
+                  )}
                   {formData.endereco && (
                     <a 
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(formData.endereco)}`}
+                      href={buildGoogleMapsDirectionsUrl(formData.endereco)} 
                       target="_blank"
                       rel="noreferrer"
                       className="text-[11px] font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-0.5"
@@ -371,7 +417,16 @@ export default function CollectionModal() {
                 disabled={isMotorista}
                 value={formData.endereco}
                 onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                placeholder="Rua, Número, Bairro, Cidade - UF" 
+                onPaste={(e) => {
+                  if (isMotorista) return;
+                  const pasted = e.clipboardData?.getData('text') || '';
+                  if (extractFirstShortMapsUrl(pasted)) {
+                    setTimeout(() => {
+                      handleResolveShortAddressLink(pasted, false);
+                    }, 80);
+                  }
+                }}
+                placeholder="Rua, Número, Bairro, Cidade - UF ou cole link do Maps" 
                 className={`w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-xs ${isMotorista ? 'bg-slate-50 text-slate-800 font-medium' : ''}`}
               />
             </div>
@@ -460,25 +515,69 @@ export default function CollectionModal() {
               </div>
             </div>
 
-            {/* Dia da Semana (Coluna Kanban) */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Dia da Semana (Coluna do Quadro)
-              </label>
-              <select 
-                value={formData.coluna_kanban}
-                disabled={isMotorista}
-                onChange={(e) => setFormData({ ...formData, coluna_kanban: e.target.value })}
-                className={`w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-xs font-semibold text-slate-700 cursor-pointer ${isMotorista ? 'bg-slate-50' : ''}`}
-              >
-                <option value="atualizacoes">Inbox (Pendente / Atualizações)</option>
-                <option value="segunda">Segunda-feira</option>
-                <option value="terca">Terça-feira</option>
-                <option value="quarta">Quarta-feira</option>
-                <option value="quinta">Quinta-feira</option>
-                <option value="sexta">Sexta-feira</option>
-                <option value="sabado">Sábado</option>
-              </select>
+            {/* Dia da Semana (Coluna Kanban) + Data Específica */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Dia da Semana (Coluna do Quadro)
+                </label>
+                <select 
+                  value={formData.coluna_kanban}
+                  disabled={isMotorista}
+                  onChange={(e) => {
+                    const nextCol = e.target.value;
+                    const matchedDate = nextCol === 'atualizacoes' ? '' : getWeekDayDateStr(nextCol, weekNav?.weekStart);
+                    setFormData((prev) => ({
+                      ...prev,
+                      coluna_kanban: nextCol,
+                      data_agendada: prev.data_agendada && matchedDate ? matchedDate : prev.data_agendada,
+                    }));
+                  }}
+                  className={`w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-xs font-semibold text-slate-700 cursor-pointer ${isMotorista ? 'bg-slate-50' : ''}`}
+                >
+                  <option value="atualizacoes">Inbox (Pendente / Atualizações)</option>
+                  <option value="segunda">Segunda-feira</option>
+                  <option value="terca">Terça-feira</option>
+                  <option value="quarta">Quarta-feira</option>
+                  <option value="quinta">Quinta-feira</option>
+                  <option value="sexta">Sexta-feira</option>
+                  <option value="sabado">Sábado</option>
+                </select>
+              </div>
+
+              {!isMotorista && (
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <label htmlFor="collection-scheduled-date" className="block text-xs font-bold text-slate-700">
+                      Agendar Dia Específico
+                    </label>
+                    {formData.data_agendada && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, data_agendada: '' }))}
+                        className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                      >
+                        Limpar
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    id="collection-scheduled-date"
+                    type="date"
+                    value={formData.data_agendada}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const mappedCol = val ? getColumnKeyFromDate(val) : formData.coluna_kanban;
+                      setFormData((prev) => ({
+                        ...prev,
+                        data_agendada: val,
+                        coluna_kanban: val ? mappedCol : prev.coluna_kanban,
+                      }));
+                    }}
+                    className="w-full px-3.5 py-2 border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-emerald-50/40 text-xs font-semibold text-slate-800"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Detalhes da Conclusão */}

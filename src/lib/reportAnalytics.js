@@ -176,6 +176,7 @@ function finalizeOtifPercentages(bucket) {
 export function buildReportAnalytics({
   deliveries = [],
   romaneioItemsByEntregaId = new Map(),
+  resolvedShortLinks = null,
   dateStart,
   dateEnd,
   selectedPlaca = 'TODAS',
@@ -504,7 +505,7 @@ export function buildReportAnalytics({
     cliObj.byMonth[monthKey].km += km;
 
     // Locations aggregation (Total + Monthly)
-    const locInfo = normalizeDeliveryLocation(card);
+    const locInfo = normalizeDeliveryLocation(card, resolvedShortLinks);
     if (locInfo.isEmpty) mapStats.emptyAddressCount += 1;
     else if (locInfo.isShortUrl) mapStats.shortUrlCount += 1;
     else if (locInfo.explicitCoords) mapStats.explicitCoordsCount += 1;

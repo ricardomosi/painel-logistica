@@ -10,6 +10,7 @@ function extractCoordinatesFromUrl(url) {
 }
 
 const GEOCODE_CACHE_KEY = 'jpatricio_geocode_cache_v1';
+const SHORT_MAPS_CACHE_KEY = 'jpatricio_short_maps_cache_v1';
 
 // Known Mossoro/RN neighborhoods, districts, industrial hubs & regional cities
 // Used for fast canonical grouping and reliable fallback coordinates on the delivery map.
@@ -61,7 +62,13 @@ export function cleanTextForMatch(str) {
 export function isShortMapsUrl(val) {
   if (!val) return false;
   const s = String(val).trim().toLowerCase();
-  return s.includes('maps.app.goo.gl') || s.includes('goo.gl/maps');
+  return s.includes('maps.app.goo.gl') || s.includes('goo.gl/maps') || s.includes('g.co/maps');
+}
+
+export function extractFirstShortMapsUrl(val) {
+  if (!val) return null;
+  const m = String(val).match(/https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/maps)\/[^\s<>"')]+/i);
+  return m ? m[0].trim() : null;
 }
 
 export function isHttpUrl(val) {
@@ -76,7 +83,7 @@ function parseDmsCoordinate(deg, min, sec, hemi) {
 }
 
 /**
- * Extracts explicit coordinates from Google Maps URLs, DMS strings, or raw "lat, lng" strings.
+ * Extracts explicit coordinates from Google Maps URLs, DMS strings, "(GPS: lat, lng)", or raw "lat, lng" strings.
  */
 export function extractCoordinates(val) {
   if (!val) return null;
@@ -101,12 +108,65 @@ export function extractCoordinates(val) {
     };
   }
 
-  const plain = str.match(/^(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})$/);
-  if (plain) {
-    return { lat: parseFloat(plain[1]), lng: parseFloat(plain[2]) };
+  // Matches raw "lat, lng" or tagged "(GPS: -5.172960, -37.333125)"
+  const embedded = str.match(/(?:GPS:\s*)?(-?\d{1,2}\.\d{4,})\s*,\s*(-?\d{1,3}\.\d{4,})/i);
+  if (embedded) {
+    const lat = parseFloat(embedded[1]);
+    const lng = parseFloat(embedded[2]);
+    if (isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+      return { lat, lng };
+    }
   }
 
   return null;
+}
+
+/**
+ * Builds an accurate Google Maps directions URL prioritizing exact extracted coordinates
+ * so drivers/managers never get routed to an ambiguous text match or broken concatenated URL.
+ */
+export function buildGoogleMapsDirectionsUrl(endereco) {
+  const raw = String(endereco || '').trim();
+  if (!raw) return 'https://www.google.com/maps';
+  const coords = extractCoordinates(raw);
+  if (coords) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${coords.lat},${coords.lng}`;
+  }
+  const shortUrl = extractFirstShortMapsUrl(raw);
+  if (shortUrl) return shortUrl;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(raw)}`;
+}
+
+/**
+ * Merges human-readable resolved address & exact GPS coords with any manual notes
+ * the operator originally typed alongside the shortened link.
+ */
+export function formatResolvedAddressForForm(originalText, resolved) {
+  if (!resolved || typeof resolved.lat !== 'number' || typeof resolved.lng !== 'number') {
+    return originalText || '';
+  }
+  const orig = String(originalText || '').trim();
+  const strippedNotes = orig
+    .replace(/https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/maps)\/[^\s<>"')]+/gi, '')
+    .replace(/\s*\(GPS:\s*-?\d+\.\d+\s*,\s*-?\d+\.\d+\)/gi, '')
+    .replace(/\n{2,}/g, '\n')
+    .trim();
+
+  const coordTag = `(GPS: ${resolved.lat.toFixed(6)}, ${resolved.lng.toFixed(6)})`;
+  const mainAddress = String(resolved.formattedAddress || '').trim();
+
+  // If formattedAddress is only coords and user had descriptive notes, keep notes + GPS
+  const isAddrOnlyCoords = /^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(mainAddress);
+  if (strippedNotes && isAddrOnlyCoords) {
+    return `${strippedNotes} ${coordTag}`;
+  }
+  if (!mainAddress) {
+    return strippedNotes ? `${strippedNotes} ${coordTag}` : coordTag;
+  }
+  if (strippedNotes && !cleanTextForMatch(mainAddress).includes(cleanTextForMatch(strippedNotes.split('\n')[0]))) {
+    return `${mainAddress} ${coordTag}\nObs: ${strippedNotes}`;
+  }
+  return `${mainAddress} ${coordTag}`;
 }
 
 /**
@@ -134,8 +194,9 @@ function formatLocationDisplay(raw) {
 
 /**
  * Classifies and normalizes a delivery's address/location for reporting and mapping.
+ * Accepts optional `resolvedShortLinks` dictionary mapping short Google Maps URLs -> resolved coords/address.
  */
-export function normalizeDeliveryLocation(delivery) {
+export function normalizeDeliveryLocation(delivery, resolvedShortLinks = null) {
   const rawAddress = String(delivery?.endereco || '').trim();
   const rawClient = String(delivery?.cliente || '').trim();
   const combinedNorm = cleanTextForMatch(`${rawAddress} ${rawClient}`);
@@ -155,23 +216,68 @@ export function normalizeDeliveryLocation(delivery) {
   }
 
   const explicitCoords = extractCoordinates(rawAddress);
-  const shortUrl = isShortMapsUrl(rawAddress);
+  const shortUrl = extractFirstShortMapsUrl(rawAddress);
+  const shortUrlFlag = Boolean(shortUrl || isShortMapsUrl(rawAddress));
+  const resolvedShort = shortUrl && resolvedShortLinks ? resolvedShortLinks[shortUrl] : null;
   const httpUrl = isHttpUrl(rawAddress);
 
-  if (shortUrl || (httpUrl && !explicitCoords)) {
-    const matchedKnown = KNOWN_LOCATIONS.find((loc) =>
-      loc.patterns.some((p) => cleanTextForMatch(rawClient).includes(p))
+  if (resolvedShort && resolvedShort.ok && typeof resolvedShort.lat === 'number' && typeof resolvedShort.lng === 'number') {
+    const resolvedCoords = { lat: resolvedShort.lat, lng: resolvedShort.lng };
+    const searchableResolved = cleanTextForMatch(
+      `${resolvedShort.formattedAddress || ''} ${resolvedShort.neighborhood || ''} ${resolvedShort.city || ''} ${rawAddress}`
     );
-    if (matchedKnown) {
+    const matchedResolvedHub = KNOWN_LOCATIONS.find((loc) =>
+      loc.patterns.some((p) => searchableResolved.includes(p))
+    );
+    if (matchedResolvedHub) {
       return {
-        key: matchedKnown.key,
-        label: matchedKnown.label,
-        category: matchedKnown.category,
+        key: matchedResolvedHub.key,
+        label: matchedResolvedHub.label,
+        category: matchedResolvedHub.category,
         rawAddress,
         isEmpty: false,
-        isShortUrl: shortUrl,
-        explicitCoords: null,
-        presetCoords: { lat: matchedKnown.lat, lng: matchedKnown.lng },
+        isShortUrl: false,
+        explicitCoords: resolvedCoords,
+        presetCoords: { lat: matchedResolvedHub.lat, lng: matchedResolvedHub.lng },
+        geocodeQuery: null,
+      };
+    }
+
+    const regionLabel = [resolvedShort.neighborhood || resolvedShort.road, resolvedShort.city]
+      .filter(Boolean)
+      .join(' — ');
+    const displayLabel =
+      regionLabel ||
+      resolvedShort.formattedAddress ||
+      `Ponto GPS (${resolvedCoords.lat.toFixed(4)}, ${resolvedCoords.lng.toFixed(4)})`;
+
+    return {
+      key: `gps-short:${cleanTextForMatch(displayLabel).slice(0, 48)}`,
+      label: formatLocationDisplay(displayLabel),
+      category: resolvedShort.city ? 'Link GPS Expandido' : 'Coordenada GPS',
+      rawAddress,
+      isEmpty: false,
+      isShortUrl: false,
+      explicitCoords: resolvedCoords,
+      presetCoords: null,
+      geocodeQuery: null,
+    };
+  }
+
+  if (shortUrlFlag || (httpUrl && !explicitCoords)) {
+    const matchedTextFirst = KNOWN_LOCATIONS.find((loc) =>
+      loc.patterns.some((p) => combinedNorm.includes(p))
+    );
+    if (matchedTextFirst) {
+      return {
+        key: matchedTextFirst.key,
+        label: matchedTextFirst.label,
+        category: matchedTextFirst.category,
+        rawAddress,
+        isEmpty: false,
+        isShortUrl: shortUrlFlag,
+        explicitCoords: explicitCoords || null,
+        presetCoords: { lat: matchedTextFirst.lat, lng: matchedTextFirst.lng },
         geocodeQuery: null,
       };
     }
@@ -181,8 +287,9 @@ export function normalizeDeliveryLocation(delivery) {
       label: 'Link Google Maps (URL curta)',
       category: 'Link GPS',
       rawAddress,
+      shortUrl: shortUrl || rawAddress,
       isEmpty: false,
-      isShortUrl: shortUrl,
+      isShortUrl: shortUrlFlag,
       explicitCoords: null,
       presetCoords: null,
       geocodeQuery: null,
@@ -247,7 +354,8 @@ export function normalizeDeliveryLocation(delivery) {
   }
 
   // Standard street / neighborhood address grouping
-  const firstLine = rawAddress.split('\n').filter(Boolean)[0] || rawAddress;
+  const cleanDisplay = rawAddress.replace(/\s*\(GPS:\s*-?\d+\.\d+\s*,\s*-?\d+\.\d+\)/gi, '').trim();
+  const firstLine = cleanDisplay.split('\n').filter(Boolean)[0] || cleanDisplay;
   const parts = firstLine.split(',').map((p) => p.trim()).filter(Boolean);
   let canonicalText = firstLine;
   if (parts.length >= 3) {
@@ -288,5 +396,24 @@ export function saveGeocodeCache(cache) {
     localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(cache));
   } catch {
     // Ignore quota errors
+  }
+}
+
+export function loadShortMapsCache() {
+  try {
+    if (typeof localStorage === 'undefined') return {};
+    const parsed = JSON.parse(localStorage.getItem(SHORT_MAPS_CACHE_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveShortMapsCache(cache) {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(SHORT_MAPS_CACHE_KEY, JSON.stringify(cache || {}));
+  } catch {
+    // Ignore storage quota errors
   }
 }
