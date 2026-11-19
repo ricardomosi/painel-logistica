@@ -357,8 +357,21 @@ async function run() {
     await page.locator('#week-context-banner').waitFor({ state: 'hidden', timeout: 4000 });
     console.log('   [PASS] Coletas week navigation (Prev / Hoje) verified.');
 
-    // Switch back to Entregas and open Nova Entrega modal
+    // Switch back to Entregas and verify immutable creation date/time badge (e.g. EDU SERVICE created 18/11 17:23 even when on Quinta)
     await page.locator('#btn-tab-entrega-desk').click();
+    await page.locator('#kanban-view').waitFor({ state: 'visible', timeout: 8000 });
+    await page.waitForTimeout(200);
+    const eduCard = page.locator('#kanban-view h3:has-text("EDU SERVICE")').locator('..');
+    if ((await eduCard.count()) > 0) {
+      const eduText = await eduCard.first().innerText();
+      if (!eduText.includes('18/11') || !eduText.includes('17:23')) {
+        throw new Error(`Expected EDU SERVICE card to keep creation timestamp 18/11 17:23, got: ${eduText}`);
+      }
+      console.log('   [PASS] Verified EDU SERVICE moved card preserves original creation timestamp 18/11 17:23.');
+    } else {
+      throw new Error('Expected live EDU SERVICE card to be visible inside #kanban-view after waiting');
+    }
+
     await page.locator('button:has-text("Nova Entrega")').first().click();
     await page.locator('h2:has-text("Nova Entrega"), h3:has-text("Nova Entrega")').first().waitFor({ state: 'visible', timeout: 8000 });
 

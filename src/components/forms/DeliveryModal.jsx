@@ -836,16 +836,24 @@ export default function DeliveryModal({ weekNav = null } = {}) {
         ? romaneioTotalValor 
         : (parseFloat(formData.valor_entrega) || 0);
 
-      // Data específica futura/agendada ou dia da coluna na semana ativa do quadro
+      // Data específica futura/agendada ou dia da coluna na semana ativa fica em `coluna` ("col|YYYY-MM-DD").
+      // IMPORTANTE: Nunca sobrescrever `data_registro` ao editar/mover dia da semana para preservar criação original.
       const scheduledDateStr = formData.data_agendada?.trim() || '';
       const resolvedColKey = scheduledDateStr
         ? (formData.coluna === 'atualizacoes' ? getColumnKeyFromDate(scheduledDateStr) : formData.coluna)
         : (formData.coluna || 'atualizacoes');
-      const targetDayDate = scheduledDateStr || getWeekDayDateStr(resolvedColKey, weekNav?.weekStart);
-      const finalDataRegistro = targetDayDate || formData.data_registro || selectedDelivery?.data_registro || formatIsoBoardDate(new Date());
-      const finalColuna = scheduledDateStr
-        ? buildScheduledColumnValue(resolvedColKey, scheduledDateStr)
-        : (resolvedColKey || 'atualizacoes');
+      const targetColDate =
+        scheduledDateStr ||
+        (resolvedColKey !== 'atualizacoes' ? getWeekDayDateStr(resolvedColKey, weekNav?.weekStart) : null);
+      const finalColuna =
+        resolvedColKey === 'atualizacoes' && !scheduledDateStr
+          ? 'atualizacoes'
+          : targetColDate
+            ? buildScheduledColumnValue(resolvedColKey, targetColDate)
+            : (resolvedColKey || 'atualizacoes');
+      const finalDataRegistro = isEditing
+        ? (selectedDelivery?.data_registro || formData.data_registro || formatIsoBoardDate(new Date()))
+        : formatIsoBoardDate(new Date());
 
       const payload = {
         ...formData,

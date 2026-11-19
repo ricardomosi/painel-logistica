@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import KanbanColumn from './KanbanColumn';
 import MobileWeekNav from './MobileWeekNav';
 import { useLogistics } from '../../contexts/LogisticsContext';
-import { groupItemsByWeekColumns } from '../../lib/kanbanWeekUtils';
+import { buildScheduledColumnValue, groupItemsByWeekColumns } from '../../lib/kanbanWeekUtils';
 import { extractFirstShortMapsUrl, loadShortMapsCache } from '../../lib/locationUtils';
 import { resolveShortMapsUrlsBatch } from '../../services/mapsLinkService';
 
@@ -73,11 +73,14 @@ export default function KanbanBoard({ weekNav, type = 'entrega' }) {
     const id = Number(itemId);
     const targetCol = columns.find(c => c.key === targetColumnKey);
     const targetDateStr = targetCol?.fullDateStr || null;
+    const nextColumnVal = targetDateStr
+      ? buildScheduledColumnValue(targetColumnKey, targetDateStr)
+      : targetColumnKey;
 
     if (type === 'entrega') {
-      moveDeliveryColumn(id, targetColumnKey, targetDateStr);
+      moveDeliveryColumn(id, nextColumnVal);
     } else {
-      moveCollectionColumn(id, targetColumnKey, targetDateStr);
+      moveCollectionColumn(id, nextColumnVal);
     }
   };
 

@@ -286,15 +286,23 @@ export default function CollectionModal({ weekNav = null } = {}) {
         ]);
       }
 
+      // Preserva sempre a data original de criação em `data_registro` e grava dia do quadro em `coluna_kanban`
       const scheduledDateStr = formData.data_agendada?.trim() || '';
       const resolvedColKey = scheduledDateStr
         ? (formData.coluna_kanban === 'atualizacoes' ? getColumnKeyFromDate(scheduledDateStr) : formData.coluna_kanban)
         : (formData.coluna_kanban || 'atualizacoes');
-      const targetDayDate = scheduledDateStr || getWeekDayDateStr(resolvedColKey, weekNav?.weekStart);
-      const finalDataRegistro = targetDayDate || formData.data_registro || selectedCollection?.data_registro || formatIsoBoardDate(new Date());
-      const finalColuna = scheduledDateStr
-        ? buildScheduledColumnValue(resolvedColKey, scheduledDateStr)
-        : (resolvedColKey || 'atualizacoes');
+      const targetColDate =
+        scheduledDateStr ||
+        (resolvedColKey !== 'atualizacoes' ? getWeekDayDateStr(resolvedColKey, weekNav?.weekStart) : null);
+      const finalColuna =
+        resolvedColKey === 'atualizacoes' && !scheduledDateStr
+          ? 'atualizacoes'
+          : targetColDate
+            ? buildScheduledColumnValue(resolvedColKey, targetColDate)
+            : (resolvedColKey || 'atualizacoes');
+      const finalDataRegistro = isEditing
+        ? (selectedCollection?.data_registro || formData.data_registro || formatIsoBoardDate(new Date()))
+        : formatIsoBoardDate(new Date());
 
       const cleanPayload = {
         ...formData,

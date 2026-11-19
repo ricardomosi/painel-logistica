@@ -35,6 +35,14 @@ function cleanFkOrNull(val) {
   return val;
 }
 
+function getLocalTodayIso() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export const collectionsService = {
   async getAll() {
     const { data, error } = await supabase
@@ -79,7 +87,7 @@ export const collectionsService = {
       coluna_kanban: cleanStringOrNull(collectionData.coluna_kanban) || 'atualizacoes',
       board_type: 'coleta',
       urgente: !!collectionData.urgente,
-      data_registro: cleanDateOrNull(collectionData.data_registro) || new Date().toISOString().split('T')[0],
+      data_registro: cleanDateOrNull(collectionData.data_registro) || getLocalTodayIso(),
       hora_registro: cleanTimeOrNull(collectionData.hora_registro) || new Date().toTimeString().split(' ')[0],
       data_conclusao: cleanDateOrNull(collectionData.data_conclusao),
       hora_conclusao: cleanTimeOrNull(collectionData.hora_conclusao),
@@ -161,14 +169,11 @@ export const collectionsService = {
     return data;
   },
 
-  async updateColumn(id, newColumn, optionalDate = null) {
+  async updateColumn(id, newColumn) {
     const payload = {
       coluna_kanban: cleanStringOrNull(newColumn) || 'atualizacoes',
       updated_at: new Date().toISOString(),
     };
-    if (optionalDate) {
-      payload.data_registro = cleanDateOrNull(optionalDate);
-    }
     const { data, error } = await supabase
       .from('coletas')
       .update(payload)

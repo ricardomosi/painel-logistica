@@ -60,6 +60,14 @@ function cleanFkOrNull(val) {
   return val;
 }
 
+function getLocalTodayIso() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export const deliveriesService = {
   async getAll() {
     const PAGE_SIZE = 1000;
@@ -130,7 +138,7 @@ export const deliveriesService = {
       telefone: cleanStringOrNull(deliveryData.telefone),
       coluna: cleanStringOrNull(deliveryData.coluna) || 'atualizacoes',
       urgente: !!deliveryData.urgente,
-      data_registro: cleanDateOrNull(deliveryData.data_registro) || new Date().toISOString().split('T')[0],
+      data_registro: cleanDateOrNull(deliveryData.data_registro) || getLocalTodayIso(),
       hora_registro: cleanTimeOrNull(deliveryData.hora_registro) || new Date().toTimeString().split(' ')[0],
       data_inicio: cleanDateOrNull(deliveryData.data_inicio),
       hora_inicio: cleanTimeOrNull(deliveryData.hora_inicio),
@@ -228,14 +236,11 @@ export const deliveriesService = {
     return data;
   },
 
-  async updateColumn(id, newColumn, optionalDate = null) {
+  async updateColumn(id, newColumn) {
     const payload = {
       coluna: cleanStringOrNull(newColumn) || 'atualizacoes',
       updated_at: new Date().toISOString(),
     };
-    if (optionalDate) {
-      payload.data_registro = cleanDateOrNull(optionalDate);
-    }
     const { data, error } = await supabase
       .from('entregas')
       .update(payload)

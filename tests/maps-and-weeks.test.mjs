@@ -19,6 +19,7 @@ import {
   getWeekDayDateStr,
   buildScheduledColumnValue,
   extractScheduledDateFromItem,
+  extractCardCreatedDisplay,
   groupItemsByWeekColumns,
 } from '../src/lib/kanbanWeekUtils.js';
 
@@ -148,5 +149,42 @@ test('kanbanWeekUtils: accurately separates past weeks, current week rollover, a
   assert.deepEqual(futureGrouped.quinta.map((x) => x.id), [4]);
   assert.deepEqual(futureGrouped.quarta.map((x) => x.id), []);
   assert.equal(formatIsoBoardDate(parseBoardDate('2026-11-26')), '2026-11-26');
+});
+
+test('kanbanWeekUtils: keeps immutable creation date and time fixed even when moved across weekday columns', () => {
+  // Created locally on 18/11 at 17:23, even if legacy data_registro was previously overwritten to 19/11
+  const createdLocalIso = '2026-11-18T17:23:03';
+  const movedLegacyCard = {
+    id: 323,
+    cliente: 'EDU SERVICE',
+    status: 'pendente',
+    coluna: 'quinta|2026-11-19',
+    data_registro: '2026-11-19',
+    hora_registro: '17:23:03',
+    created_at: createdLocalIso,
+  };
+
+  const displayMoved = extractCardCreatedDisplay(movedLegacyCard);
+  assert.equal(displayMoved.dateLabel, '18/11');
+  assert.equal(displayMoved.timeLabel, '17:23');
+
+  // Card moved to Quinta 19/11 MUST still render in Quinta column of active week while showing 18/11 17:23
+  const groupedThisWeek = groupItemsByWeekColumns({
+    items: [movedLegacyCard],
+    type: 'entrega',
+    weekStart: parseBoardDate('2026-11-16'),
+    weekEnd: parseBoardDate('2026-11-21'),
+    referenceToday: parseBoardDate('2026-11-19'),
+  });
+  assert.deepEqual(groupedThisWeek.quinta.map((c) => c.id), [323]);
+  assert.equal(groupedThisWeek.quarta.length, 0);
+
+  // Fallback without created_at uses data_registro + hora_registro cleanly
+  const noCreatedAtDisplay = extractCardCreatedDisplay({
+    data_registro: '2026-11-18',
+    hora_registro: '08:05:12',
+  });
+  assert.equal(noCreatedAtDisplay.dateLabel, '18/11');
+  assert.equal(noCreatedAtDisplay.timeLabel, '08:05');
 });
 

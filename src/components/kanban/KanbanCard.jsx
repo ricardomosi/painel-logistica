@@ -2,7 +2,11 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLogistics } from '../../contexts/LogisticsContext';
 import { buildGoogleMapsDirectionsUrl, formatAddressForDisplay } from '../../lib/locationUtils';
-import { extractScheduledDateFromItem, formatIsoBoardDate } from '../../lib/kanbanWeekUtils';
+import {
+  extractCardCreatedDisplay,
+  extractScheduledDateFromItem,
+  formatIsoBoardDate,
+} from '../../lib/kanbanWeekUtils';
 
 const TIPO_CONFIG = {
   'envio': { 
@@ -122,24 +126,8 @@ export default function KanbanCard({ item, type = 'entrega', onDragStart, resolv
     }
   };
 
-  // Date and Time formatting
-  const rawDate = item.data_registro || item.created_at || '';
-  let dataExibicao = '';
-  if (rawDate) {
-    const parts = rawDate.split('T')[0].split('-');
-    if (parts.length === 3) {
-      dataExibicao = `${parts[2]}/${parts[1]}`;
-    }
-  }
-
-  const rawHora = item.hora_registro || '';
-  let horaExibicao = '';
-  if (rawHora) {
-    const hParts = rawHora.split(':');
-    if (hParts.length >= 2) {
-      horaExibicao = `${hParts[0]}:${hParts[1]}`;
-    }
-  }
+  // Immutable creation date & time formatting (never altered by Kanban column moves)
+  const { dateLabel: dataExibicao, timeLabel: horaExibicao } = extractCardCreatedDisplay(item);
 
   // Concluded Date & Time formatting
   let dataConclusaoFmt = '';

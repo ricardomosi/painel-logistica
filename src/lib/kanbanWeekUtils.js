@@ -94,6 +94,46 @@ export function extractScheduledDateFromItem(item, type = 'entrega') {
   return null;
 }
 
+/**
+ * Extracts immutable visual creation date ("DD/MM") and time ("HH:mm") for a Kanban card,
+ * prioritizing `created_at` so moving a card across weekday columns never alters its creation badge.
+ */
+export function extractCardCreatedDisplay(item) {
+  if (!item) return { dateLabel: '', timeLabel: '' };
+
+  const rawCreated = item.created_at ? String(item.created_at).trim() : '';
+  if (rawCreated && (rawCreated.includes('T') || /\d{2}:\d{2}/.test(rawCreated))) {
+    const normalized = rawCreated.replace(/^(\d{4}-\d{2}-\d{2})\s+/, '$1T');
+    const dt = new Date(normalized);
+    if (!isNaN(dt.getTime())) {
+      const dd = String(dt.getDate()).padStart(2, '0');
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      const hh = String(dt.getHours()).padStart(2, '0');
+      const min = String(dt.getMinutes()).padStart(2, '0');
+      return {
+        dateLabel: `${dd}/${mm}`,
+        timeLabel: `${hh}:${min}`,
+      };
+    }
+  }
+
+  let dateLabel = '';
+  const fallbackDate = parseBoardDate(item.data_registro || item.created_at);
+  if (fallbackDate) {
+    dateLabel = `${String(fallbackDate.getDate()).padStart(2, '0')}/${String(fallbackDate.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  let timeLabel = '';
+  if (item.hora_registro) {
+    const hParts = String(item.hora_registro).trim().split(':');
+    if (hParts.length >= 2) {
+      timeLabel = `${hParts[0].padStart(2, '0')}:${hParts[1].padStart(2, '0')}`;
+    }
+  }
+
+  return { dateLabel, timeLabel };
+}
+
 export function groupItemsByWeekColumns({
   items = [],
   type = 'entrega',
